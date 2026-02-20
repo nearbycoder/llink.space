@@ -72,7 +72,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				"img-src 'self' data: blob: https:",
 				"font-src 'self' data: https://fonts.gstatic.com",
 				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-				"script-src 'self' 'unsafe-inline'",
+				"script-src 'self' 'unsafe-inline' https://tic.nrby.xyz",
 				"connect-src 'self' https: wss:",
 				"upgrade-insecure-requests",
 			].join("; ");
@@ -89,6 +89,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		<html lang="en">
 			<head>
 				<HeadContent />
+				<script
+					defer
+					data-domain="llink.space"
+					src="https://tic.nrby.xyz/js/script.js"
+				/>
 			</head>
 			<body>
 				<TanStackQueryProvider>
