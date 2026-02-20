@@ -32,7 +32,7 @@ function AvatarImage({
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={cn("aspect-square size-full", className)}
+      className={cn("aspect-square size-full object-cover", className)}
       {...props}
     />
   )
@@ -40,11 +40,13 @@ function AvatarImage({
 
 function AvatarFallback({
   className,
+  delayMs = 600,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
+      delayMs={delayMs}
       className={cn(
         "flex size-full items-center justify-center rounded-full border border-black bg-[#F5FF7B] text-[#11110F] text-sm group-data-[size=sm]/avatar:text-xs",
         className

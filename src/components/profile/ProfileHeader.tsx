@@ -21,7 +21,13 @@ export function ProfileHeader({
 	return (
 		<div className="flex flex-col items-center text-center mb-8">
 			<Avatar className="w-20 h-20 mb-4 border-2 border-black shadow-[3px_3px_0_0_#11110F]">
-				<AvatarImage src={profile.avatarUrl ?? undefined} />
+				<AvatarImage
+					src={profile.avatarUrl ?? undefined}
+					alt={`${profile.displayName ?? profile.username} avatar`}
+					loading="eager"
+					fetchPriority="high"
+					decoding="async"
+				/>
 				<AvatarFallback
 					className="text-2xl font-semibold"
 					style={{ backgroundColor: "#F5FF7B", color: textColor }}

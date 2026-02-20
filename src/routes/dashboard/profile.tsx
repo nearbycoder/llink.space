@@ -149,7 +149,11 @@ function ProfilePage() {
 				<div className="kinetic-panel p-6 mb-4">
 					<div className="flex items-center gap-3 mb-2">
 						<Avatar className="w-10 h-10">
-							<AvatarImage src={previewAvatarUrl} />
+							<AvatarImage
+								src={previewAvatarUrl}
+								alt={`${profile.displayName ?? profile.username} avatar`}
+								decoding="async"
+							/>
 							<AvatarFallback className="bg-[#F5FF7B] text-[#11110F] font-medium">
 								{profile.displayName?.charAt(0).toUpperCase() ?? "?"}
 							</AvatarFallback>

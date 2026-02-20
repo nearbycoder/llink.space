@@ -46,7 +46,16 @@ const config = defineConfig({
 	plugins: [
 		devtools(),
 		hashAliasPlugin,
-		nitro({ rollupConfig: { external: [/^@sentry\//] } }),
+		nitro({
+			rollupConfig: { external: [/^@sentry\//] },
+			routeRules: {
+				"/uploads/**": {
+					headers: {
+						"cache-control": "public, max-age=31536000, immutable",
+					},
+				},
+			},
+		}),
 		tsconfigPaths({ projects: ["./tsconfig.json"] }),
 		tailwindcss(),
 		tanstackStart(),

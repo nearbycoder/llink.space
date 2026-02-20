@@ -33,45 +33,64 @@ function DashboardPage() {
 	const queryClient = useQueryClient()
 	const [showAdd, setShowAdd] = useState(false)
 	const [editingLink, setEditingLink] = useState<LinkType | null>(null)
+	const linksQueryOptions = trpc.links.list.queryOptions()
 
-	const { data: links = [], isLoading } = useQuery(
-		trpc.links.list.queryOptions(),
-	)
+	const {
+		data: links = [],
+		isLoading,
+		refetch: refetchLinks,
+	} = useQuery(linksQueryOptions)
 
 	const addLink = useMutation(trpc.links.add.mutationOptions())
 	const updateLink = useMutation(trpc.links.update.mutationOptions())
 	const deleteLink = useMutation(trpc.links.delete.mutationOptions())
 	const reorderLinks = useMutation(trpc.links.reorder.mutationOptions())
 
-	const invalidate = () =>
-		queryClient.invalidateQueries({ queryKey: ["trpc", "links", "list"] })
+	const refreshLinks = async () => {
+		await queryClient.invalidateQueries({
+			queryKey: linksQueryOptions.queryKey,
+			exact: true,
+		})
+		await refetchLinks()
+	}
 
 	const handleAdd = async (data: LinkFormData) => {
-		await addLink.mutateAsync(data)
-		await invalidate()
+		const created = await addLink.mutateAsync(data)
+		queryClient.setQueryData<LinkType[]>(linksQueryOptions.queryKey, (current) =>
+			current ? [...current, created] : [created],
+		)
+		await refreshLinks()
 		setShowAdd(false)
 	}
 
 	const handleUpdate = async (data: LinkFormData) => {
 		if (!editingLink) return
-		await updateLink.mutateAsync({
+		const updated = await updateLink.mutateAsync({
 			id: editingLink.id,
 			...data,
 			iconUrl: data.iconUrl ?? null,
 		})
-		await invalidate()
+		queryClient.setQueryData<LinkType[]>(linksQueryOptions.queryKey, (current) =>
+			current
+				? current.map((link) => (link.id === updated.id ? { ...link, ...updated } : link))
+				: current,
+		)
+		await refreshLinks()
 		setEditingLink(null)
 	}
 
 	const handleDelete = async (id: string) => {
 		if (!confirm("Delete this link?")) return
 		await deleteLink.mutateAsync({ id })
-		await invalidate()
+		queryClient.setQueryData<LinkType[]>(linksQueryOptions.queryKey, (current) =>
+			current ? current.filter((link) => link.id !== id) : current,
+		)
+		await refreshLinks()
 	}
 
 	const handleReorder = async (ids: string[]) => {
 		await reorderLinks.mutateAsync({ ids })
-		await invalidate()
+		await refreshLinks()
 	}
 
 	return (

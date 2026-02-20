@@ -10,7 +10,7 @@ export const Route = createFileRoute("/u/$username")({
 	ssr: true,
 	loader: async ({ params, context }) => {
 		try {
-			const data = await context.queryClient.ensureQueryData(
+			const data = await context.queryClient.fetchQuery(
 				context.trpc.links.getPublic.queryOptions({ username: params.username }),
 			)
 			return { data }
