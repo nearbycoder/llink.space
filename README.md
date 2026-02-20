@@ -83,11 +83,27 @@ VITE_POSTHOG_DEV_ENABLED=false
 OBJECT_STORAGE_BACKEND=local
 LOCAL_OBJECT_STORAGE_DIR=public/uploads
 LOCAL_OBJECT_STORAGE_BASE_PATH=/uploads
+
+# Optional (S3-compatible object storage)
+# Set OBJECT_STORAGE_BACKEND=s3 to enable this mode
+S3_BUCKET=
+# Alias also supported: S3_BUCKET_NAME
+S3_REGION=us-east-1
+S3_ENDPOINT=
+S3_ACCESS_KEY_ID=
+# Alias also supported: AWS_ACCESS_KEY_ID
+S3_SECRET_ACCESS_KEY=
+# Alias also supported: AWS_SECRET_ACCESS_KEY
+S3_PUBLIC_BASE_URL=
+S3_FORCE_PATH_STYLE=true
+S3_KEY_PREFIX=
 ```
 
 Notes:
 - `VITE_POSTHOG_HOST` must be an API host (for example `https://us.i.posthog.com`), not an assets CDN host.
-- `OBJECT_STORAGE_BACKEND=s3` is scaffolded but not implemented yet in this codebase.
+- For AWS S3 you can usually omit `S3_ENDPOINT`; for S3-compatible providers (R2, MinIO, Railway bucket providers), set `S3_ENDPOINT`.
+- `S3_PUBLIC_BASE_URL` is optional but recommended when your bucket uses a CDN/custom public domain.
+- Railway bucket plugins commonly provide `S3_BUCKET_NAME`; this is supported directly by the app.
 - In production, set `BETTER_AUTH_URL` to your canonical HTTPS domain and keep `BETTER_AUTH_SECRET` stable.
 
 ## Local Development
@@ -175,6 +191,8 @@ bun --bun run db:studio
 
 - User-provided link URLs are normalized and restricted to `http`/`https`.
 - Avatar uploads accept only JPG/PNG/WEBP/GIF, enforce size limits, and verify file signatures.
+- Object storage supports local disk and S3-compatible buckets.
+- Local uploads are in `public/uploads/`, which is git-ignored to prevent committing user files.
 - State-changing API routes validate request origin.
 - Auth and API mutation responses use `cache-control: no-store`.
 - Root route sends security headers; production adds CSP + HSTS.
