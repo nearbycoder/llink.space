@@ -2,8 +2,8 @@
 set -euo pipefail
 
 node_bin="$(command -v node)"
-if [[ "${node_bin}" == /private/tmp/bun-node-* ]]; then
-	node_bin="$(which -a node | sed -n "2p")"
+if [[ "${node_bin}" == *"bun-node"* ]]; then
+	node_bin="$(which -a node | awk '!seen[$0]++' | grep -v "bun-node" | head -n 1)"
 fi
 
 if [[ -z "${node_bin}" ]]; then
