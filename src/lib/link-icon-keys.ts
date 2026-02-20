@@ -29,12 +29,12 @@ export const LINK_ICON_KEYS = [
 	"slack",
 	"figma",
 	"dribbble",
-] as const
+] as const;
 
-export type LinkIconKey = (typeof LINK_ICON_KEYS)[number]
+export type LinkIconKey = (typeof LINK_ICON_KEYS)[number];
 
-const linkIconKeySet = new Set<string>(LINK_ICON_KEYS)
+const linkIconKeySet = new Set<string>(LINK_ICON_KEYS);
 
 export function isLinkIconKey(value: string): value is LinkIconKey {
-	return linkIconKeySet.has(value)
+	return linkIconKeySet.has(value);
 }

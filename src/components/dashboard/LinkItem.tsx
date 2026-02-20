@@ -1,36 +1,42 @@
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import { GripVertical, Pencil, Trash2 } from "lucide-react"
-import { Button } from "#/components/ui/button"
-import { Badge } from "#/components/ui/badge"
-import { LinkIcon } from "#/components/links/LinkIcon"
-import { cn } from "#/lib/utils"
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { Button } from "#/components/ui/button";
+import { Badge } from "#/components/ui/badge";
+import { LinkIcon } from "#/components/links/LinkIcon";
+import { cn } from "#/lib/utils";
 
 interface Link {
-	id: string
-	title: string
-	url: string
-	description: string | null
-	iconUrl: string | null
-	iconBgColor: string | null
-	isActive: boolean | null
-	sortOrder: number | null
+	id: string;
+	title: string;
+	url: string;
+	description: string | null;
+	iconUrl: string | null;
+	iconBgColor: string | null;
+	isActive: boolean | null;
+	sortOrder: number | null;
 }
 
 interface LinkItemProps {
-	link: Link
-	onEdit: (link: Link) => void
-	onDelete: (id: string) => void
+	link: Link;
+	onEdit: (link: Link) => void;
+	onDelete: (id: string) => void;
 }
 
 export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-		useSortable({ id: link.id })
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({ id: link.id });
 
 	const style = {
 		transform: CSS.Transform.toString(transform),
 		transition,
-	}
+	};
 
 	return (
 		<div
@@ -76,7 +82,7 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 				</div>
 			</div>
 
-			<div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+			<div className="pointer-events-none flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
 				<Button
 					variant="ghost"
 					size="sm"
@@ -95,5 +101,5 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 				</Button>
 			</div>
 		</div>
-	)
+	);
 }

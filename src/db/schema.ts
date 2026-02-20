@@ -5,7 +5,7 @@ import {
 	timestamp,
 	uuid,
 	integer,
-} from "drizzle-orm/pg-core"
+} from "drizzle-orm/pg-core";
 
 export const profiles = pgTable("profiles", {
 	id: uuid().primaryKey().defaultRandom(),
@@ -17,7 +17,7 @@ export const profiles = pgTable("profiles", {
 	theme: text().default("default"),
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
-})
+});
 
 export const links = pgTable("links", {
 	id: uuid().primaryKey().defaultRandom(),
@@ -33,7 +33,7 @@ export const links = pgTable("links", {
 	sortOrder: integer("sort_order").default(0),
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
-})
+});
 
 export const clickEvents = pgTable("click_events", {
 	id: uuid().primaryKey().defaultRandom(),
@@ -47,4 +47,4 @@ export const clickEvents = pgTable("click_events", {
 	userAgent: text("user_agent"),
 	country: text(),
 	clickedAt: timestamp("clicked_at").defaultNow(),
-})
+});

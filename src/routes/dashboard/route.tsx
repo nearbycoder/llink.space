@@ -4,37 +4,37 @@ import {
 	Outlet,
 	redirect,
 	useLocation,
-} from "@tanstack/react-router"
-import { authClient } from "#/lib/auth-client"
-import { useTRPC } from "#/integrations/trpc/react"
-import { useQuery } from "@tanstack/react-query"
-import { checkDashboardAccess } from "#/lib/auth-server"
+} from "@tanstack/react-router";
+import { authClient } from "#/lib/auth-client";
+import { useTRPC } from "#/integrations/trpc/react";
+import { useQuery } from "@tanstack/react-query";
+import { checkDashboardAccess } from "#/lib/auth-server";
 import {
 	BarChart3,
 	ExternalLink,
 	LayoutDashboard,
 	LogOut,
 	User,
-} from "lucide-react"
-import { cn } from "#/lib/utils"
-import { SiteBrand } from "#/components/SiteBrand"
+} from "lucide-react";
+import { cn } from "#/lib/utils";
+import { SiteBrand } from "#/components/SiteBrand";
 
 export const Route = createFileRoute("/dashboard")({
 	headers: () => ({
 		"cache-control": "private, no-store, no-cache, must-revalidate, max-age=0",
 	}),
 	loader: async () => {
-		const result = await checkDashboardAccess()
+		const result = await checkDashboardAccess();
 		if (result.status === "unauthenticated") {
-			throw redirect({ to: "/sign-in" })
+			throw redirect({ to: "/sign-in" });
 		}
 		if (result.status === "no-profile") {
-			throw redirect({ to: "/onboarding" })
+			throw redirect({ to: "/onboarding" });
 		}
-		return { initialProfile: result.profile }
+		return { initialProfile: result.profile };
 	},
 	component: DashboardLayout,
-})
+});
 
 const navItems = [
 	{ to: "/dashboard", label: "Links", icon: LayoutDashboard, exact: true },
@@ -45,17 +45,17 @@ const navItems = [
 		icon: BarChart3,
 		exact: false,
 	},
-]
+];
 
 function DashboardLayout() {
-	const { initialProfile } = Route.useLoaderData()
-	const location = useLocation()
-	const trpc = useTRPC()
-	const profileQueryOptions = trpc.profile.getCurrent.queryOptions()
+	const { initialProfile } = Route.useLoaderData();
+	const location = useLocation();
+	const trpc = useTRPC();
+	const profileQueryOptions = trpc.profile.getCurrent.queryOptions();
 	const { data: profile = initialProfile } = useQuery({
 		...profileQueryOptions,
 		initialData: initialProfile,
-	})
+	});
 
 	return (
 		<div className="min-h-screen kinetic-gradient md:flex">
@@ -71,7 +71,7 @@ function DashboardLayout() {
 					{navItems.map((item) => {
 						const active = item.exact
 							? location.pathname === item.to
-							: location.pathname.startsWith(item.to)
+							: location.pathname.startsWith(item.to);
 						return (
 							<Link
 								key={item.to}
@@ -86,7 +86,7 @@ function DashboardLayout() {
 								<item.icon className="w-4 h-4" />
 								{item.label}
 							</Link>
-						)
+						);
 					})}
 				</nav>
 
@@ -146,7 +146,7 @@ function DashboardLayout() {
 							{navItems.map((item) => {
 								const active = item.exact
 									? location.pathname === item.to
-									: location.pathname.startsWith(item.to)
+									: location.pathname.startsWith(item.to);
 								return (
 									<Link
 										key={`mobile-${item.to}`}
@@ -161,7 +161,7 @@ function DashboardLayout() {
 										<item.icon className="w-3.5 h-3.5" />
 										{item.label}
 									</Link>
-								)
+								);
 							})}
 						</div>
 					</nav>
@@ -173,5 +173,5 @@ function DashboardLayout() {
 				</main>
 			</div>
 		</div>
-	)
+	);
 }

@@ -1,26 +1,26 @@
-import { createServerFn } from "@tanstack/react-start"
-import { getRequest } from "@tanstack/start-server-core"
-import { asc, eq } from "drizzle-orm"
-import { auth } from "./auth"
-import { db } from "#/db"
-import { links, profiles } from "#/db/schema"
+import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/start-server-core";
+import { asc, eq } from "drizzle-orm";
+import { auth } from "./auth";
+import { db } from "#/db";
+import { links, profiles } from "#/db/schema";
 
 async function resolveDashboardAccess(headers: Headers) {
-	const session = await auth.api.getSession({ headers })
+	const session = await auth.api.getSession({ headers });
 
 	if (!session) {
-		return { status: "unauthenticated" } as const
+		return { status: "unauthenticated" } as const;
 	}
 
 	const profile = await db.query.profiles.findFirst({
 		where: eq(profiles.userId, session.user.id),
-	})
+	});
 
 	if (!profile) {
-		return { status: "no-profile" } as const
+		return { status: "no-profile" } as const;
 	}
 
-	return { status: "ok", profile } as const
+	return { status: "ok", profile } as const;
 }
 
 /**
@@ -29,30 +29,30 @@ async function resolveDashboardAccess(headers: Headers) {
  * redirect appropriately without any cookie-forwarding plumbing.
  */
 export const checkDashboardAccess = createServerFn().handler(async () => {
-	const request = getRequest()
-	return resolveDashboardAccess(request.headers)
-})
+	const request = getRequest();
+	return resolveDashboardAccess(request.headers);
+});
 
 /**
  * Server function that returns dashboard links for the current user with
  * auth/profile checks performed on the server request context.
  */
 export const getDashboardLinks = createServerFn().handler(async () => {
-	const request = getRequest()
-	const access = await resolveDashboardAccess(request.headers)
+	const request = getRequest();
+	const access = await resolveDashboardAccess(request.headers);
 
 	if (access.status !== "ok") {
-		return access
+		return access;
 	}
 
 	const profileLinks = await db.query.links.findMany({
 		where: eq(links.profileId, access.profile.id),
 		orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-	})
+	});
 
 	return {
 		status: "ok",
 		profile: access.profile,
 		links: profileLinks,
-	} as const
-})
+	} as const;
+});

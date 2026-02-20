@@ -1,58 +1,58 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
-import { useTRPC } from "#/integrations/trpc/react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { DraggableLinkList } from "#/components/dashboard/DraggableLinkList"
-import { StaticLinkList } from "#/components/dashboard/StaticLinkList"
-import { LinkForm } from "#/components/dashboard/LinkForm"
-import type { LinkFormData } from "#/components/dashboard/LinkForm"
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useTRPC } from "#/integrations/trpc/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DraggableLinkList } from "#/components/dashboard/DraggableLinkList";
+import { StaticLinkList } from "#/components/dashboard/StaticLinkList";
+import { LinkForm } from "#/components/dashboard/LinkForm";
+import type { LinkFormData } from "#/components/dashboard/LinkForm";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-} from "#/components/ui/dialog"
-import { Button } from "#/components/ui/button"
-import { Plus } from "lucide-react"
-import { useEffect, useState } from "react"
-import { getDashboardLinks } from "#/lib/auth-server"
-import { isLinkIconKey } from "#/lib/link-icon-keys"
+} from "#/components/ui/dialog";
+import { Button } from "#/components/ui/button";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getDashboardLinks } from "#/lib/auth-server";
+import { isLinkIconKey } from "#/lib/link-icon-keys";
 
 export const Route = createFileRoute("/dashboard/")({
 	headers: () => ({
 		"cache-control": "private, no-store, no-cache, must-revalidate, max-age=0",
 	}),
 	loader: async () => {
-		const result = await getDashboardLinks()
+		const result = await getDashboardLinks();
 		if (result.status === "unauthenticated") {
-			throw redirect({ to: "/sign-in" })
+			throw redirect({ to: "/sign-in" });
 		}
 		if (result.status === "no-profile") {
-			throw redirect({ to: "/onboarding" })
+			throw redirect({ to: "/onboarding" });
 		}
-		return { initialLinks: result.links }
+		return { initialLinks: result.links };
 	},
 	component: DashboardPage,
-})
+});
 
 interface LinkType {
-	id: string
-	title: string
-	url: string
-	description: string | null
-	iconUrl: string | null
-	iconBgColor: string | null
-	isActive: boolean | null
-	sortOrder: number | null
+	id: string;
+	title: string;
+	url: string;
+	description: string | null;
+	iconUrl: string | null;
+	iconBgColor: string | null;
+	isActive: boolean | null;
+	sortOrder: number | null;
 }
 
 function DashboardPage() {
-	const { initialLinks } = Route.useLoaderData()
-	const trpc = useTRPC()
-	const queryClient = useQueryClient()
-	const [isHydrated, setIsHydrated] = useState(false)
-	const [showAdd, setShowAdd] = useState(false)
-	const [editingLink, setEditingLink] = useState<LinkType | null>(null)
-	const linksQueryOptions = trpc.links.list.queryOptions()
+	const { initialLinks } = Route.useLoaderData();
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const [isHydrated, setIsHydrated] = useState(false);
+	const [showAdd, setShowAdd] = useState(false);
+	const [editingLink, setEditingLink] = useState<LinkType | null>(null);
+	const linksQueryOptions = trpc.links.list.queryOptions();
 
 	const {
 		data: links = initialLinks,
@@ -61,63 +61,70 @@ function DashboardPage() {
 	} = useQuery({
 		...linksQueryOptions,
 		initialData: initialLinks,
-	})
+	});
 
-	const addLink = useMutation(trpc.links.add.mutationOptions())
-	const updateLink = useMutation(trpc.links.update.mutationOptions())
-	const deleteLink = useMutation(trpc.links.delete.mutationOptions())
-	const reorderLinks = useMutation(trpc.links.reorder.mutationOptions())
+	const addLink = useMutation(trpc.links.add.mutationOptions());
+	const updateLink = useMutation(trpc.links.update.mutationOptions());
+	const deleteLink = useMutation(trpc.links.delete.mutationOptions());
+	const reorderLinks = useMutation(trpc.links.reorder.mutationOptions());
 
 	useEffect(() => {
-		setIsHydrated(true)
-	}, [])
+		setIsHydrated(true);
+	}, []);
 
 	const refreshLinks = async () => {
 		await queryClient.invalidateQueries({
 			queryKey: linksQueryOptions.queryKey,
 			exact: true,
-		})
-		await refetchLinks()
-	}
+		});
+		await refetchLinks();
+	};
 
 	const handleAdd = async (data: LinkFormData) => {
-		const created = await addLink.mutateAsync(data)
-		queryClient.setQueryData<LinkType[]>(linksQueryOptions.queryKey, (current) =>
-			current ? [...current, created] : [created],
-		)
-		await refreshLinks()
-		setShowAdd(false)
-	}
+		const created = await addLink.mutateAsync(data);
+		queryClient.setQueryData<LinkType[]>(
+			linksQueryOptions.queryKey,
+			(current) => (current ? [...current, created] : [created]),
+		);
+		await refreshLinks();
+		setShowAdd(false);
+	};
 
 	const handleUpdate = async (data: LinkFormData) => {
-		if (!editingLink) return
+		if (!editingLink) return;
 		const updated = await updateLink.mutateAsync({
 			id: editingLink.id,
 			...data,
 			iconUrl: data.iconUrl ?? null,
-		})
-		queryClient.setQueryData<LinkType[]>(linksQueryOptions.queryKey, (current) =>
-			current
-				? current.map((link) => (link.id === updated.id ? { ...link, ...updated } : link))
-				: current,
-		)
-		await refreshLinks()
-		setEditingLink(null)
-	}
+		});
+		queryClient.setQueryData<LinkType[]>(
+			linksQueryOptions.queryKey,
+			(current) =>
+				current
+					? current.map((link) =>
+							link.id === updated.id ? { ...link, ...updated } : link,
+						)
+					: current,
+		);
+		await refreshLinks();
+		setEditingLink(null);
+	};
 
 	const handleDelete = async (id: string) => {
-		if (!confirm("Delete this link?")) return
-		await deleteLink.mutateAsync({ id })
-		queryClient.setQueryData<LinkType[]>(linksQueryOptions.queryKey, (current) =>
-			current ? current.filter((link) => link.id !== id) : current,
-		)
-		await refreshLinks()
-	}
+		if (!confirm("Delete this link?")) return;
+		await deleteLink.mutateAsync({ id });
+		queryClient.setQueryData<LinkType[]>(
+			linksQueryOptions.queryKey,
+			(current) =>
+				current ? current.filter((link) => link.id !== id) : current,
+		);
+		await refreshLinks();
+	};
 
 	const handleReorder = async (ids: string[]) => {
-		await reorderLinks.mutateAsync({ ids })
-		await refreshLinks()
-	}
+		await reorderLinks.mutateAsync({ ids });
+		await refreshLinks();
+	};
 
 	return (
 		<div className="max-w-2xl px-4 py-5 sm:px-6 md:p-8">
@@ -159,23 +166,19 @@ function DashboardPage() {
 						Add your first link
 					</Button>
 				</div>
+			) : isHydrated ? (
+				<DraggableLinkList
+					links={links}
+					onReorder={handleReorder}
+					onEdit={(link) => setEditingLink(link)}
+					onDelete={handleDelete}
+				/>
 			) : (
-				<>
-					{isHydrated ? (
-						<DraggableLinkList
-							links={links}
-							onReorder={handleReorder}
-							onEdit={(link) => setEditingLink(link)}
-							onDelete={handleDelete}
-						/>
-					) : (
-						<StaticLinkList
-							links={links}
-							onEdit={(link) => setEditingLink(link)}
-							onDelete={handleDelete}
-						/>
-					)}
-				</>
+				<StaticLinkList
+					links={links}
+					onEdit={(link) => setEditingLink(link)}
+					onDelete={handleDelete}
+				/>
 			)}
 
 			{/* Add Dialog */}
@@ -218,5 +221,5 @@ function DashboardPage() {
 				</DialogContent>
 			</Dialog>
 		</div>
-	)
+	);
 }

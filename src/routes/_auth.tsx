@@ -1,16 +1,16 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-import { checkDashboardAccess } from "#/lib/auth-server"
-import { SiteBrand } from "#/components/SiteBrand"
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { checkDashboardAccess } from "#/lib/auth-server";
+import { SiteBrand } from "#/components/SiteBrand";
 
 export const Route = createFileRoute("/_auth")({
 	beforeLoad: async () => {
-		const result = await checkDashboardAccess()
+		const result = await checkDashboardAccess();
 		if (result.status !== "unauthenticated") {
-			throw redirect({ to: "/dashboard" })
+			throw redirect({ to: "/dashboard" });
 		}
 	},
 	component: AuthLayout,
-})
+});
 
 function AuthLayout() {
 	return (
@@ -24,5 +24,5 @@ function AuthLayout() {
 				<Outlet />
 			</div>
 		</div>
-	)
+	);
 }

@@ -1,9 +1,9 @@
-import { Link } from "@tanstack/react-router"
-import { authClient } from "#/lib/auth-client"
-import { SiteBrand } from "#/components/SiteBrand"
+import { Link } from "@tanstack/react-router";
+import { authClient } from "#/lib/auth-client";
+import { SiteBrand } from "#/components/SiteBrand";
 
 export default function Header() {
-	const { data: session, isPending } = authClient.useSession()
+	const { data: session, isPending } = authClient.useSession();
 
 	return (
 		<header className="bg-[#FFFCEF]/90 backdrop-blur-sm border-b-2 border-black">
@@ -41,5 +41,5 @@ export default function Header() {
 				</nav>
 			</div>
 		</header>
-	)
+	);
 }

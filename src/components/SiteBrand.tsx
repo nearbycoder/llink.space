@@ -1,27 +1,27 @@
-import type { CSSProperties } from "react"
-import { Link2 } from "lucide-react"
-import { cn } from "#/lib/utils"
+import type { CSSProperties } from "react";
+import { Link2 } from "lucide-react";
+import { cn } from "#/lib/utils";
 
-type SiteBrandSize = "sm" | "md" | "lg"
+type SiteBrandSize = "sm" | "md" | "lg";
 
 const markSizeByVariant: Record<SiteBrandSize, string> = {
 	sm: "1.15rem",
 	md: "1.35rem",
 	lg: "1.6rem",
-}
+};
 
 const textSizeByVariant: Record<SiteBrandSize, string> = {
 	sm: "text-sm",
 	md: "text-base",
 	lg: "text-lg",
-}
+};
 
 interface SiteBrandProps {
-	className?: string
-	textClassName?: string
-	showText?: boolean
-	size?: SiteBrandSize
-	text?: string
+	className?: string;
+	textClassName?: string;
+	showText?: boolean;
+	size?: SiteBrandSize;
+	text?: string;
 }
 
 export function SiteBrand({
@@ -33,7 +33,7 @@ export function SiteBrand({
 }: SiteBrandProps) {
 	const style = {
 		"--site-brand-size": markSizeByVariant[size],
-	} as CSSProperties
+	} as CSSProperties;
 
 	return (
 		<span className={cn("site-brand", className)} style={style}>
@@ -55,5 +55,5 @@ export function SiteBrand({
 				</span>
 			) : null}
 		</span>
-	)
+	);
 }

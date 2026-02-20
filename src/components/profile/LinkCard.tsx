@@ -1,19 +1,19 @@
-import { ExternalLink } from "lucide-react"
-import { LinkIcon } from "#/components/links/LinkIcon"
-import { normalizeHttpUrl } from "#/lib/security"
+import { ExternalLink } from "lucide-react";
+import { LinkIcon } from "#/components/links/LinkIcon";
+import { normalizeHttpUrl } from "#/lib/security";
 
 interface LinkCardProps {
-	id: string
-	title: string
-	url: string
-	description?: string | null
-	iconUrl?: string | null
-	iconBgColor?: string | null
-	cardBg?: string
-	cardBorder?: string
-	textColor?: string
-	mutedTextColor?: string
-	onClickRecord?: (linkId: string) => void
+	id: string;
+	title: string;
+	url: string;
+	description?: string | null;
+	iconUrl?: string | null;
+	iconBgColor?: string | null;
+	cardBg?: string;
+	cardBorder?: string;
+	textColor?: string;
+	mutedTextColor?: string;
+	onClickRecord?: (linkId: string) => void;
 }
 
 export function LinkCard({
@@ -31,13 +31,13 @@ export function LinkCard({
 }: LinkCardProps) {
 	const handleClick = () => {
 		if (!safeUrl) {
-			return
+			return;
 		}
 		if (onClickRecord) {
-			onClickRecord(id)
+			onClickRecord(id);
 		}
-	}
-	const safeUrl = normalizeHttpUrl(url)
+	};
+	const safeUrl = normalizeHttpUrl(url);
 
 	return (
 		<a
@@ -46,10 +46,10 @@ export function LinkCard({
 			rel="noopener noreferrer nofollow ugc"
 			onClick={(event) => {
 				if (!safeUrl) {
-					event.preventDefault()
-					return
+					event.preventDefault();
+					return;
 				}
-				handleClick()
+				handleClick();
 			}}
 			className="group block w-full rounded-xl border-2 px-5 py-4 transition-all shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
 			style={{
@@ -83,5 +83,5 @@ export function LinkCard({
 				/>
 			</div>
 		</a>
-	)
+	);
 }

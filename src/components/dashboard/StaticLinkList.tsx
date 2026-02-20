@@ -1,32 +1,36 @@
-import { GripVertical, Pencil, Trash2 } from "lucide-react"
-import { Badge } from "#/components/ui/badge"
-import { LinkIcon } from "#/components/links/LinkIcon"
-import { Button } from "#/components/ui/button"
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { Badge } from "#/components/ui/badge";
+import { LinkIcon } from "#/components/links/LinkIcon";
+import { Button } from "#/components/ui/button";
 
 interface Link {
-	id: string
-	title: string
-	url: string
-	description: string | null
-	iconUrl: string | null
-	iconBgColor: string | null
-	isActive: boolean | null
-	sortOrder: number | null
+	id: string;
+	title: string;
+	url: string;
+	description: string | null;
+	iconUrl: string | null;
+	iconBgColor: string | null;
+	isActive: boolean | null;
+	sortOrder: number | null;
 }
 
 interface StaticLinkListProps {
-	links: Link[]
-	onEdit: (link: Link) => void
-	onDelete: (id: string) => void
+	links: Link[];
+	onEdit: (link: Link) => void;
+	onDelete: (id: string) => void;
 }
 
-export function StaticLinkList({ links, onEdit, onDelete }: StaticLinkListProps) {
+export function StaticLinkList({
+	links,
+	onEdit,
+	onDelete,
+}: StaticLinkListProps) {
 	return (
 		<div className="space-y-2">
 			{links.map((link) => (
 				<div
 					key={link.id}
-					className="flex items-center gap-3 rounded-xl border-2 border-black bg-[#FFFCEF] p-4 shadow-[3px_3px_0_0_#11110F]"
+					className="group flex items-center gap-3 rounded-xl border-2 border-black bg-[#FFFCEF] p-4 shadow-[3px_3px_0_0_#11110F]"
 				>
 					<span
 						aria-hidden="true"
@@ -61,7 +65,7 @@ export function StaticLinkList({ links, onEdit, onDelete }: StaticLinkListProps)
 						</div>
 					</div>
 
-					<div className="flex gap-1">
+					<div className="pointer-events-none flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
 						<Button
 							variant="ghost"
 							size="sm"
@@ -82,5 +86,5 @@ export function StaticLinkList({ links, onEdit, onDelete }: StaticLinkListProps)
 				</div>
 			))}
 		</div>
-	)
+	);
 }

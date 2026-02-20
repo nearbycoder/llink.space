@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	BarChart3,
 	Link2,
@@ -7,10 +7,10 @@ import {
 	ShieldCheck,
 	Sparkles,
 	UserCircle2,
-} from "lucide-react"
-import { SiteBrand } from "#/components/SiteBrand"
+} from "lucide-react";
+import { SiteBrand } from "#/components/SiteBrand";
 
-export const Route = createFileRoute("/")({ component: LandingPage })
+export const Route = createFileRoute("/")({ component: LandingPage });
 
 const featureItems = [
 	{
@@ -49,13 +49,13 @@ const featureItems = [
 			"Your page is designed to load fast and look great on phones where most bio traffic happens.",
 		icon: UserCircle2,
 	},
-]
+];
 
 const setupSteps = [
 	"Create your account and choose your username.",
 	"Add links, icons, and profile details from the dashboard.",
 	"Share your /u page and track what gets clicks.",
-]
+];
 
 function LandingPage() {
 	return (
@@ -105,7 +105,9 @@ function LandingPage() {
 							</p>
 							<ul className="mt-4 space-y-1 text-sm text-[#3D3A31]">
 								<li>Mobile-first profile pages made for social traffic</li>
-								<li>Fast link setup with icon choices and clean organization</li>
+								<li>
+									Fast link setup with icon choices and clean organization
+								</li>
 								<li>Simple analytics so you know what performs</li>
 							</ul>
 							<div className="mt-8 flex flex-wrap gap-3">
@@ -131,20 +133,17 @@ function LandingPage() {
 									<Sparkles className="w-4 h-4" />
 								</div>
 								<div className="mt-4 space-y-2">
-									{[
-										"New release",
-										"Resources",
-										"Community",
-										"Book a call",
-									].map((item) => (
-										<div
-											key={item}
-											className="h-10 rounded-lg border-2 border-black bg-[#F8F8F4] px-3 flex items-center justify-between text-sm"
-										>
-											<span>{item}</span>
-											<span>+</span>
-										</div>
-									))}
+									{["New release", "Resources", "Community", "Book a call"].map(
+										(item) => (
+											<div
+												key={item}
+												className="h-10 rounded-lg border-2 border-black bg-[#F8F8F4] px-3 flex items-center justify-between text-sm"
+											>
+												<span>{item}</span>
+												<span>+</span>
+											</div>
+										),
+									)}
 								</div>
 							</div>
 							<div className="-rotate-1 rounded-2xl border-2 border-black bg-[#111] text-[#DFFAFD] p-4 shadow-[5px_5px_0px_0px_#111]">
@@ -164,9 +163,9 @@ function LandingPage() {
 						</p>
 						<p className="mt-2 text-sm sm:text-base leading-relaxed">
 							It is your public profile layer for the web: one branded page that
-							collects your links, products, content, and social channels. Instead
-							of changing your bio constantly, you update llink.space once and keep
-							your audience pointed to the right places.
+							collects your links, products, content, and social channels.
+							Instead of changing your bio constantly, you update llink.space
+							once and keep your audience pointed to the right places.
 						</p>
 					</div>
 					<div className="rounded-2xl border-2 border-black bg-[#111] p-5 text-[#FFFCEF] shadow-[6px_6px_0px_0px_#111]">
@@ -175,7 +174,8 @@ function LandingPage() {
 						</p>
 						<p className="mt-2 text-sm sm:text-base leading-relaxed">
 							Creators, freelancers, startups, communities, and personal brands
-							that need a focused page for driving traffic from social platforms.
+							that need a focused page for driving traffic from social
+							platforms.
 						</p>
 					</div>
 				</section>
@@ -244,5 +244,5 @@ function LandingPage() {
 				</section>
 			</div>
 		</div>
-	)
+	);
 }

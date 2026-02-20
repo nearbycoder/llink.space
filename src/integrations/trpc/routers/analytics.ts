@@ -1,14 +1,10 @@
-import { TRPCError } from "@trpc/server"
-import { and, asc, desc, eq, sql } from "drizzle-orm"
-import { z } from "zod"
-import { db } from "#/db"
-import { clickEvents, links, profiles } from "#/db/schema"
-import { normalizeHttpUrl } from "#/lib/security"
-import {
-	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure,
-} from "../init"
+import { TRPCError } from "@trpc/server";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "#/db";
+import { clickEvents, links, profiles } from "#/db/schema";
+import { normalizeHttpUrl } from "#/lib/security";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 export const analyticsRouter = createTRPCRouter({
 	recordClick: publicProcedure
@@ -27,41 +23,41 @@ export const analyticsRouter = createTRPCRouter({
 					eq(links.profileId, input.profileId),
 					eq(links.isActive, true),
 				),
-			})
+			});
 			if (!profileLink) {
 				// Ignore forged or stale click payloads to avoid profile event poisoning.
-				return { success: true }
+				return { success: true };
 			}
 
 			const normalizedReferrer = normalizeHttpUrl(
 				input.referrer ?? ctx.request.headers.get("referer") ?? "",
-			)
+			);
 			const userAgent =
 				input.userAgent?.slice(0, 512) ??
 				ctx.request.headers.get("user-agent")?.slice(0, 512) ??
-				null
+				null;
 
 			await db.insert(clickEvents).values({
 				linkId: profileLink.id,
 				profileId: profileLink.profileId,
 				referrer: normalizedReferrer,
 				userAgent,
-			})
-			return { success: true }
+			});
+			return { success: true };
 		}),
 
 	getSummary: protectedProcedure.query(async ({ ctx }) => {
 		const profile = await db.query.profiles.findFirst({
 			where: eq(profiles.userId, ctx.userId),
-		})
+		});
 		if (!profile) {
-			throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+			throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" });
 		}
 
 		const totalClicks = await db
 			.select({ count: sql<number>`count(*)::int` })
 			.from(clickEvents)
-			.where(eq(clickEvents.profileId, profile.id))
+			.where(eq(clickEvents.profileId, profile.id));
 
 		const clicksLast24h = await db
 			.select({ count: sql<number>`count(*)::int` })
@@ -71,7 +67,7 @@ export const analyticsRouter = createTRPCRouter({
 					eq(clickEvents.profileId, profile.id),
 					sql`${clickEvents.clickedAt} >= now() - interval '24 hours'`,
 				),
-			)
+			);
 
 		const clicksLast7d = await db
 			.select({ count: sql<number>`count(*)::int` })
@@ -81,21 +77,21 @@ export const analyticsRouter = createTRPCRouter({
 					eq(clickEvents.profileId, profile.id),
 					sql`${clickEvents.clickedAt} >= now() - interval '7 days'`,
 				),
-			)
+			);
 
 		const uniqueReferrers = await db
 			.select({
 				count: sql<number>`count(distinct nullif(${clickEvents.referrer}, ''))::int`,
 			})
 			.from(clickEvents)
-			.where(eq(clickEvents.profileId, profile.id))
+			.where(eq(clickEvents.profileId, profile.id));
 
 		const directClicks = await db
 			.select({
 				count: sql<number>`count(*) filter (where ${clickEvents.referrer} is null or btrim(${clickEvents.referrer}) = '')::int`,
 			})
 			.from(clickEvents)
-			.where(eq(clickEvents.profileId, profile.id))
+			.where(eq(clickEvents.profileId, profile.id));
 
 		const clicksByLink = await db
 			.select({
@@ -108,10 +104,9 @@ export const analyticsRouter = createTRPCRouter({
 			.leftJoin(links, eq(clickEvents.linkId, links.id))
 			.where(eq(clickEvents.profileId, profile.id))
 			.groupBy(clickEvents.linkId, links.title, links.url)
-			.orderBy(desc(sql`count(*)`))
+			.orderBy(desc(sql`count(*)`));
 
-		const referrerSourceExpr =
-			sql<string>`coalesce(nullif(split_part(regexp_replace(${clickEvents.referrer}, '^https?://(www\\.)?', ''), '/', 1), ''), 'Direct')`
+		const referrerSourceExpr = sql<string>`coalesce(nullif(split_part(regexp_replace(${clickEvents.referrer}, '^https?://(www\\.)?', ''), '/', 1), ''), 'Direct')`;
 
 		const topReferrers = await db
 			.select({
@@ -122,9 +117,9 @@ export const analyticsRouter = createTRPCRouter({
 			.where(eq(clickEvents.profileId, profile.id))
 			.groupBy(referrerSourceExpr)
 			.orderBy(desc(sql`count(*)`))
-			.limit(8)
+			.limit(8);
 
-		const dayExpr = sql`date_trunc('day', ${clickEvents.clickedAt})`
+		const dayExpr = sql`date_trunc('day', ${clickEvents.clickedAt})`;
 
 		const clicksByDay = await db
 			.select({
@@ -139,7 +134,7 @@ export const analyticsRouter = createTRPCRouter({
 				),
 			)
 			.groupBy(dayExpr)
-			.orderBy(asc(dayExpr))
+			.orderBy(asc(dayExpr));
 
 		const recentClicks = await db
 			.select({
@@ -156,7 +151,7 @@ export const analyticsRouter = createTRPCRouter({
 			.leftJoin(links, eq(clickEvents.linkId, links.id))
 			.where(eq(clickEvents.profileId, profile.id))
 			.orderBy(desc(clickEvents.clickedAt))
-			.limit(50)
+			.limit(50);
 
 		return {
 			totalClicks: totalClicks[0]?.count ?? 0,
@@ -168,6 +163,6 @@ export const analyticsRouter = createTRPCRouter({
 			topReferrers,
 			clicksByDay,
 			recentClicks,
-		}
+		};
 	}),
-})
+});

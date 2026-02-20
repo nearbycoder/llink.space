@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { useTRPC } from "#/integrations/trpc/react"
-import { useQuery } from "@tanstack/react-query"
+import { createFileRoute } from "@tanstack/react-router";
+import { useTRPC } from "#/integrations/trpc/react";
+import { useQuery } from "@tanstack/react-query";
 import {
 	Area,
 	AreaChart,
@@ -12,24 +12,25 @@ import {
 	Tooltip,
 	XAxis,
 	YAxis,
-} from "recharts"
+} from "recharts";
 import {
 	eachDayOfInterval,
 	format,
 	formatDistanceToNow,
 	subDays,
-} from "date-fns"
+} from "date-fns";
 import {
 	Activity,
 	Clock3,
 	Globe2,
 	MousePointerClick,
 	TrendingUp,
-} from "lucide-react"
+} from "lucide-react";
+import { useId } from "react";
 
 export const Route = createFileRoute("/dashboard/analytics")({
 	component: AnalyticsPage,
-})
+});
 
 const chartColors = [
 	"#FF8A4C",
@@ -38,60 +39,64 @@ const chartColors = [
 	"#F2B7E2",
 	"#7CC6FF",
 	"#7FE8A7",
-]
+];
 
 function truncateLabel(value: string, maxLength = 18) {
-	if (value.length <= maxLength) return value
-	return `${value.slice(0, maxLength - 1)}…`
+	if (value.length <= maxLength) return value;
+	return `${value.slice(0, maxLength - 1)}…`;
 }
 
 function normalizeReferrer(value: string | null | undefined) {
-	const raw = value?.trim() ?? ""
-	if (!raw) return "Direct"
-	return raw.replace(/^https?:\/\/(www\.)?/i, "").split("/")[0] || "Direct"
+	const raw = value?.trim() ?? "";
+	if (!raw) return "Direct";
+	return raw.replace(/^https?:\/\/(www\.)?/i, "").split("/")[0] || "Direct";
 }
 
-function buildSevenDayTrend(clicksByDay: Array<{ day: string; count: number }>) {
-	const counts = new Map(clicksByDay.map((item) => [item.day, item.count]))
+function buildSevenDayTrend(
+	clicksByDay: Array<{ day: string; count: number }>,
+) {
+	const counts = new Map(clicksByDay.map((item) => [item.day, item.count]));
 	const days = eachDayOfInterval({
 		start: subDays(new Date(), 6),
 		end: new Date(),
-	})
+	});
 
 	return days.map((day) => {
-		const key = format(day, "yyyy-MM-dd")
+		const key = format(day, "yyyy-MM-dd");
 		return {
 			day: key,
 			label: format(day, "EEE"),
 			fullLabel: format(day, "MMM d"),
 			count: counts.get(key) ?? 0,
-		}
-	})
+		};
+	});
 }
 
 function AnalyticsPage() {
-	const trpc = useTRPC()
+	const trpc = useTRPC();
+	const trendFillId = useId();
 	const { data: summary, isLoading } = useQuery(
 		trpc.analytics.getSummary.queryOptions(),
-	)
+	);
 
-	const totalClicks = summary?.totalClicks ?? 0
-	const directClicks = summary?.directClicks ?? 0
-	const directPercent = totalClicks > 0 ? Math.round((directClicks / totalClicks) * 100) : 0
+	const totalClicks = summary?.totalClicks ?? 0;
+	const directClicks = summary?.directClicks ?? 0;
+	const directPercent =
+		totalClicks > 0 ? Math.round((directClicks / totalClicks) * 100) : 0;
 
 	const chartData =
 		summary?.clicksByLink.map((item, index) => {
-			const label = item.title || item.url || "Untitled link"
+			const label = item.title || item.url || "Untitled link";
 			return {
 				...item,
 				label,
 				shortLabel: truncateLabel(label),
 				fill: chartColors[index % chartColors.length],
-			}
-		}) ?? []
+			};
+		}) ?? [];
 
-	const trendData = buildSevenDayTrend(summary?.clicksByDay ?? [])
-	const topLink = chartData[0]
+	const trendData = buildSevenDayTrend(summary?.clicksByDay ?? []);
+	const topLink = chartData[0];
 
 	return (
 		<div className="max-w-4xl px-4 py-5 sm:px-6 md:p-8">
@@ -182,8 +187,9 @@ function AnalyticsPage() {
 								</div>
 								{topLink ? (
 									<div className="rounded-lg border border-black/15 bg-white px-2.5 py-1 text-xs">
-										Top link: <span className="font-semibold">{topLink.label}</span>{" "}
-										({topLink.count})
+										Top link:{" "}
+										<span className="font-semibold">{topLink.label}</span> (
+										{topLink.count})
 									</div>
 								) : null}
 							</div>
@@ -260,11 +266,28 @@ function AnalyticsPage() {
 							</div>
 							<div className="rounded-xl border-2 border-black/15 bg-white px-2 py-3">
 								<ResponsiveContainer width="100%" height={210}>
-									<AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+									<AreaChart
+										data={trendData}
+										margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+									>
 										<defs>
-											<linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-												<stop offset="5%" stopColor="#8AE1E7" stopOpacity={0.85} />
-												<stop offset="95%" stopColor="#8AE1E7" stopOpacity={0.15} />
+											<linearGradient
+												id={trendFillId}
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
+											>
+												<stop
+													offset="5%"
+													stopColor="#8AE1E7"
+													stopOpacity={0.85}
+												/>
+												<stop
+													offset="95%"
+													stopColor="#8AE1E7"
+													stopOpacity={0.15}
+												/>
 											</linearGradient>
 										</defs>
 										<CartesianGrid
@@ -304,7 +327,7 @@ function AnalyticsPage() {
 											dataKey="count"
 											stroke="#11110F"
 											strokeWidth={2}
-											fill="url(#trendFill)"
+											fill={`url(#${trendFillId})`}
 										/>
 									</AreaChart>
 								</ResponsiveContainer>
@@ -324,7 +347,7 @@ function AnalyticsPage() {
 								{(summary?.topReferrers ?? []).slice(0, 6).map((item) => {
 									const percent = totalClicks
 										? Math.round((item.count / totalClicks) * 100)
-										: 0
+										: 0;
 									return (
 										<div
 											key={item.source}
@@ -345,7 +368,7 @@ function AnalyticsPage() {
 												/>
 											</div>
 										</div>
-									)
+									);
 								})}
 								{(summary?.topReferrers ?? []).length === 0 && (
 									<p className="rounded-lg border border-black/15 bg-white px-3 py-2 text-xs text-[#6A675C]">
@@ -363,9 +386,11 @@ function AnalyticsPage() {
 							</h2>
 							<div className="space-y-2">
 								{summary.recentClicks.slice(0, 12).map((click) => {
-									const source = normalizeReferrer(click.referrer)
+									const source = normalizeReferrer(click.referrer);
 									const linkLabel =
-										click.linkTitle?.trim() || click.linkUrl?.trim() || "Deleted link"
+										click.linkTitle?.trim() ||
+										click.linkUrl?.trim() ||
+										"Deleted link";
 
 									return (
 										<div
@@ -388,7 +413,7 @@ function AnalyticsPage() {
 													: ""}
 											</span>
 										</div>
-									)
+									);
 								})}
 							</div>
 						</div>
@@ -406,5 +431,5 @@ function AnalyticsPage() {
 				</div>
 			)}
 		</div>
-	)
+	);
 }

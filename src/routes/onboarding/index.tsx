@@ -1,20 +1,20 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { useTRPC } from "#/integrations/trpc/react"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { Button } from "#/components/ui/button"
-import { Input } from "#/components/ui/input"
-import { Label } from "#/components/ui/label"
-import { useState } from "react"
-import { CheckCircle, XCircle } from "lucide-react"
-import { useDebounce } from "#/lib/use-debounce"
-import { SiteBrand } from "#/components/SiteBrand"
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useTRPC } from "#/integrations/trpc/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
+import { useId, useState, type ChangeEvent } from "react";
+import { CheckCircle, XCircle } from "lucide-react";
+import { useDebounce } from "#/lib/use-debounce";
+import { SiteBrand } from "#/components/SiteBrand";
 
 export const Route = createFileRoute("/onboarding/")({
 	component: OnboardingPage,
-})
+});
 
 const schema = z.object({
 	username: z
@@ -23,40 +23,43 @@ const schema = z.object({
 		.max(30, "Max 30 characters")
 		.regex(/^[a-z0-9_-]+$/, "Only lowercase letters, numbers, - and _"),
 	displayName: z.string().min(1, "Name is required").max(100),
-})
-type FormData = z.infer<typeof schema>
+});
+type FormData = z.infer<typeof schema>;
 
 function OnboardingPage() {
-	const navigate = useNavigate()
-	const trpc = useTRPC()
-	const [usernameInput, setUsernameInput] = useState("")
-	const debouncedUsername = useDebounce(usernameInput, 400)
+	const navigate = useNavigate();
+	const trpc = useTRPC();
+	const [usernameInput, setUsernameInput] = useState("");
+	const usernameId = useId();
+	const displayNameId = useId();
+	const debouncedUsername = useDebounce(usernameInput, 400);
 
 	const { data: checkData } = useQuery(
 		trpc.profile.checkUsername.queryOptions(
 			{ username: debouncedUsername },
 			{ enabled: debouncedUsername.length >= 2 },
 		),
-	)
+	);
 
-	const createProfile = useMutation(trpc.profile.create.mutationOptions())
+	const createProfile = useMutation(trpc.profile.create.mutationOptions());
 
 	const {
 		register,
 		handleSubmit,
 		formState: { errors, isSubmitting },
-	} = useForm<FormData>({ resolver: zodResolver(schema) })
+	} = useForm<FormData>({ resolver: zodResolver(schema) });
 
 	const onSubmit = async (data: FormData) => {
 		await createProfile.mutateAsync({
 			username: data.username,
 			displayName: data.displayName,
-		})
-		navigate({ to: "/dashboard" })
-	}
+		});
+		navigate({ to: "/dashboard" });
+	};
 
-	const isAvailable = debouncedUsername.length >= 2 && checkData?.available
-	const isTaken = debouncedUsername.length >= 2 && checkData?.available === false
+	const isAvailable = debouncedUsername.length >= 2 && checkData?.available;
+	const isTaken =
+		debouncedUsername.length >= 2 && checkData?.available === false;
 
 	return (
 		<div className="kinetic-gradient min-h-screen flex items-center justify-center px-4">
@@ -82,7 +85,7 @@ function OnboardingPage() {
 						)}
 
 						<div className="space-y-1.5">
-							<Label htmlFor="username">Username</Label>
+							<Label htmlFor={usernameId}>Username</Label>
 							<div className="relative">
 								<span className="absolute left-3 top-1/2 hidden -translate-y-1/2 text-[#4B4B45] text-sm sm:block">
 									llink.space/u/
@@ -91,11 +94,11 @@ function OnboardingPage() {
 									llink.space/u/
 								</span>
 								<Input
-									id="username"
+									id={usernameId}
 									className="sm:pl-[108px]"
 									placeholder="yourname"
 									{...register("username", {
-										onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+										onChange: (e: ChangeEvent<HTMLInputElement>) =>
 											setUsernameInput(e.target.value.toLowerCase()),
 									})}
 								/>
@@ -107,7 +110,9 @@ function OnboardingPage() {
 								)}
 							</div>
 							{errors.username && (
-								<p className="text-xs text-[#B42318]">{errors.username.message}</p>
+								<p className="text-xs text-[#B42318]">
+									{errors.username.message}
+								</p>
 							)}
 							{isTaken && (
 								<p className="text-xs text-[#B42318]">Username already taken</p>
@@ -118,9 +123,9 @@ function OnboardingPage() {
 						</div>
 
 						<div className="space-y-1.5">
-							<Label htmlFor="displayName">Display name</Label>
+							<Label htmlFor={displayNameId}>Display name</Label>
 							<Input
-								id="displayName"
+								id={displayNameId}
 								type="text"
 								placeholder="Your full name"
 								{...register("displayName")}
@@ -132,12 +137,16 @@ function OnboardingPage() {
 							)}
 						</div>
 
-						<Button type="submit" className="w-full" disabled={isSubmitting || isTaken}>
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={isSubmitting || isTaken}
+						>
 							{isSubmitting ? "Creating profile…" : "Continue →"}
 						</Button>
 					</form>
 				</div>
 			</div>
 		</div>
-	)
+	);
 }

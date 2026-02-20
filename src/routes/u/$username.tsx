@@ -1,37 +1,42 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { TRPCClientError } from "@trpc/client"
-import { useTRPC } from "#/integrations/trpc/react"
-import { useMutation } from "@tanstack/react-query"
-import { ProfileHeader } from "#/components/profile/ProfileHeader"
-import { LinkCard } from "#/components/profile/LinkCard"
-import { getTheme } from "#/lib/themes"
-import { Home, SearchX, UserPlus } from "lucide-react"
-import { SiteBrand } from "#/components/SiteBrand"
+import { createFileRoute } from "@tanstack/react-router";
+import { TRPCClientError } from "@trpc/client";
+import { useTRPC } from "#/integrations/trpc/react";
+import { useMutation } from "@tanstack/react-query";
+import { ProfileHeader } from "#/components/profile/ProfileHeader";
+import { LinkCard } from "#/components/profile/LinkCard";
+import { getTheme } from "#/lib/themes";
+import { Home, SearchX, UserPlus } from "lucide-react";
+import { SiteBrand } from "#/components/SiteBrand";
 
 export const Route = createFileRoute("/u/$username")({
 	ssr: true,
 	loader: async ({ params, context }) => {
 		try {
 			const data = await context.queryClient.fetchQuery(
-				context.trpc.links.getPublic.queryOptions({ username: params.username }),
-			)
-			return { data }
+				context.trpc.links.getPublic.queryOptions({
+					username: params.username,
+				}),
+			);
+			return { data };
 		} catch (error) {
-			if (error instanceof TRPCClientError && error.data?.code === "NOT_FOUND") {
-				return { data: null }
+			if (
+				error instanceof TRPCClientError &&
+				error.data?.code === "NOT_FOUND"
+			) {
+				return { data: null };
 			}
-			throw error
+			throw error;
 		}
 	},
 	component: ProfilePage,
-})
+});
 
 function ProfilePage() {
-	const { data } = Route.useLoaderData()
-	const { username } = Route.useParams()
-	const trpc = useTRPC()
+	const { data } = Route.useLoaderData();
+	const { username } = Route.useParams();
+	const trpc = useTRPC();
 
-	const recordClick = useMutation(trpc.analytics.recordClick.mutationOptions())
+	const recordClick = useMutation(trpc.analytics.recordClick.mutationOptions());
 
 	if (!data) {
 		return (
@@ -88,11 +93,11 @@ function ProfilePage() {
 					</div>
 				</div>
 			</div>
-		)
+		);
 	}
 
-	const { profile, links } = data
-	const theme = getTheme(profile.theme ?? "default")
+	const { profile, links } = data;
+	const theme = getTheme(profile.theme ?? "default");
 
 	const handleLinkClick = (linkId: string) => {
 		recordClick.mutate({
@@ -101,13 +106,16 @@ function ProfilePage() {
 			referrer: typeof window !== "undefined" ? document.referrer : undefined,
 			userAgent:
 				typeof window !== "undefined" ? navigator.userAgent : undefined,
-		})
-	}
+		});
+	};
 
 	return (
 		<div
 			className="min-h-screen"
-			style={{ background: theme.background, fontFamily: "'Work Sans', sans-serif" }}
+			style={{
+				background: theme.background,
+				fontFamily: "'Work Sans', sans-serif",
+			}}
 		>
 			<div className="max-w-sm mx-auto px-4 py-10 sm:py-16">
 				<div className="kinetic-shell p-6 sm:p-7">
@@ -157,5 +165,5 @@ function ProfilePage() {
 				</div>
 			</div>
 		</div>
-	)
+	);
 }

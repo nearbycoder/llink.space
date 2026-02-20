@@ -290,10 +290,14 @@ function resolveS3StorageConfig(
 		);
 	}
 
+	if (!accessKeyId || !secretAccessKey || !bucket) {
+		throw new Error("S3 object storage is not configured");
+	}
+
 	return {
-		accessKeyId: accessKeyId!,
-		secretAccessKey: secretAccessKey!,
-		bucket: bucket!,
+		accessKeyId,
+		secretAccessKey,
+		bucket,
 		region,
 		endpoint: endpoint ? normalizeEndpoint(endpoint) : undefined,
 		publicBaseUrl,

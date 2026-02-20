@@ -1,12 +1,12 @@
 export interface Theme {
-	id: string
-	name: string
-	background: string
-	cardBg: string
-	cardBorder: string
-	text: string
-	mutedText: string
-	accent: string
+	id: string;
+	name: string;
+	background: string;
+	cardBg: string;
+	cardBorder: string;
+	text: string;
+	mutedText: string;
+	accent: string;
 }
 
 export const themes: Record<string, Theme> = {
@@ -43,8 +43,8 @@ export const themes: Record<string, Theme> = {
 		mutedText: "#4B4B45",
 		accent: "#F5FF7B",
 	},
-}
+};
 
 export function getTheme(id: string): Theme {
-	return themes[id] ?? themes.default
+	return themes[id] ?? themes.default;
 }

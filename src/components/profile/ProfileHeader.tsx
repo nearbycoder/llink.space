@@ -1,16 +1,16 @@
-import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
 
 interface Profile {
-	username: string
-	displayName: string | null
-	bio: string | null
-	avatarUrl: string | null
+	username: string;
+	displayName: string | null;
+	bio: string | null;
+	avatarUrl: string | null;
 }
 
 interface ProfileHeaderProps {
-	profile: Profile
-	textColor?: string
-	mutedTextColor?: string
+	profile: Profile;
+	textColor?: string;
+	mutedTextColor?: string;
 }
 
 export function ProfileHeader({
@@ -53,5 +53,5 @@ export function ProfileHeader({
 				</p>
 			)}
 		</div>
-	)
+	);
 }

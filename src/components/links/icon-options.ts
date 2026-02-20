@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react"
+import type { LucideIcon } from "lucide-react";
 import {
 	BadgeDollarSign,
 	BookOpen,
@@ -30,14 +30,14 @@ import {
 	Video,
 	X,
 	Youtube,
-} from "lucide-react"
+} from "lucide-react";
 
-import type { LinkIconKey } from "#/lib/link-icon-keys"
+import type { LinkIconKey } from "#/lib/link-icon-keys";
 
 export interface LinkIconOption {
-	key: LinkIconKey
-	label: string
-	Icon: LucideIcon
+	key: LinkIconKey;
+	label: string;
+	Icon: LucideIcon;
 }
 
 export const LINK_ICON_OPTIONS: LinkIconOption[] = [
@@ -71,10 +71,9 @@ export const LINK_ICON_OPTIONS: LinkIconOption[] = [
 	{ key: "slack", label: "Slack", Icon: Slack },
 	{ key: "figma", label: "Figma", Icon: Figma },
 	{ key: "dribbble", label: "Dribbble", Icon: Dribbble },
-]
+];
 
 export const LINK_ICON_OPTIONS_BY_KEY: Record<LinkIconKey, LinkIconOption> =
-	Object.fromEntries(LINK_ICON_OPTIONS.map((option) => [option.key, option])) as Record<
-		LinkIconKey,
-		LinkIconOption
-	>
+	Object.fromEntries(
+		LINK_ICON_OPTIONS.map((option) => [option.key, option]),
+	) as Record<LinkIconKey, LinkIconOption>;

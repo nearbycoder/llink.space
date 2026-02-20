@@ -2,26 +2,26 @@ import {
 	HeadContent,
 	Scripts,
 	createRootRouteWithContext,
-} from "@tanstack/react-router"
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
-import { TanStackDevtools } from "@tanstack/react-devtools"
-import { useEffect, useState } from "react"
+} from "@tanstack/react-router";
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { TanStackDevtools } from "@tanstack/react-devtools";
+import { useEffect, useState } from "react";
 
-import TanStackQueryProvider from "../integrations/tanstack-query/root-provider"
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools"
-import PostHogProvider from "../integrations/posthog/provider"
+import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
+import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import PostHogProvider from "../integrations/posthog/provider";
 
-import appCss from "../styles.css?url"
+import appCss from "../styles.css?url";
 
-import type { QueryClient } from "@tanstack/react-query"
-import type { TRPCRouter } from "#/integrations/trpc/router"
-import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query"
+import type { QueryClient } from "@tanstack/react-query";
+import type { TRPCRouter } from "#/integrations/trpc/router";
+import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
-const isProduction = process.env.NODE_ENV === "production"
+const isProduction = process.env.NODE_ENV === "production";
 
 interface MyRouterContext {
-	queryClient: QueryClient
-	trpc: TRPCOptionsProxy<TRPCRouter>
+	queryClient: QueryClient;
+	trpc: TRPCOptionsProxy<TRPCRouter>;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -58,11 +58,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			"permissions-policy": "camera=(), microphone=(), geolocation=()",
 			"cross-origin-opener-policy": "same-origin",
 			"cross-origin-resource-policy": "same-origin",
-		}
+		};
 
 		if (isProduction) {
 			headers["strict-transport-security"] =
-				"max-age=63072000; includeSubDomains; preload"
+				"max-age=63072000; includeSubDomains; preload";
 			headers["content-security-policy"] = [
 				"default-src 'self'",
 				"base-uri 'self'",
@@ -75,14 +75,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				"script-src 'self' 'unsafe-inline'",
 				"connect-src 'self' https: wss:",
 				"upgrade-insecure-requests",
-			].join("; ")
+			].join("; ");
 		}
 
-		return headers
+		return headers;
 	},
 	shellComponent: RootDocument,
 	notFoundComponent: RootNotFound,
-})
+});
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
@@ -111,18 +111,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<Scripts />
 			</body>
 		</html>
-	)
+	);
 }
 
 function ClientOnly({ children }: { children: React.ReactNode }) {
-	const [mounted, setMounted] = useState(false)
+	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
-		setMounted(true)
-	}, [])
+		setMounted(true);
+	}, []);
 
-	if (!mounted) return null
-	return <>{children}</>
+	if (!mounted) return null;
+	return <>{children}</>;
 }
 
 function RootNotFound() {
@@ -146,5 +146,5 @@ function RootNotFound() {
 				</a>
 			</div>
 		</div>
-	)
+	);
 }
