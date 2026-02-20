@@ -46,7 +46,7 @@ export function ProfileHeader({
 
 			{profile.bio && (
 				<p
-					className="text-sm mt-2 max-w-xs leading-relaxed"
+					className="mt-2 w-full max-w-xs text-left text-sm leading-relaxed"
 					style={{ color: mutedTextColor }}
 				>
 					{profile.bio}
