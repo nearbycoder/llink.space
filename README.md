@@ -97,12 +97,14 @@ S3_SECRET_ACCESS_KEY=
 S3_PUBLIC_BASE_URL=
 S3_FORCE_PATH_STYLE=true
 S3_KEY_PREFIX=
+# Optional: override proxy path used when S3_PUBLIC_BASE_URL is not set
+OBJECT_STORAGE_PROXY_BASE_PATH=/api/storage
 ```
 
 Notes:
 - `VITE_POSTHOG_HOST` must be an API host (for example `https://us.i.posthog.com`), not an assets CDN host.
 - For AWS S3 you can usually omit `S3_ENDPOINT`; for S3-compatible providers (R2, MinIO, Railway bucket providers), set `S3_ENDPOINT`.
-- `S3_PUBLIC_BASE_URL` is optional but recommended when your bucket uses a CDN/custom public domain.
+- `S3_PUBLIC_BASE_URL` is optional. If omitted, uploaded assets are served through the app at `/api/storage/*`, which works with private buckets.
 - Railway bucket plugins commonly provide `S3_BUCKET_NAME`; this is supported directly by the app.
 - In production, set `BETTER_AUTH_URL` to your canonical HTTPS domain and keep `BETTER_AUTH_SECRET` stable.
 
@@ -157,6 +159,7 @@ App runs at [http://localhost:3000](http://localhost:3000).
 - `/api/trpc/*` tRPC endpoint
 - `/api/auth/*` Better Auth endpoint
 - `/api/upload/avatar` avatar upload endpoint
+- `/api/storage/*` object proxy endpoint for local files/private S3 reads
 
 ## Scripts
 

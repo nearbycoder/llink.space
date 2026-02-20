@@ -1,37 +1,34 @@
-import { TRPCError } from "@trpc/server"
-import { and, asc, eq } from "drizzle-orm"
-import { z } from "zod"
-import { db } from "#/db"
-import { links, profiles } from "#/db/schema"
-import { LINK_ICON_KEYS } from "#/lib/link-icon-keys"
-import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security"
-import {
-	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure,
-} from "../init"
+import { TRPCError } from "@trpc/server";
+import { and, asc, eq } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "#/db";
+import { links, profiles } from "#/db/schema";
+import { LINK_ICON_KEYS } from "#/lib/link-icon-keys";
+import { normalizeObjectUrlForClient } from "#/lib/object-storage";
+import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
-const linkIconSchema = z.enum(LINK_ICON_KEYS)
-const iconBgColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
+const linkIconSchema = z.enum(LINK_ICON_KEYS);
+const iconBgColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 const linkUrlSchema = z
 	.string()
 	.trim()
 	.max(2048)
 	.refine(isSafeHttpUrl, "URL must start with http:// or https://")
-	.transform((value) => normalizeHttpUrl(value) ?? value)
+	.transform((value) => normalizeHttpUrl(value) ?? value);
 
 export const linksRouter = createTRPCRouter({
 	list: protectedProcedure.query(async ({ ctx }) => {
 		const profile = await db.query.profiles.findFirst({
 			where: eq(profiles.userId, ctx.userId),
-		})
+		});
 		if (!profile) {
-			throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+			throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" });
 		}
 		return db.query.links.findMany({
 			where: eq(links.profileId, profile.id),
 			orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-		})
+		});
 	}),
 
 	add: protectedProcedure
@@ -48,18 +45,21 @@ export const linksRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const profile = await db.query.profiles.findFirst({
 				where: eq(profiles.userId, ctx.userId),
-			})
+			});
 			if (!profile) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Profile not found",
+				});
 			}
 			const existing = await db.query.links.findMany({
 				where: eq(links.profileId, profile.id),
-			})
+			});
 			const nextSortOrder =
 				existing.reduce(
 					(max, link) => Math.max(max, link.sortOrder ?? -1),
 					-1,
-				) + 1
+				) + 1;
 			const [link] = await db
 				.insert(links)
 				.values({
@@ -72,8 +72,8 @@ export const linksRouter = createTRPCRouter({
 					isActive: input.isActive,
 					sortOrder: nextSortOrder,
 				})
-				.returning()
-			return link
+				.returning();
+			return link;
 		}),
 
 	update: protectedProcedure
@@ -91,20 +91,23 @@ export const linksRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const profile = await db.query.profiles.findFirst({
 				where: eq(profiles.userId, ctx.userId),
-			})
+			});
 			if (!profile) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Profile not found",
+				});
 			}
-			const { id, ...data } = input
+			const { id, ...data } = input;
 			const [updated] = await db
 				.update(links)
 				.set({ ...data, updatedAt: new Date() })
 				.where(and(eq(links.id, id), eq(links.profileId, profile.id)))
-				.returning()
+				.returning();
 			if (!updated) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" })
+				throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
 			}
-			return updated
+			return updated;
 		}),
 
 	delete: protectedProcedure
@@ -112,14 +115,17 @@ export const linksRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const profile = await db.query.profiles.findFirst({
 				where: eq(profiles.userId, ctx.userId),
-			})
+			});
 			if (!profile) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Profile not found",
+				});
 			}
 			await db
 				.delete(links)
-				.where(and(eq(links.id, input.id), eq(links.profileId, profile.id)))
-			return { success: true }
+				.where(and(eq(links.id, input.id), eq(links.profileId, profile.id)));
+			return { success: true };
 		}),
 
 	reorder: protectedProcedure
@@ -127,9 +133,12 @@ export const linksRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const profile = await db.query.profiles.findFirst({
 				where: eq(profiles.userId, ctx.userId),
-			})
+			});
 			if (!profile) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Profile not found",
+				});
 			}
 			await Promise.all(
 				input.ids.map((id, index) =>
@@ -138,8 +147,8 @@ export const linksRouter = createTRPCRouter({
 						.set({ sortOrder: index })
 						.where(and(eq(links.id, id), eq(links.profileId, profile.id))),
 				),
-			)
-			return { success: true }
+			);
+			return { success: true };
 		}),
 
 	getPublic: publicProcedure
@@ -147,17 +156,23 @@ export const linksRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			const profile = await db.query.profiles.findFirst({
 				where: eq(profiles.username, input.username.toLowerCase()),
-			})
+			});
 			if (!profile) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Profile not found",
+				});
 			}
 			const profileLinks = await db.query.links.findMany({
-				where: and(
-					eq(links.profileId, profile.id),
-					eq(links.isActive, true),
-				),
+				where: and(eq(links.profileId, profile.id), eq(links.isActive, true)),
 				orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-			})
-			return { profile, links: profileLinks }
+			});
+			return {
+				profile: {
+					...profile,
+					avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),
+				},
+				links: profileLinks,
+			};
 		}),
-})
+});

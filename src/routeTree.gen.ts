@@ -21,6 +21,7 @@ import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
 import { Route as ApiUploadAvatarRouteImport } from './routes/api.upload.avatar'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
+import { Route as ApiStorageSplatRouteImport } from './routes/api.storage.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const AuthRoute = AuthRouteImport.update({
@@ -82,6 +83,11 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   path: '/api/trpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStorageSplatRoute = ApiStorageSplatRouteImport.update({
+  id: '/api/storage/$',
+  path: '/api/storage/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/storage/$': typeof ApiStorageSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/upload/avatar': typeof ApiUploadAvatarRoute
 }
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/storage/$': typeof ApiStorageSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/upload/avatar': typeof ApiUploadAvatarRoute
 }
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/storage/$': typeof ApiStorageSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/upload/avatar': typeof ApiUploadAvatarRoute
 }
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/onboarding/'
     | '/api/auth/$'
+    | '/api/storage/$'
     | '/api/trpc/$'
     | '/api/upload/avatar'
   fileRoutesByTo: FileRoutesByTo
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/api/auth/$'
+    | '/api/storage/$'
     | '/api/trpc/$'
     | '/api/upload/avatar'
   id:
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/onboarding/'
     | '/api/auth/$'
+    | '/api/storage/$'
     | '/api/trpc/$'
     | '/api/upload/avatar'
   fileRoutesById: FileRoutesById
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   UUsernameRoute: typeof UUsernameRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiStorageSplatRoute: typeof ApiStorageSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   ApiUploadAvatarRoute: typeof ApiUploadAvatarRoute
 }
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/storage/$': {
+      id: '/api/storage/$'
+      path: '/api/storage/$'
+      fullPath: '/api/storage/$'
+      preLoaderRoute: typeof ApiStorageSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -318,6 +338,7 @@ const rootRouteChildren: RootRouteChildren = {
   UUsernameRoute: UUsernameRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiStorageSplatRoute: ApiStorageSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   ApiUploadAvatarRoute: ApiUploadAvatarRoute,
 }

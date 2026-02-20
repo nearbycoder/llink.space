@@ -1,31 +1,32 @@
-import { TRPCError } from "@trpc/server"
-import { eq } from "drizzle-orm"
-import { z } from "zod"
-import { db } from "#/db"
-import { profiles } from "#/db/schema"
-import { isAllowedAvatarUrl } from "#/lib/security"
-import {
-	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure,
-} from "../init"
+import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "#/db";
+import { profiles } from "#/db/schema";
+import { normalizeObjectUrlForClient } from "#/lib/object-storage";
+import { isAllowedAvatarUrl } from "#/lib/security";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 const avatarUrlSchema = z
 	.string()
 	.max(500)
 	.refine((value) => isAllowedAvatarUrl(value), {
-		message: "Avatar URL must be an http(s) URL or /uploads path (SVG not allowed)",
-	})
+		message:
+			"Avatar URL must be an http(s) URL, /uploads path, or /api/storage path (SVG not allowed)",
+	});
 
 export const profileRouter = createTRPCRouter({
 	getCurrent: protectedProcedure.query(async ({ ctx }) => {
 		const profile = await db.query.profiles.findFirst({
 			where: eq(profiles.userId, ctx.userId),
-		})
+		});
 		if (!profile) {
-			throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+			throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" });
 		}
-		return profile
+		return {
+			...profile,
+			avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),
+		};
 	}),
 
 	checkUsername: publicProcedure
@@ -33,8 +34,8 @@ export const profileRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			const existing = await db.query.profiles.findFirst({
 				where: eq(profiles.username, input.username.toLowerCase()),
-			})
-			return { available: !existing }
+			});
+			return { available: !existing };
 		}),
 
 	create: protectedProcedure
@@ -51,12 +52,12 @@ export const profileRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const existing = await db.query.profiles.findFirst({
 				where: eq(profiles.username, input.username.toLowerCase()),
-			})
+			});
 			if (existing) {
 				throw new TRPCError({
 					code: "CONFLICT",
 					message: "Username already taken",
-				})
+				});
 			}
 			const [profile] = await db
 				.insert(profiles)
@@ -65,8 +66,8 @@ export const profileRouter = createTRPCRouter({
 					username: input.username.toLowerCase(),
 					displayName: input.displayName ?? null,
 				})
-				.returning()
-			return profile
+				.returning();
+			return profile;
 		}),
 
 	update: protectedProcedure
@@ -78,19 +79,30 @@ export const profileRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			const normalizedAvatarUrl =
+				input.avatarUrl === undefined || input.avatarUrl === null
+					? input.avatarUrl
+					: normalizeObjectUrlForClient(input.avatarUrl);
+
 			const [updated] = await db
 				.update(profiles)
 				.set({
 					displayName: input.displayName,
 					bio: input.bio,
-					avatarUrl: input.avatarUrl,
+					avatarUrl: normalizedAvatarUrl,
 					updatedAt: new Date(),
 				})
 				.where(eq(profiles.userId, ctx.userId))
-				.returning()
+				.returning();
 			if (!updated) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" })
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Profile not found",
+				});
 			}
-			return updated
+			return {
+				...updated,
+				avatarUrl: normalizeObjectUrlForClient(updated.avatarUrl),
+			};
 		}),
-})
+});
