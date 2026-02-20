@@ -6,6 +6,7 @@ import { isLinkIconKey } from "#/lib/link-icon-keys"
 
 interface LinkIconProps {
 	iconUrl?: string | null
+	iconBgColor?: string | null
 	className?: string
 	imgClassName?: string
 	glyphClassName?: string
@@ -13,6 +14,7 @@ interface LinkIconProps {
 
 export function LinkIcon({
 	iconUrl,
+	iconBgColor,
 	className,
 	imgClassName,
 	glyphClassName,
@@ -28,9 +30,10 @@ export function LinkIcon({
 	return (
 		<span
 			className={cn(
-				"inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-black bg-[#F5FF7B]",
+				"inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-black",
 				className,
 			)}
+			style={{ backgroundColor: iconBgColor ?? "#F5FF7B" }}
 		>
 			{iconOption ? (
 				<iconOption.Icon

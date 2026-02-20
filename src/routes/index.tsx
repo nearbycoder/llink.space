@@ -8,6 +8,7 @@ import {
 	Sparkles,
 	UserCircle2,
 } from "lucide-react"
+import { SiteBrand } from "#/components/SiteBrand"
 
 export const Route = createFileRoute("/")({ component: LandingPage })
 
@@ -67,11 +68,16 @@ function LandingPage() {
 			}}
 		>
 			<div className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14">
-				<div className="absolute -top-10 -right-8 w-44 h-44 rounded-full bg-[#111]/20 blur-3xl" />
+				<div
+					aria-hidden="true"
+					className="pointer-events-none absolute -top-10 -right-8 h-44 w-44 rounded-full bg-[#111]/20 blur-3xl"
+				/>
 				<header className="mb-4 flex items-center justify-between">
-					<div className="inline-flex rounded-full border-2 border-black bg-[#F5FF7B] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]">
-						llink.space
-					</div>
+					<SiteBrand
+						size="md"
+						className="rounded-full border-2 border-black bg-[#FFFCEF]/90 px-3 py-1 shadow-[2px_2px_0_0_#11110F]"
+						textClassName="text-sm"
+					/>
 					<Link
 						to="/sign-in"
 						className="rounded-xl border-2 border-black bg-[#FFFCEF] px-4 py-2 text-sm font-semibold hover:bg-black hover:text-white transition-colors"

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
@@ -10,22 +10,22 @@ import { Label } from "#/components/ui/label"
 import { Textarea } from "#/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar"
 import { useEffect, useRef, useState, type ChangeEvent } from "react"
+import { checkDashboardAccess } from "#/lib/auth-server"
+import { isAllowedAvatarUrl } from "#/lib/security"
 
 export const Route = createFileRoute("/dashboard/profile")({
+	loader: async () => {
+		const result = await checkDashboardAccess()
+		if (result.status === "unauthenticated") {
+			throw redirect({ to: "/sign-in" })
+		}
+		if (result.status === "no-profile") {
+			throw redirect({ to: "/onboarding" })
+		}
+		return { profile: result.profile }
+	},
 	component: ProfilePage,
 })
-
-function isValidAvatarUrl(value: string) {
-	if (value.startsWith("/uploads/")) {
-		return true
-	}
-	try {
-		const url = new URL(value)
-		return url.protocol === "https:" || url.protocol === "http:"
-	} catch {
-		return false
-	}
-}
 
 const schema = z.object({
 	displayName: z.string().min(1, "Name is required").max(100),
@@ -35,17 +35,23 @@ const schema = z.object({
 		.max(500)
 		.optional()
 		.or(z.literal(""))
-		.refine((value) => !value || isValidAvatarUrl(value), {
-			message: "Must be an http(s) URL or /uploads path",
+		.refine((value) => !value || isAllowedAvatarUrl(value), {
+			message: "Must be an http(s) URL or /uploads path (SVG not allowed)",
 		})
 		.transform((v) => v || undefined),
 })
-type FormData = z.infer<typeof schema>
+type FormInput = z.input<typeof schema>
+type FormData = z.output<typeof schema>
 
 function ProfilePage() {
+	const { profile: initialProfile } = Route.useLoaderData()
 	const trpc = useTRPC()
 	const queryClient = useQueryClient()
-	const { data: profile } = useQuery(trpc.profile.getCurrent.queryOptions())
+	const profileQueryOptions = trpc.profile.getCurrent.queryOptions()
+	const { data: profile = initialProfile } = useQuery({
+		...profileQueryOptions,
+		initialData: initialProfile,
+	})
 	const updateProfile = useMutation(trpc.profile.update.mutationOptions())
 	const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 	const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null)
@@ -58,12 +64,12 @@ function ProfilePage() {
 		setValue,
 		watch,
 		formState: { errors, isSubmitting, isDirty },
-	} = useForm<FormData>({
+	} = useForm<FormInput, unknown, FormData>({
 		resolver: zodResolver(schema),
 		defaultValues: {
-			displayName: "",
-			bio: "",
-			avatarUrl: "",
+			displayName: initialProfile.displayName ?? "",
+			bio: initialProfile.bio ?? "",
+			avatarUrl: initialProfile.avatarUrl ?? "",
 		},
 	})
 
@@ -145,30 +151,32 @@ function ProfilePage() {
 				</p>
 			</div>
 
-			{profile && (
-				<div className="kinetic-panel p-6 mb-4">
-					<div className="flex items-center gap-3 mb-2">
-						<Avatar className="w-10 h-10">
-							<AvatarImage
-								src={previewAvatarUrl}
-								alt={`${profile.displayName ?? profile.username} avatar`}
-								decoding="async"
-							/>
-							<AvatarFallback className="bg-[#F5FF7B] text-[#11110F] font-medium">
-								{profile.displayName?.charAt(0).toUpperCase() ?? "?"}
-							</AvatarFallback>
-						</Avatar>
-						<div>
-							<p className="text-sm font-medium text-[#11110F]">
-								@{profile.username}
-							</p>
-							<p className="text-xs text-[#4B4B45]">
-								{`llink.space/u/${profile.username}`}
-							</p>
-						</div>
+			<div className="kinetic-panel p-6 mb-4">
+				<div className="flex items-center gap-3 mb-2">
+					<Avatar className="w-10 h-10">
+						<AvatarImage
+							src={previewAvatarUrl}
+							alt={`${profile.displayName ?? profile.username} avatar`}
+							decoding="async"
+						/>
+						<AvatarFallback className="bg-[#F5FF7B] text-[#11110F] font-medium">
+							{(
+								profile.displayName?.charAt(0) ??
+								profile.username.charAt(0) ??
+								"?"
+							).toUpperCase()}
+						</AvatarFallback>
+					</Avatar>
+					<div>
+						<p className="text-sm font-medium text-[#11110F]">
+							@{profile.username}
+						</p>
+						<p className="text-xs text-[#4B4B45]">
+							{`llink.space/u/${profile.username}`}
+						</p>
 					</div>
 				</div>
-			)}
+			</div>
 
 			<div className="kinetic-panel p-6">
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -210,7 +218,7 @@ function ProfilePage() {
 							ref={fileInputRef}
 							id="avatarUpload"
 							type="file"
-							accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+							accept="image/jpeg,image/png,image/webp,image/gif"
 							onChange={handleAvatarUpload}
 							className="hidden"
 						/>

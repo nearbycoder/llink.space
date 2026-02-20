@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react"
 import { LinkIcon } from "#/components/links/LinkIcon"
+import { normalizeHttpUrl } from "#/lib/security"
 
 interface LinkCardProps {
 	id: string
@@ -7,6 +8,7 @@ interface LinkCardProps {
 	url: string
 	description?: string | null
 	iconUrl?: string | null
+	iconBgColor?: string | null
 	cardBg?: string
 	cardBorder?: string
 	textColor?: string
@@ -20,6 +22,7 @@ export function LinkCard({
 	url,
 	description,
 	iconUrl,
+	iconBgColor,
 	cardBg = "#FFFFFF",
 	cardBorder = "#11110F",
 	textColor = "#11110F",
@@ -27,17 +30,27 @@ export function LinkCard({
 	onClickRecord,
 }: LinkCardProps) {
 	const handleClick = () => {
+		if (!safeUrl) {
+			return
+		}
 		if (onClickRecord) {
 			onClickRecord(id)
 		}
 	}
+	const safeUrl = normalizeHttpUrl(url)
 
 	return (
 		<a
-			href={url}
+			href={safeUrl ?? "#"}
 			target="_blank"
-			rel="noopener noreferrer"
-			onClick={handleClick}
+			rel="noopener noreferrer nofollow ugc"
+			onClick={(event) => {
+				if (!safeUrl) {
+					event.preventDefault()
+					return
+				}
+				handleClick()
+			}}
 			className="group block w-full rounded-xl border-2 px-5 py-4 transition-all shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
 			style={{
 				backgroundColor: cardBg,
@@ -46,7 +59,7 @@ export function LinkCard({
 		>
 			<div className="flex items-center justify-between">
 				<div className="min-w-0 flex items-center gap-3">
-					<LinkIcon iconUrl={iconUrl} />
+					<LinkIcon iconUrl={iconUrl} iconBgColor={iconBgColor} />
 					<div className="min-w-0">
 						<p
 							className="font-medium text-sm truncate"

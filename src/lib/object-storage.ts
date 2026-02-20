@@ -34,7 +34,11 @@ class LocalObjectStorage implements ObjectStorage {
 
 	async putObject(input: PutObjectInput): Promise<PutObjectResult> {
 		const normalizedKey = input.key.replace(/^\/+/, "")
-		const fullPath = path.join(this.rootDir, normalizedKey)
+		const rootPath = path.resolve(this.rootDir)
+		const fullPath = path.resolve(rootPath, normalizedKey)
+		if (!fullPath.startsWith(`${rootPath}${path.sep}`)) {
+			throw new Error("Invalid object key path")
+		}
 		await mkdir(path.dirname(fullPath), { recursive: true })
 		await writeFile(fullPath, Buffer.from(input.body))
 		return {
@@ -65,7 +69,6 @@ const extensionByMimeType: Record<string, string> = {
 	"image/png": "png",
 	"image/webp": "webp",
 	"image/gif": "gif",
-	"image/svg+xml": "svg",
 }
 
 export function buildProfileAvatarObjectKey({

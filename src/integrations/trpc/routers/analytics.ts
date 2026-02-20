@@ -3,6 +3,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "#/db"
 import { clickEvents, links, profiles } from "#/db/schema"
+import { normalizeHttpUrl } from "#/lib/security"
 import {
 	createTRPCRouter,
 	protectedProcedure,
@@ -15,19 +16,36 @@ export const analyticsRouter = createTRPCRouter({
 			z.object({
 				linkId: z.string().uuid(),
 				profileId: z.string().uuid(),
-				referrer: z.string().optional(),
-				userAgent: z.string().optional(),
+				referrer: z.string().trim().max(2048).optional(),
+				userAgent: z.string().trim().max(512).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			const profileLink = await db.query.links.findFirst({
+				where: and(
+					eq(links.id, input.linkId),
+					eq(links.profileId, input.profileId),
+					eq(links.isActive, true),
+				),
+			})
+			if (!profileLink) {
+				// Ignore forged or stale click payloads to avoid profile event poisoning.
+				return { success: true }
+			}
+
+			const normalizedReferrer = normalizeHttpUrl(
+				input.referrer ?? ctx.request.headers.get("referer") ?? "",
+			)
+			const userAgent =
+				input.userAgent?.slice(0, 512) ??
+				ctx.request.headers.get("user-agent")?.slice(0, 512) ??
+				null
+
 			await db.insert(clickEvents).values({
-				linkId: input.linkId,
-				profileId: input.profileId,
-				referrer: input.referrer ?? ctx.request.headers.get("referer") ?? null,
-				userAgent:
-					input.userAgent ??
-					ctx.request.headers.get("user-agent") ??
-					null,
+				linkId: profileLink.id,
+				profileId: profileLink.profileId,
+				referrer: normalizedReferrer,
+				userAgent,
 			})
 			return { success: true }
 		}),

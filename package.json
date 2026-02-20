@@ -5,6 +5,9 @@
   "imports": {
     "#/*": "./src/*"
   },
+  "overrides": {
+    "esbuild": "^0.27.3"
+  },
   "scripts": {
     "dev": "vite dev --port 3000",
     "build": "vite build",
@@ -42,7 +45,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.0",
     "lucide-react": "^0.561.0",
     "next-themes": "^0.4.6",
@@ -72,6 +74,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^16.0.0",
+    "drizzle-kit": "^0.31.8",
     "jsdom": "^27.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.7.2",

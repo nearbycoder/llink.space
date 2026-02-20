@@ -12,6 +12,7 @@ interface Link {
 	url: string
 	description: string | null
 	iconUrl: string | null
+	iconBgColor: string | null
 	isActive: boolean | null
 	sortOrder: number | null
 }
@@ -51,7 +52,7 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 
 			<div className="flex-1 min-w-0">
 				<div className="flex items-start gap-3">
-					<LinkIcon iconUrl={link.iconUrl} />
+					<LinkIcon iconUrl={link.iconUrl} iconBgColor={link.iconBgColor} />
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
 							<span className="font-medium text-sm text-[#11110F] truncate">

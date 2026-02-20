@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { checkDashboardAccess } from "#/lib/auth-server"
+import { SiteBrand } from "#/components/SiteBrand"
 
 export const Route = createFileRoute("/_auth")({
 	beforeLoad: async () => {
@@ -17,12 +18,7 @@ function AuthLayout() {
 			<div className="my-6 w-full max-w-sm kinetic-shell p-6 sm:p-7">
 				<div className="text-center mb-8">
 					<a href="/" className="inline-block">
-						<span
-							className="text-2xl tracking-tight"
-							style={{ fontFamily: "'Archivo Black', sans-serif" }}
-						>
-							llink.space
-						</span>
+						<SiteBrand size="lg" />
 					</a>
 				</div>
 				<Outlet />

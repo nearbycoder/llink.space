@@ -13,6 +13,17 @@ import { nitro } from "nitro/vite"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const srcDir = path.resolve(__dirname, "src")
+const tanstackVirtualIds = [
+	"#tanstack-router-entry",
+	"#tanstack-start-entry",
+	"tanstack-start-manifest:v",
+	"tanstack-start-injected-head-scripts:v",
+]
+const tanstackOptimizeDepsExcludes = [
+	"@tanstack/start-server-core",
+	"@tanstack/start-client-core",
+	...tanstackVirtualIds,
+]
 
 // Resolve #/ subpath imports to src/
 const hashAliasPlugin = {
@@ -43,6 +54,16 @@ const hashAliasPlugin = {
 }
 
 const config = defineConfig({
+	optimizeDeps: {
+		exclude: tanstackOptimizeDepsExcludes,
+	},
+	environments: {
+		ssr: {
+			optimizeDeps: {
+				exclude: tanstackOptimizeDepsExcludes,
+			},
+		},
+	},
 	plugins: [
 		devtools(),
 		hashAliasPlugin,

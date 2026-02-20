@@ -4,6 +4,7 @@ import { z } from "zod"
 import { db } from "#/db"
 import { links, profiles } from "#/db/schema"
 import { LINK_ICON_KEYS } from "#/lib/link-icon-keys"
+import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security"
 import {
 	createTRPCRouter,
 	protectedProcedure,
@@ -11,6 +12,13 @@ import {
 } from "../init"
 
 const linkIconSchema = z.enum(LINK_ICON_KEYS)
+const iconBgColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
+const linkUrlSchema = z
+	.string()
+	.trim()
+	.max(2048)
+	.refine(isSafeHttpUrl, "URL must start with http:// or https://")
+	.transform((value) => normalizeHttpUrl(value) ?? value)
 
 export const linksRouter = createTRPCRouter({
 	list: protectedProcedure.query(async ({ ctx }) => {
@@ -22,7 +30,7 @@ export const linksRouter = createTRPCRouter({
 		}
 		return db.query.links.findMany({
 			where: eq(links.profileId, profile.id),
-			orderBy: [asc(links.sortOrder), asc(links.createdAt)],
+			orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
 		})
 	}),
 
@@ -30,9 +38,10 @@ export const linksRouter = createTRPCRouter({
 		.input(
 			z.object({
 				title: z.string().min(1).max(100),
-				url: z.string().url(),
+				url: linkUrlSchema,
 				description: z.string().max(200).optional(),
 				iconUrl: linkIconSchema.optional(),
+				iconBgColor: iconBgColorSchema.optional(),
 				isActive: z.boolean().default(true),
 			}),
 		)
@@ -46,6 +55,11 @@ export const linksRouter = createTRPCRouter({
 			const existing = await db.query.links.findMany({
 				where: eq(links.profileId, profile.id),
 			})
+			const nextSortOrder =
+				existing.reduce(
+					(max, link) => Math.max(max, link.sortOrder ?? -1),
+					-1,
+				) + 1
 			const [link] = await db
 				.insert(links)
 				.values({
@@ -54,8 +68,9 @@ export const linksRouter = createTRPCRouter({
 					url: input.url,
 					description: input.description ?? null,
 					iconUrl: input.iconUrl ?? null,
+					iconBgColor: input.iconBgColor ?? "#F5FF7B",
 					isActive: input.isActive,
-					sortOrder: existing.length,
+					sortOrder: nextSortOrder,
 				})
 				.returning()
 			return link
@@ -66,9 +81,10 @@ export const linksRouter = createTRPCRouter({
 			z.object({
 				id: z.string().uuid(),
 				title: z.string().min(1).max(100).optional(),
-				url: z.string().url().optional(),
+				url: linkUrlSchema.optional(),
 				description: z.string().max(200).optional().nullable(),
 				iconUrl: linkIconSchema.optional().nullable(),
+				iconBgColor: iconBgColorSchema.optional(),
 				isActive: z.boolean().optional(),
 			}),
 		)
@@ -140,7 +156,7 @@ export const linksRouter = createTRPCRouter({
 					eq(links.profileId, profile.id),
 					eq(links.isActive, true),
 				),
-				orderBy: [asc(links.sortOrder), asc(links.createdAt)],
+				orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
 			})
 			return { profile, links: profileLinks }
 		}),

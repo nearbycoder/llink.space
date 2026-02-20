@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { authClient } from "#/lib/auth-client"
+import { SiteBrand } from "#/components/SiteBrand"
 
 export default function Header() {
 	const { data: session, isPending } = authClient.useSession()
@@ -8,12 +9,7 @@ export default function Header() {
 		<header className="bg-[#FFFCEF]/90 backdrop-blur-sm border-b-2 border-black">
 			<div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
 				<Link to="/">
-					<span
-						className="text-lg tracking-tight text-[#11110F]"
-						style={{ fontFamily: "'Archivo Black', sans-serif" }}
-					>
-						llink.space
-					</span>
+					<SiteBrand size="md" />
 				</Link>
 
 				<nav className="flex items-center gap-4">

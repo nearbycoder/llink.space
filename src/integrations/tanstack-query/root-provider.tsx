@@ -24,18 +24,14 @@ export const trpcClient = createTRPCClient<TRPCRouter>({
   ],
 })
 
-let context:
-  | {
-      queryClient: QueryClient
-      trpc: ReturnType<typeof createTRPCOptionsProxy<TRPCRouter>>
-    }
-  | undefined
+type RouterContext = {
+  queryClient: QueryClient
+  trpc: ReturnType<typeof createTRPCOptionsProxy<TRPCRouter>>
+}
 
-export function getContext() {
-  if (context) {
-    return context
-  }
+let browserContext: RouterContext | undefined
 
+function createContext(): RouterContext {
   const queryClient = new QueryClient({
     defaultOptions: {
       dehydrate: { serializeData: superjson.serialize },
@@ -43,16 +39,25 @@ export function getContext() {
     },
   })
 
-  const serverHelpers = createTRPCOptionsProxy({
+  const trpc = createTRPCOptionsProxy({
     client: trpcClient,
-    queryClient: queryClient,
-  })
-  context = {
     queryClient,
-    trpc: serverHelpers,
+  })
+
+  return { queryClient, trpc }
+}
+
+export function getContext() {
+  // Avoid sharing QueryClient cache across SSR requests.
+  if (typeof window === 'undefined') {
+    return createContext()
   }
 
-  return context
+  if (!browserContext) {
+    browserContext = createContext()
+  }
+
+  return browserContext
 }
 
 export default function TanStackQueryProvider({

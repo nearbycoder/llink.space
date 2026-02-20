@@ -28,6 +28,7 @@ export const links = pgTable("links", {
 	url: text().notNull(),
 	description: text(),
 	iconUrl: text("icon_url"),
+	iconBgColor: text("icon_bg_color").notNull().default("#F5FF7B"),
 	isActive: boolean("is_active").default(true),
 	sortOrder: integer("sort_order").default(0),
 	createdAt: timestamp("created_at").defaultNow(),

@@ -3,29 +3,18 @@ import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "#/db"
 import { profiles } from "#/db/schema"
+import { isAllowedAvatarUrl } from "#/lib/security"
 import {
 	createTRPCRouter,
 	protectedProcedure,
 	publicProcedure,
 } from "../init"
 
-function isValidAvatarUrl(value: string) {
-	if (value.startsWith("/uploads/")) {
-		return true
-	}
-	try {
-		const url = new URL(value)
-		return url.protocol === "https:" || url.protocol === "http:"
-	} catch {
-		return false
-	}
-}
-
 const avatarUrlSchema = z
 	.string()
 	.max(500)
-	.refine((value) => isValidAvatarUrl(value), {
-		message: "Avatar URL must be an http(s) URL or /uploads path",
+	.refine((value) => isAllowedAvatarUrl(value), {
+		message: "Avatar URL must be an http(s) URL or /uploads path (SVG not allowed)",
 	})
 
 export const profileRouter = createTRPCRouter({

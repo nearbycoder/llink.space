@@ -1,18 +1,12 @@
 import { createServerFn } from "@tanstack/react-start"
 import { getRequest } from "@tanstack/start-server-core"
-import { eq } from "drizzle-orm"
+import { asc, eq } from "drizzle-orm"
 import { auth } from "./auth"
 import { db } from "#/db"
-import { profiles } from "#/db/schema"
+import { links, profiles } from "#/db/schema"
 
-/**
- * Server function that checks whether the current request has a valid session
- * and an existing profile. Returns a discriminated union so the caller can
- * redirect appropriately without any cookie-forwarding plumbing.
- */
-export const checkDashboardAccess = createServerFn().handler(async () => {
-	const request = getRequest()
-	const session = await auth.api.getSession({ headers: request.headers })
+async function resolveDashboardAccess(headers: Headers) {
+	const session = await auth.api.getSession({ headers })
 
 	if (!session) {
 		return { status: "unauthenticated" } as const
@@ -27,4 +21,38 @@ export const checkDashboardAccess = createServerFn().handler(async () => {
 	}
 
 	return { status: "ok", profile } as const
+}
+
+/**
+ * Server function that checks whether the current request has a valid session
+ * and an existing profile. Returns a discriminated union so the caller can
+ * redirect appropriately without any cookie-forwarding plumbing.
+ */
+export const checkDashboardAccess = createServerFn().handler(async () => {
+	const request = getRequest()
+	return resolveDashboardAccess(request.headers)
+})
+
+/**
+ * Server function that returns dashboard links for the current user with
+ * auth/profile checks performed on the server request context.
+ */
+export const getDashboardLinks = createServerFn().handler(async () => {
+	const request = getRequest()
+	const access = await resolveDashboardAccess(request.headers)
+
+	if (access.status !== "ok") {
+		return access
+	}
+
+	const profileLinks = await db.query.links.findMany({
+		where: eq(links.profileId, access.profile.id),
+		orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
+	})
+
+	return {
+		status: "ok",
+		profile: access.profile,
+		links: profileLinks,
+	} as const
 })

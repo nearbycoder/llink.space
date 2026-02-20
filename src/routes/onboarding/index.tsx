@@ -10,6 +10,7 @@ import { Label } from "#/components/ui/label"
 import { useState } from "react"
 import { CheckCircle, XCircle } from "lucide-react"
 import { useDebounce } from "#/lib/use-debounce"
+import { SiteBrand } from "#/components/SiteBrand"
 
 export const Route = createFileRoute("/onboarding/")({
 	component: OnboardingPage,
@@ -62,12 +63,7 @@ function OnboardingPage() {
 			<div className="my-6 w-full max-w-sm kinetic-shell p-6 sm:p-7">
 				<div className="text-center mb-8">
 					<a href="/" className="inline-block mb-6">
-						<span
-							className="text-2xl tracking-tight"
-							style={{ fontFamily: "'Archivo Black', sans-serif" }}
-						>
-							llink.space
-						</span>
+						<SiteBrand size="lg" />
 					</a>
 					<h1 className="text-2xl font-semibold text-[#11110F]">
 						Claim your username

@@ -17,9 +17,13 @@ import {
 	User,
 } from "lucide-react"
 import { cn } from "#/lib/utils"
+import { SiteBrand } from "#/components/SiteBrand"
 
 export const Route = createFileRoute("/dashboard")({
-	beforeLoad: async () => {
+	headers: () => ({
+		"cache-control": "private, no-store, no-cache, must-revalidate, max-age=0",
+	}),
+	loader: async () => {
 		const result = await checkDashboardAccess()
 		if (result.status === "unauthenticated") {
 			throw redirect({ to: "/sign-in" })
@@ -27,6 +31,7 @@ export const Route = createFileRoute("/dashboard")({
 		if (result.status === "no-profile") {
 			throw redirect({ to: "/onboarding" })
 		}
+		return { initialProfile: result.profile }
 	},
 	component: DashboardLayout,
 })
@@ -43,9 +48,14 @@ const navItems = [
 ]
 
 function DashboardLayout() {
+	const { initialProfile } = Route.useLoaderData()
 	const location = useLocation()
 	const trpc = useTRPC()
-	const { data: profile } = useQuery(trpc.profile.getCurrent.queryOptions())
+	const profileQueryOptions = trpc.profile.getCurrent.queryOptions()
+	const { data: profile = initialProfile } = useQuery({
+		...profileQueryOptions,
+		initialData: initialProfile,
+	})
 
 	return (
 		<div className="min-h-screen kinetic-gradient md:flex">
@@ -53,12 +63,7 @@ function DashboardLayout() {
 			<aside className="hidden md:flex w-60 bg-[#FFFCEF]/95 backdrop-blur-sm border-r-2 border-black flex-col fixed inset-y-0 left-0 z-10">
 				<div className="p-5 border-b-2 border-black">
 					<a href="/">
-						<span
-							className="text-lg tracking-tight text-[#11110F]"
-							style={{ fontFamily: "'Archivo Black', sans-serif" }}
-						>
-							llink.space
-						</span>
+						<SiteBrand size="md" />
 					</a>
 				</div>
 
@@ -112,12 +117,7 @@ function DashboardLayout() {
 				<header className="md:hidden border-b-2 border-black bg-[#FFFCEF]/95 backdrop-blur-sm">
 					<div className="flex items-center justify-between px-4 py-3">
 						<a href="/">
-							<span
-								className="text-base tracking-tight text-[#11110F]"
-								style={{ fontFamily: "'Archivo Black', sans-serif" }}
-							>
-								llink.space
-							</span>
+							<SiteBrand size="sm" />
 						</a>
 
 						<div className="flex items-center gap-2">

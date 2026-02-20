@@ -20,6 +20,7 @@ interface Link {
 	url: string
 	description: string | null
 	iconUrl: string | null
+	iconBgColor: string | null
 	isActive: boolean | null
 	sortOrder: number | null
 }

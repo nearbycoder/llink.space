@@ -1,3 +1,5 @@
+![llink.space](./public/readme.png)
+
 # llink.space
 
 `llink.space` is a link-in-bio platform for creators and brands.
@@ -8,6 +10,21 @@ It lets users:
 - choose from a built-in icon set for links
 - upload a profile avatar (local object storage in dev)
 - track click analytics per link
+
+## Latest Updates
+
+- Server-rendered dashboard data flow for auth/profile/link state to reduce UI flashing on refresh.
+- Added a static, hydration-safe dashboard link list fallback before drag-and-drop mounts.
+- Public profile and missing-profile experiences are fully server-rendered, including a custom 404-style page for unknown usernames.
+- Added customizable icon background colors for links.
+- Introduced shared site branding (`SiteBrand`) with the chain-link message-bubble logo across key surfaces.
+- Security hardening pass:
+  - strict URL normalization/validation for user links (`http`/`https` only)
+  - avatar validation blocks SVG and checks image magic bytes (JPG/PNG/WEBP/GIF)
+  - origin checks for mutation endpoints (`/api/trpc/*`, `/api/auth/*`, `/api/upload/avatar`)
+  - no-store caching on sensitive auth/API responses and dashboard routes
+  - stronger root security headers (CSP in production, HSTS in production, COOP/CORP, nosniff, frame deny)
+  - Better Auth trusted origins + production rate limiting/secure cookies
 
 ## Tech Stack
 
@@ -26,10 +43,12 @@ It lets users:
 - Dashboard with:
   - Links management (create, edit, delete, reorder, active/hidden)
   - Link icon picker (30 built-in icons, including popular socials)
+  - Per-link icon background color customization
   - Profile editing (display name, bio, avatar upload)
   - Analytics (total clicks, active links, clicks by link, recent clicks)
 - Onboarding flow for claiming unique usernames
 - Mobile-friendly UI across landing, dashboard, and public pages
+- Custom not-found experience for missing public profiles
 
 ## Prerequisites
 
@@ -43,6 +62,17 @@ Create `.env.local` in project root:
 ```bash
 # Required
 DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DB_NAME
+
+# Recommended for auth + origin checks
+BETTER_AUTH_SECRET=your-long-random-secret
+BETTER_AUTH_URL=http://localhost:3000
+
+# Optional aliases used by origin resolution
+APP_URL=http://localhost:3000
+PUBLIC_URL=http://localhost:3000
+
+# Optional extra trusted origins (comma-separated)
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
 
 # Optional (PostHog)
 VITE_POSTHOG_KEY=
@@ -58,6 +88,7 @@ LOCAL_OBJECT_STORAGE_BASE_PATH=/uploads
 Notes:
 - `VITE_POSTHOG_HOST` must be an API host (for example `https://us.i.posthog.com`), not an assets CDN host.
 - `OBJECT_STORAGE_BACKEND=s3` is scaffolded but not implemented yet in this codebase.
+- In production, set `BETTER_AUTH_URL` to your canonical HTTPS domain and keep `BETTER_AUTH_SECRET` stable.
 
 ## Local Development
 
@@ -108,6 +139,7 @@ App runs at [http://localhost:3000](http://localhost:3000).
 - `/dashboard/analytics` analytics
 - `/u/$username` public profile page (SSR)
 - `/api/trpc/*` tRPC endpoint
+- `/api/auth/*` Better Auth endpoint
 - `/api/upload/avatar` avatar upload endpoint
 
 ## Scripts
@@ -139,11 +171,20 @@ bun --bun run db:pull
 bun --bun run db:studio
 ```
 
+## Security Notes
+
+- User-provided link URLs are normalized and restricted to `http`/`https`.
+- Avatar uploads accept only JPG/PNG/WEBP/GIF, enforce size limits, and verify file signatures.
+- State-changing API routes validate request origin.
+- Auth and API mutation responses use `cache-control: no-store`.
+- Root route sends security headers; production adds CSP + HSTS.
+
 ## Deployment Notes
 
 - Build with `bun --bun run build`.
 - Start with `bun --bun run start`.
 - Ensure production env has:
   - `DATABASE_URL`
-  - auth-related secrets/config required by your Better Auth setup
+  - `BETTER_AUTH_SECRET`
+  - `BETTER_AUTH_URL` (and optional `BETTER_AUTH_TRUSTED_ORIGINS` if needed)
   - object storage config if you replace local storage

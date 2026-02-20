@@ -40,7 +40,7 @@ function AvatarImage({
 
 function AvatarFallback({
   className,
-  delayMs = 600,
+  delayMs = 0,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
   return (
