@@ -183,7 +183,7 @@ function DashboardPage() {
 
 			{/* Add Dialog */}
 			<Dialog open={showAdd} onOpenChange={setShowAdd}>
-				<DialogContent className="sm:max-w-md">
+				<DialogContent className="top-4 max-h-[calc(100svh-2rem)] translate-y-0 overflow-y-auto overscroll-contain sm:top-[50%] sm:max-h-[calc(100svh-4rem)] sm:max-w-md sm:translate-y-[-50%]">
 					<DialogHeader>
 						<DialogTitle>Add link</DialogTitle>
 					</DialogHeader>
@@ -197,7 +197,7 @@ function DashboardPage() {
 
 			{/* Edit Dialog */}
 			<Dialog open={!!editingLink} onOpenChange={() => setEditingLink(null)}>
-				<DialogContent className="sm:max-w-md">
+				<DialogContent className="top-4 max-h-[calc(100svh-2rem)] translate-y-0 overflow-y-auto overscroll-contain sm:top-[50%] sm:max-h-[calc(100svh-4rem)] sm:max-w-md sm:translate-y-[-50%]">
 					<DialogHeader>
 						<DialogTitle>Edit link</DialogTitle>
 					</DialogHeader>

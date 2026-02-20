@@ -23,6 +23,7 @@ import { Route as ApiUploadAvatarRouteImport } from './routes/api.upload.avatar'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiStorageSplatRouteImport } from './routes/api.storage.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiOgUUsernameRouteImport } from './routes/api.og.u.$username'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -93,6 +94,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOgUUsernameRoute = ApiOgUUsernameRouteImport.update({
+  id: '/api/og/u/$username',
+  path: '/api/og/u/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/upload/avatar': typeof ApiUploadAvatarRoute
+  '/api/og/u/$username': typeof ApiOgUUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/upload/avatar': typeof ApiUploadAvatarRoute
+  '/api/og/u/$username': typeof ApiOgUUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/upload/avatar': typeof ApiUploadAvatarRoute
+  '/api/og/u/$username': typeof ApiOgUUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/api/storage/$'
     | '/api/trpc/$'
     | '/api/upload/avatar'
+    | '/api/og/u/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/api/storage/$'
     | '/api/trpc/$'
     | '/api/upload/avatar'
+    | '/api/og/u/$username'
   id:
     | '__root__'
     | '/'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/api/storage/$'
     | '/api/trpc/$'
     | '/api/upload/avatar'
+    | '/api/og/u/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -198,6 +210,7 @@ export interface RootRouteChildren {
   ApiStorageSplatRoute: typeof ApiStorageSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   ApiUploadAvatarRoute: typeof ApiUploadAvatarRoute
+  ApiOgUUsernameRoute: typeof ApiOgUUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/og/u/$username': {
+      id: '/api/og/u/$username'
+      path: '/api/og/u/$username'
+      fullPath: '/api/og/u/$username'
+      preLoaderRoute: typeof ApiOgUUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -341,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStorageSplatRoute: ApiStorageSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   ApiUploadAvatarRoute: ApiUploadAvatarRoute,
+  ApiOgUUsernameRoute: ApiOgUUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

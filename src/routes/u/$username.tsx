@@ -7,6 +7,12 @@ import { LinkCard } from "#/components/profile/LinkCard";
 import { getTheme } from "#/lib/themes";
 import { Home, SearchX, UserPlus } from "lucide-react";
 import { SiteBrand } from "#/components/SiteBrand";
+import { toAbsoluteUrl } from "#/lib/site-url";
+
+function trimForMeta(value: string, maxLength: number) {
+	if (value.length <= maxLength) return value;
+	return `${value.slice(0, maxLength - 1)}…`;
+}
 
 export const Route = createFileRoute("/u/$username")({
 	ssr: true,
@@ -27,6 +33,95 @@ export const Route = createFileRoute("/u/$username")({
 			}
 			throw error;
 		}
+	},
+	head: ({ params, loaderData }) => {
+		const encodedUsername = encodeURIComponent(params.username);
+		const pageUrl = toAbsoluteUrl(`/u/${encodedUsername}`);
+		const ogImageUrl = toAbsoluteUrl(`/api/og/u/${encodedUsername}`);
+
+		if (!loaderData?.data) {
+			return {
+				meta: [
+					{ title: `@${params.username} not found | llink.space` },
+					{
+						name: "description",
+						content: `No public profile exists for @${params.username} on llink.space.`,
+					},
+					{
+						name: "robots",
+						content: "noindex, nofollow",
+					},
+					{
+						property: "og:title",
+						content: `@${params.username} not found | llink.space`,
+					},
+					{
+						property: "og:description",
+						content: `No public profile exists for @${params.username}.`,
+					},
+					{
+						property: "og:type",
+						content: "website",
+					},
+					{
+						property: "og:url",
+						content: pageUrl,
+					},
+					{
+						property: "og:image",
+						content: ogImageUrl,
+					},
+					{
+						name: "twitter:card",
+						content: "summary_large_image",
+					},
+					{
+						name: "twitter:title",
+						content: `@${params.username} not found | llink.space`,
+					},
+					{
+						name: "twitter:description",
+						content: `No public profile exists for @${params.username}.`,
+					},
+					{
+						name: "twitter:image",
+						content: ogImageUrl,
+					},
+				],
+				links: [{ rel: "canonical", href: pageUrl }],
+			};
+		}
+
+		const { profile, links } = loaderData.data;
+		const displayName = profile.displayName?.trim() || `@${profile.username}`;
+		const defaultDescription = `${displayName} shares ${links.length} link${links.length === 1 ? "" : "s"} on llink.space.`;
+		const description = profile.bio?.trim()
+			? trimForMeta(profile.bio.trim(), 160)
+			: defaultDescription;
+		const title = `${displayName} | llink.space`;
+
+		return {
+			meta: [
+				{ title },
+				{ name: "description", content: description },
+				{ property: "og:title", content: title },
+				{ property: "og:description", content: description },
+				{ property: "og:type", content: "profile" },
+				{ property: "og:url", content: pageUrl },
+				{ property: "og:image", content: ogImageUrl },
+				{ property: "og:image:width", content: "1200" },
+				{ property: "og:image:height", content: "630" },
+				{
+					property: "og:image:alt",
+					content: `Preview of ${displayName} on llink.space`,
+				},
+				{ name: "twitter:card", content: "summary_large_image" },
+				{ name: "twitter:title", content: title },
+				{ name: "twitter:description", content: description },
+				{ name: "twitter:image", content: ogImageUrl },
+			],
+			links: [{ rel: "canonical", href: pageUrl }],
+		};
 	},
 	component: ProfilePage,
 });
