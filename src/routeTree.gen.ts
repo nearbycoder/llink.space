@@ -17,6 +17,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as UUsernameRouteImport } from './routes/u/$username'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard/profile'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
+import { Route as ApiOgRouteImport } from './routes/api.og'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
 import { Route as ApiUploadAvatarRouteImport } from './routes/api.upload.avatar'
@@ -64,6 +65,11 @@ const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const ApiOgRoute = ApiOgRouteImport.update({
+  id: '/api/og',
+  path: '/api/og',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
@@ -95,9 +101,9 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOgUUsernameRoute = ApiOgUUsernameRouteImport.update({
-  id: '/api/og/u/$username',
-  path: '/api/og/u/$username',
-  getParentRoute: () => rootRouteImport,
+  id: '/u/$username',
+  path: '/u/$username',
+  getParentRoute: () => ApiOgRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/u/$username': typeof UUsernameRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/u/$username': typeof UUsernameRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
+  '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
   '/u/$username': typeof UUsernameRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/sign-in'
     | '/sign-up'
+    | '/api/og'
     | '/dashboard/analytics'
     | '/dashboard/profile'
     | '/u/$username'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/sign-up'
+    | '/api/og'
     | '/dashboard/analytics'
     | '/dashboard/profile'
     | '/u/$username'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
+    | '/api/og'
     | '/dashboard/analytics'
     | '/dashboard/profile'
     | '/u/$username'
@@ -204,13 +216,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  ApiOgRoute: typeof ApiOgRouteWithChildren
   UUsernameRoute: typeof UUsernameRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiStorageSplatRoute: typeof ApiStorageSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   ApiUploadAvatarRoute: typeof ApiUploadAvatarRoute
-  ApiOgUUsernameRoute: typeof ApiOgUUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -271,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAnalyticsRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/api/og': {
+      id: '/api/og'
+      path: '/api/og'
+      fullPath: '/api/og'
+      preLoaderRoute: typeof ApiOgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth/sign-up': {
       id: '/_auth/sign-up'
       path: '/sign-up'
@@ -315,10 +334,10 @@ declare module '@tanstack/react-router' {
     }
     '/api/og/u/$username': {
       id: '/api/og/u/$username'
-      path: '/api/og/u/$username'
+      path: '/u/$username'
       fullPath: '/api/og/u/$username'
       preLoaderRoute: typeof ApiOgUUsernameRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ApiOgRoute
     }
   }
 }
@@ -351,17 +370,27 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface ApiOgRouteChildren {
+  ApiOgUUsernameRoute: typeof ApiOgUUsernameRoute
+}
+
+const ApiOgRouteChildren: ApiOgRouteChildren = {
+  ApiOgUUsernameRoute: ApiOgUUsernameRoute,
+}
+
+const ApiOgRouteWithChildren = ApiOgRoute._addFileChildren(ApiOgRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  ApiOgRoute: ApiOgRouteWithChildren,
   UUsernameRoute: UUsernameRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiStorageSplatRoute: ApiStorageSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   ApiUploadAvatarRoute: ApiUploadAvatarRoute,
-  ApiOgUUsernameRoute: ApiOgUUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

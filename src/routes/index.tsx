@@ -9,8 +9,41 @@ import {
 	UserCircle2,
 } from "lucide-react";
 import { SiteBrand } from "#/components/SiteBrand";
+import { toAbsoluteUrl } from "#/lib/site-url";
 
-export const Route = createFileRoute("/")({ component: LandingPage });
+export const Route = createFileRoute("/")({
+	head: () => {
+		const title = "llink.space — Your Link-in-Bio Home Base";
+		const description =
+			"Create one branded link-in-bio page at /u/username, share it everywhere, and track clicks in one simple dashboard.";
+		const pageUrl = toAbsoluteUrl("/");
+		const ogImageUrl = toAbsoluteUrl("/api/og");
+
+		return {
+			meta: [
+				{ title },
+				{ name: "description", content: description },
+				{ property: "og:title", content: title },
+				{ property: "og:description", content: description },
+				{ property: "og:type", content: "website" },
+				{ property: "og:url", content: pageUrl },
+				{ property: "og:image", content: ogImageUrl },
+				{ property: "og:image:width", content: "1200" },
+				{ property: "og:image:height", content: "630" },
+				{
+					property: "og:image:alt",
+					content: "llink.space link-in-bio homepage preview",
+				},
+				{ name: "twitter:card", content: "summary_large_image" },
+				{ name: "twitter:title", content: title },
+				{ name: "twitter:description", content: description },
+				{ name: "twitter:image", content: ogImageUrl },
+			],
+			links: [{ rel: "canonical", href: pageUrl }],
+		};
+	},
+	component: LandingPage,
+});
 
 const featureItems = [
 	{
