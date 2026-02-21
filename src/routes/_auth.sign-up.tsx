@@ -1,11 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useId, useState } from "react";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { authClient } from "#/lib/auth-client";
 import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
 import {
 	Card,
 	CardContent,
@@ -13,9 +11,27 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
-import { useId, useState } from "react";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
+import { authClient } from "#/lib/auth-client";
+import { toAbsoluteUrl } from "#/lib/site-url";
 
 export const Route = createFileRoute("/_auth/sign-up")({
+	head: () => {
+		const title = "Sign up | llink.space";
+		const description =
+			"Create your llink.space account and launch your link-in-bio page.";
+		const pageUrl = toAbsoluteUrl("/sign-up");
+
+		return {
+			meta: [
+				{ title },
+				{ name: "description", content: description },
+				{ name: "robots", content: "noindex, nofollow, noarchive" },
+			],
+			links: [{ rel: "canonical", href: pageUrl }],
+		};
+	},
 	component: SignUpPage,
 });
 

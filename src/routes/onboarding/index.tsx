@@ -1,18 +1,34 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useTRPC } from "#/integrations/trpc/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CheckCircle, XCircle } from "lucide-react";
+import { type ChangeEvent, useId, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { SiteBrand } from "#/components/SiteBrand";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { useId, useState, type ChangeEvent } from "react";
-import { CheckCircle, XCircle } from "lucide-react";
+import { useTRPC } from "#/integrations/trpc/react";
+import { toAbsoluteUrl } from "#/lib/site-url";
 import { useDebounce } from "#/lib/use-debounce";
-import { SiteBrand } from "#/components/SiteBrand";
 
 export const Route = createFileRoute("/onboarding/")({
+	head: () => {
+		const title = "Onboarding | llink.space";
+		const description =
+			"Choose your username and finish setting up your llink.space profile.";
+		const pageUrl = toAbsoluteUrl("/onboarding");
+
+		return {
+			meta: [
+				{ title },
+				{ name: "description", content: description },
+				{ name: "robots", content: "noindex, nofollow, noarchive" },
+			],
+			links: [{ rel: "canonical", href: pageUrl }],
+		};
+	},
 	component: OnboardingPage,
 });
 

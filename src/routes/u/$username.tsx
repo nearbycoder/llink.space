@@ -1,13 +1,13 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { TRPCClientError } from "@trpc/client";
-import { useTRPC } from "#/integrations/trpc/react";
-import { useMutation } from "@tanstack/react-query";
-import { ProfileHeader } from "#/components/profile/ProfileHeader";
-import { LinkCard } from "#/components/profile/LinkCard";
-import { getTheme } from "#/lib/themes";
 import { Home, SearchX, UserPlus } from "lucide-react";
+import { LinkCard } from "#/components/profile/LinkCard";
+import { ProfileHeader } from "#/components/profile/ProfileHeader";
 import { SiteBrand } from "#/components/SiteBrand";
+import { useTRPC } from "#/integrations/trpc/react";
 import { toAbsoluteUrl } from "#/lib/site-url";
+import { getTheme } from "#/lib/themes";
 
 function trimForMeta(value: string, maxLength: number) {
 	if (value.length <= maxLength) return value;
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/u/$username")({
 					},
 					{
 						name: "robots",
-						content: "noindex, nofollow",
+						content: "noindex, nofollow, noarchive",
 					},
 					{
 						property: "og:title",
@@ -99,6 +99,27 @@ export const Route = createFileRoute("/u/$username")({
 			? trimForMeta(profile.bio.trim(), 160)
 			: defaultDescription;
 		const title = `${displayName} | llink.space`;
+		const sameAs = Array.from(
+			new Set(
+				links
+					.map((link) => link.url?.trim())
+					.filter((url): url is string => Boolean(url)),
+			),
+		);
+		const profileImage = profile.avatarUrl?.trim()
+			? toAbsoluteUrl(profile.avatarUrl)
+			: undefined;
+		const structuredData = {
+			"@context": "https://schema.org",
+			"@type": "Person",
+			name: displayName,
+			alternateName: `@${profile.username}`,
+			url: pageUrl,
+			description,
+			mainEntityOfPage: pageUrl,
+			...(profileImage ? { image: profileImage } : {}),
+			...(sameAs.length > 0 ? { sameAs } : {}),
+		};
 
 		return {
 			meta: [
@@ -119,6 +140,16 @@ export const Route = createFileRoute("/u/$username")({
 				{ name: "twitter:title", content: title },
 				{ name: "twitter:description", content: description },
 				{ name: "twitter:image", content: ogImageUrl },
+				{
+					name: "twitter:image:alt",
+					content: `Preview of ${displayName} on llink.space`,
+				},
+			],
+			scripts: [
+				{
+					type: "application/ld+json",
+					children: JSON.stringify(structuredData),
+				},
 			],
 			links: [{ rel: "canonical", href: pageUrl }],
 		};

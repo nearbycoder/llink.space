@@ -18,6 +18,23 @@ export const Route = createFileRoute("/")({
 			"Create one branded link-in-bio page at /u/username, share it everywhere, and track clicks in one simple dashboard.";
 		const pageUrl = toAbsoluteUrl("/");
 		const ogImageUrl = toAbsoluteUrl("/api/og");
+		const signUpUrl = toAbsoluteUrl("/sign-up");
+		const structuredData = {
+			"@context": "https://schema.org",
+			"@type": "WebSite",
+			name: "llink.space",
+			url: pageUrl,
+			description,
+			potentialAction: {
+				"@type": "RegisterAction",
+				target: signUpUrl,
+			},
+			publisher: {
+				"@type": "Organization",
+				name: "llink.space",
+				url: pageUrl,
+			},
+		};
 
 		return {
 			meta: [
@@ -38,6 +55,13 @@ export const Route = createFileRoute("/")({
 				{ name: "twitter:title", content: title },
 				{ name: "twitter:description", content: description },
 				{ name: "twitter:image", content: ogImageUrl },
+				{ name: "twitter:image:alt", content: "llink.space homepage preview" },
+			],
+			scripts: [
+				{
+					type: "application/ld+json",
+					children: JSON.stringify(structuredData),
+				},
 			],
 			links: [{ rel: "canonical", href: pageUrl }],
 		};

@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { checkDashboardAccess } from "#/lib/auth-server";
 import { SiteBrand } from "#/components/SiteBrand";
+import { checkDashboardAccess } from "#/lib/auth-server";
 
 export const Route = createFileRoute("/_auth")({
 	beforeLoad: async () => {
@@ -9,6 +9,9 @@ export const Route = createFileRoute("/_auth")({
 			throw redirect({ to: "/dashboard" });
 		}
 	},
+	head: () => ({
+		meta: [{ name: "robots", content: "noindex, nofollow, noarchive" }],
+	}),
 	component: AuthLayout,
 });
 

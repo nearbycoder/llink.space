@@ -1,4 +1,9 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
 Allow: /api/og/*
+Disallow: /api/auth/
+Disallow: /api/trpc/
+Disallow: /api/storage/
+Disallow: /api/upload/
+
+Sitemap: https://llink.space/sitemap.xml

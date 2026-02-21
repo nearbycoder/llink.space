@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
@@ -5,10 +6,6 @@ import {
 	redirect,
 	useLocation,
 } from "@tanstack/react-router";
-import { authClient } from "#/lib/auth-client";
-import { useTRPC } from "#/integrations/trpc/react";
-import { useQuery } from "@tanstack/react-query";
-import { checkDashboardAccess } from "#/lib/auth-server";
 import {
 	BarChart3,
 	ExternalLink,
@@ -16,12 +13,25 @@ import {
 	LogOut,
 	User,
 } from "lucide-react";
-import { cn } from "#/lib/utils";
 import { SiteBrand } from "#/components/SiteBrand";
+import { useTRPC } from "#/integrations/trpc/react";
+import { authClient } from "#/lib/auth-client";
+import { checkDashboardAccess } from "#/lib/auth-server";
+import { cn } from "#/lib/utils";
 
 export const Route = createFileRoute("/dashboard")({
 	headers: () => ({
 		"cache-control": "private, no-store, no-cache, must-revalidate, max-age=0",
+	}),
+	head: () => ({
+		meta: [
+			{ title: "Dashboard | llink.space" },
+			{
+				name: "description",
+				content: "Manage your llink.space profile, links, and analytics.",
+			},
+			{ name: "robots", content: "noindex, nofollow, noarchive" },
+		],
 	}),
 	loader: async () => {
 		const result = await checkDashboardAccess();
