@@ -1,9 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/start-server-core";
 import { asc, eq } from "drizzle-orm";
-import { auth } from "./auth";
 import { db } from "#/db";
 import { links, profiles } from "#/db/schema";
+import { normalizeObjectUrlForClient } from "#/lib/object-storage";
+import { auth } from "./auth";
 
 async function resolveDashboardAccess(headers: Headers) {
 	const session = await auth.api.getSession({ headers });
@@ -20,7 +21,16 @@ async function resolveDashboardAccess(headers: Headers) {
 		return { status: "no-profile" } as const;
 	}
 
-	return { status: "ok", profile } as const;
+	return {
+		status: "ok",
+		profile: {
+			...profile,
+			avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),
+			pageBackgroundImageUrl: normalizeObjectUrlForClient(
+				profile.pageBackgroundImageUrl,
+			),
+		},
+	} as const;
 }
 
 /**

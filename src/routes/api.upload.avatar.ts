@@ -1,15 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "#/lib/auth";
-import { putProfileAvatarObject } from "#/lib/object-storage";
+import {
+	putProfileAvatarObject,
+	putProfileBackgroundObject,
+} from "#/lib/object-storage";
 import { isTrustedRequestOrigin } from "#/lib/security";
 
-const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_PROFILE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const allowedImageMimeTypes = new Set([
 	"image/jpeg",
 	"image/png",
 	"image/webp",
 	"image/gif",
 ]);
+const imageUploadPurposes = new Set(["avatar", "background"]);
 
 function jsonResponse(status: number, body: Record<string, string>) {
 	return new Response(JSON.stringify(body), {
@@ -80,7 +84,7 @@ async function postHandler({ request }: { request: Request }) {
 	);
 	if (
 		Number.isFinite(contentLength) &&
-		contentLength > MAX_AVATAR_SIZE_BYTES + 1024
+		contentLength > MAX_PROFILE_IMAGE_SIZE_BYTES + 1024
 	) {
 		return jsonResponse(413, { error: "Request payload too large" });
 	}
@@ -102,11 +106,17 @@ async function postHandler({ request }: { request: Request }) {
 		return jsonResponse(400, { error: "Missing file upload" });
 	}
 
+	const purposeValue = formData.get("purpose");
+	const purpose =
+		typeof purposeValue === "string" && imageUploadPurposes.has(purposeValue)
+			? purposeValue
+			: "avatar";
+
 	if (file.size <= 0) {
 		return jsonResponse(400, { error: "File is empty" });
 	}
 
-	if (file.size > MAX_AVATAR_SIZE_BYTES) {
+	if (file.size > MAX_PROFILE_IMAGE_SIZE_BYTES) {
 		return jsonResponse(400, { error: "File too large (max 5MB)" });
 	}
 
@@ -125,16 +135,24 @@ async function postHandler({ request }: { request: Request }) {
 	}
 
 	try {
-		const uploaded = await putProfileAvatarObject({
-			userId: session.user.id,
-			fileName: file.name,
-			contentType: mimeType,
-			body: bytes.buffer,
-		});
+		const uploaded =
+			purpose === "background"
+				? await putProfileBackgroundObject({
+						userId: session.user.id,
+						fileName: file.name,
+						contentType: mimeType,
+						body: bytes.buffer,
+					})
+				: await putProfileAvatarObject({
+						userId: session.user.id,
+						fileName: file.name,
+						contentType: mimeType,
+						body: bytes.buffer,
+					});
 
 		return jsonResponse(200, { url: uploaded.url, key: uploaded.key });
 	} catch (error) {
-		console.error("Avatar upload failed", error);
+		console.error("Profile image upload failed", error);
 		return jsonResponse(500, { error: "Upload failed" });
 	}
 }

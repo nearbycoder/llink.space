@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	isAllowedAvatarUrl,
+	isAllowedBackgroundImageUrl,
 	isTrustedRequestOrigin,
 	normalizeHttpUrl,
 	resolveTrustedOrigins,
@@ -35,10 +36,27 @@ describe("security", () => {
 		});
 
 		it("allows safe http avatar URLs and blocks svg URLs", () => {
-			expect(isAllowedAvatarUrl("https://cdn.llink.space/avatar.jpg")).toBe(true);
-			expect(isAllowedAvatarUrl("https://cdn.llink.space/avatar.svg?size=64")).toBe(
+			expect(isAllowedAvatarUrl("https://cdn.llink.space/avatar.jpg")).toBe(
+				true,
+			);
+			expect(
+				isAllowedAvatarUrl("https://cdn.llink.space/avatar.svg?size=64"),
+			).toBe(false);
+		});
+	});
+
+	describe("isAllowedBackgroundImageUrl", () => {
+		it("matches avatar image URL safety rules", () => {
+			expect(isAllowedBackgroundImageUrl("/uploads/background.png")).toBe(true);
+			expect(isAllowedBackgroundImageUrl("/uploads/background.svg")).toBe(
 				false,
 			);
+			expect(
+				isAllowedBackgroundImageUrl("https://cdn.llink.space/bg.webp"),
+			).toBe(true);
+			expect(
+				isAllowedBackgroundImageUrl("https://cdn.llink.space/bg.svg"),
+			).toBe(false);
 		});
 	});
 
@@ -70,21 +88,27 @@ describe("security", () => {
 
 	describe("isTrustedRequestOrigin", () => {
 		it("accepts matching origin header", () => {
-			const request = new Request("https://app.llink.space/api/trpc/links.create", {
-				headers: {
-					origin: "https://app.llink.space",
+			const request = new Request(
+				"https://app.llink.space/api/trpc/links.create",
+				{
+					headers: {
+						origin: "https://app.llink.space",
+					},
 				},
-			});
+			);
 
 			expect(isTrustedRequestOrigin(request)).toBe(true);
 		});
 
 		it("rejects mismatched origin header", () => {
-			const request = new Request("https://app.llink.space/api/trpc/links.create", {
-				headers: {
-					origin: "https://evil.example",
+			const request = new Request(
+				"https://app.llink.space/api/trpc/links.create",
+				{
+					headers: {
+						origin: "https://evil.example",
+					},
 				},
-			});
+			);
 
 			expect(isTrustedRequestOrigin(request)).toBe(false);
 		});

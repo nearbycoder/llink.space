@@ -1,6 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
 import {
 	GetObjectCommand,
 	PutObjectCommand,
@@ -495,6 +495,22 @@ export function buildProfileAvatarObjectKey({
 	return `avatars/${safeUserId}/${Date.now()}-${randomUUID()}.${ext}`;
 }
 
+export function buildProfileBackgroundObjectKey({
+	userId,
+	fileName,
+	contentType,
+}: {
+	userId: string;
+	fileName: string;
+	contentType: string;
+}) {
+	const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "");
+	const extFromName = path.extname(fileName).replace(".", "").toLowerCase();
+	const extFromMime = extensionByMimeType[contentType];
+	const ext = extFromMime || extFromName || "bin";
+	return `backgrounds/${safeUserId}/${Date.now()}-${randomUUID()}.${ext}`;
+}
+
 export async function putProfileAvatarObject(input: {
 	userId: string;
 	fileName: string;
@@ -502,6 +518,20 @@ export async function putProfileAvatarObject(input: {
 	body: ArrayBuffer;
 }) {
 	const key = buildProfileAvatarObjectKey(input);
+	return storage.putObject({
+		key,
+		body: input.body,
+		contentType: input.contentType,
+	});
+}
+
+export async function putProfileBackgroundObject(input: {
+	userId: string;
+	fileName: string;
+	contentType: string;
+	body: ArrayBuffer;
+}) {
+	const key = buildProfileBackgroundObjectKey(input);
 	return storage.putObject({
 		key,
 		body: input.body,

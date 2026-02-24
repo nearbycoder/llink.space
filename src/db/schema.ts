@@ -1,10 +1,10 @@
 import {
 	boolean,
+	integer,
 	pgTable,
 	text,
 	timestamp,
 	uuid,
-	integer,
 } from "drizzle-orm/pg-core";
 
 export const profiles = pgTable("profiles", {
@@ -14,6 +14,16 @@ export const profiles = pgTable("profiles", {
 	displayName: text("display_name"),
 	bio: text(),
 	avatarUrl: text("avatar_url"),
+	pageBackgroundType: text("page_background_type")
+		.notNull()
+		.default("gradient"),
+	pageBackgroundColor: text("page_background_color")
+		.notNull()
+		.default("sun-cream"),
+	pageBackgroundGradient: text("page_background_gradient")
+		.notNull()
+		.default("kinetic-neon"),
+	pageBackgroundImageUrl: text("page_background_image_url"),
 	theme: text().default("default"),
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),

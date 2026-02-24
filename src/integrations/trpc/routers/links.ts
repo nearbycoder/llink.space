@@ -171,6 +171,9 @@ export const linksRouter = createTRPCRouter({
 				profile: {
 					...profile,
 					avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),
+					pageBackgroundImageUrl: normalizeObjectUrlForClient(
+						profile.pageBackgroundImageUrl,
+					),
 				},
 				links: profileLinks,
 			};

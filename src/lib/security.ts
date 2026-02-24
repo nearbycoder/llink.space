@@ -17,7 +17,7 @@ export function isSafeHttpUrl(value: string): boolean {
 	return normalizeHttpUrl(value) !== null;
 }
 
-export function isAllowedAvatarUrl(value: string): boolean {
+function isAllowedProfileImageUrl(value: string): boolean {
 	const lower = value.trim().toLowerCase();
 	if (lower.startsWith("/uploads/") || lower.startsWith("/api/storage/")) {
 		return !lower.endsWith(".svg");
@@ -28,6 +28,14 @@ export function isAllowedAvatarUrl(value: string): boolean {
 
 	const url = new URL(normalized);
 	return !url.pathname.toLowerCase().endsWith(".svg");
+}
+
+export function isAllowedAvatarUrl(value: string): boolean {
+	return isAllowedProfileImageUrl(value);
+}
+
+export function isAllowedBackgroundImageUrl(value: string): boolean {
+	return isAllowedProfileImageUrl(value);
 }
 
 function getTrustedOriginCandidates(): string[] {

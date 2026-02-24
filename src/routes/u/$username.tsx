@@ -6,12 +6,61 @@ import { LinkCard } from "#/components/profile/LinkCard";
 import { ProfileHeader } from "#/components/profile/ProfileHeader";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
+import {
+	getProfileBackgroundColorValue,
+	getProfileBackgroundGradientValue,
+} from "#/lib/profile-backgrounds";
+import { isAllowedBackgroundImageUrl } from "#/lib/security";
 import { toAbsoluteUrl } from "#/lib/site-url";
 import { getTheme } from "#/lib/themes";
 
 function trimForMeta(value: string, maxLength: number) {
 	if (value.length <= maxLength) return value;
 	return `${value.slice(0, maxLength - 1)}…`;
+}
+
+function toCssBackgroundImageUrl(value: string) {
+	const safeValue = value.replace(/["\\\n\r\f]/g, "");
+	return `url("${safeValue}")`;
+}
+
+function resolveProfileBackgroundStyle(
+	profile: {
+		pageBackgroundType?: string | null;
+		pageBackgroundColor?: string | null;
+		pageBackgroundGradient?: string | null;
+		pageBackgroundImageUrl?: string | null;
+	},
+	fallbackBackground: string,
+) {
+	if (profile.pageBackgroundType === "color") {
+		return {
+			background: getProfileBackgroundColorValue(profile.pageBackgroundColor),
+		};
+	}
+
+	if (
+		profile.pageBackgroundType === "image" &&
+		profile.pageBackgroundImageUrl &&
+		isAllowedBackgroundImageUrl(profile.pageBackgroundImageUrl)
+	) {
+		return {
+			backgroundColor: "#11110F",
+			backgroundImage: `linear-gradient(130deg, rgba(17,17,15,0.45), rgba(17,17,15,0.2)), ${toCssBackgroundImageUrl(profile.pageBackgroundImageUrl)}`,
+			backgroundPosition: "center",
+			backgroundSize: "cover",
+		};
+	}
+
+	if (profile.pageBackgroundType === "gradient") {
+		return {
+			background: getProfileBackgroundGradientValue(
+				profile.pageBackgroundGradient,
+			),
+		};
+	}
+
+	return { background: fallbackBackground };
 }
 
 export const Route = createFileRoute("/u/$username")({
@@ -224,6 +273,10 @@ function ProfilePage() {
 
 	const { profile, links } = data;
 	const theme = getTheme(profile.theme ?? "default");
+	const pageBackgroundStyle = resolveProfileBackgroundStyle(
+		profile,
+		theme.background,
+	);
 
 	const handleLinkClick = (linkId: string) => {
 		recordClick.mutate({
@@ -239,7 +292,7 @@ function ProfilePage() {
 		<div
 			className="min-h-screen"
 			style={{
-				background: theme.background,
+				...pageBackgroundStyle,
 				fontFamily: "'Work Sans', sans-serif",
 			}}
 		>
