@@ -186,6 +186,7 @@ bun --bun run check
 bun --bun run db:generate
 bun --bun run db:migrate
 bun --bun run db:push
+bun --bun run db:seed
 bun --bun run db:pull
 bun --bun run db:studio
 ```

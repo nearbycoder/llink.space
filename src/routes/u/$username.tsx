@@ -4,6 +4,7 @@ import { TRPCClientError } from "@trpc/client";
 import { Home, SearchX, UserPlus } from "lucide-react";
 import { LinkCard } from "#/components/profile/LinkCard";
 import { ProfileHeader } from "#/components/profile/ProfileHeader";
+import { PublicLinkCommandBar } from "#/components/profile/PublicLinkCommandBar";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
 import {
@@ -303,6 +304,7 @@ function ProfilePage() {
 						textColor={theme.text}
 						mutedTextColor={theme.mutedText}
 					/>
+					<PublicLinkCommandBar links={links} onVisitLink={handleLinkClick} />
 
 					{links.length > 0 ? (
 						<div className="space-y-3">
