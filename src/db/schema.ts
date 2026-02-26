@@ -29,11 +29,25 @@ export const profiles = pgTable("profiles", {
 	updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const linkSections = pgTable("link_sections", {
+	id: uuid().primaryKey().defaultRandom(),
+	profileId: uuid("profile_id")
+		.notNull()
+		.references(() => profiles.id, { onDelete: "cascade" }),
+	title: text().notNull(),
+	sortOrder: integer("sort_order").default(0),
+	createdAt: timestamp("created_at").defaultNow(),
+	updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const links = pgTable("links", {
 	id: uuid().primaryKey().defaultRandom(),
 	profileId: uuid("profile_id")
 		.notNull()
 		.references(() => profiles.id, { onDelete: "cascade" }),
+	sectionId: uuid("section_id").references(() => linkSections.id, {
+		onDelete: "set null",
+	}),
 	title: text().notNull(),
 	url: text().notNull(),
 	description: text(),

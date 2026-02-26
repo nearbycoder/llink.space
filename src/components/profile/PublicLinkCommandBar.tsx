@@ -16,6 +16,7 @@ interface PublicLinkItem {
 	title: string;
 	url: string;
 	description?: string | null;
+	sectionTitle?: string | null;
 }
 
 interface PublicLinkCommandBarProps {
@@ -96,7 +97,7 @@ export function PublicLinkCommandBar({
 
 		return links.filter((link) => {
 			const haystack =
-				`${link.title} ${link.description ?? ""} ${link.url}`.toLowerCase();
+				`${link.title} ${link.description ?? ""} ${link.url} ${link.sectionTitle ?? ""}`.toLowerCase();
 			return haystack.includes(normalized);
 		});
 	}, [links, query]);
@@ -218,9 +219,22 @@ export function PublicLinkCommandBar({
 												: "border-black/80 bg-[#FFFCEF] text-[#11110F] hover:bg-[#F8F8F4]"
 										}`}
 									>
-										<p className="truncate text-sm font-semibold">
-											{link.title}
-										</p>
+										<div className="flex items-start justify-between gap-2">
+											<p className="min-w-0 truncate text-sm font-semibold">
+												{link.title}
+											</p>
+											{link.sectionTitle?.trim() ? (
+												<span
+													className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${
+														index === selectedIndex
+															? "border-[#F5FF7B]/70 text-[#F5FF7B]"
+															: "border-black/35 bg-[#F5FF7B]/55 text-[#4F4A00]"
+													}`}
+												>
+													{link.sectionTitle}
+												</span>
+											) : null}
+										</div>
 										<p
 											className={`truncate text-xs ${
 												index === selectedIndex

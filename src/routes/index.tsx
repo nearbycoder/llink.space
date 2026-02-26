@@ -9,6 +9,7 @@ import {
 	UserCircle2,
 } from "lucide-react";
 import { SiteBrand } from "#/components/SiteBrand";
+import { authClient } from "#/lib/auth-client";
 import { toAbsoluteUrl } from "#/lib/site-url";
 
 export const Route = createFileRoute("/")({
@@ -115,6 +116,9 @@ const setupSteps = [
 ];
 
 function LandingPage() {
+	const { data: session, isPending } = authClient.useSession();
+	const isSignedIn = Boolean(session?.user);
+
 	return (
 		<div
 			className="min-h-screen text-[#11110F] overflow-hidden"
@@ -135,12 +139,16 @@ function LandingPage() {
 						className="rounded-full border-2 border-black bg-[#FFFCEF]/90 px-3 py-1 shadow-[2px_2px_0_0_#11110F]"
 						textClassName="text-sm"
 					/>
-					<Link
-						to="/sign-in"
-						className="rounded-xl border-2 border-black bg-[#FFFCEF] px-4 py-2 text-sm font-semibold hover:bg-black hover:text-white transition-colors"
-					>
-						Sign in
-					</Link>
+					{isPending ? (
+						<div className="h-[42px] w-28 rounded-xl border-2 border-black bg-[#FFFCEF]/70 animate-pulse" />
+					) : (
+						<Link
+							to={isSignedIn ? "/dashboard" : "/sign-in"}
+							className="rounded-xl border-2 border-black bg-[#FFFCEF] px-4 py-2 text-sm font-semibold hover:bg-black hover:text-white transition-colors"
+						>
+							{isSignedIn ? "Open dashboard" : "Sign in"}
+						</Link>
+					)}
 				</header>
 
 				<section className="rounded-[2rem] border-2 border-black bg-[#FFFCEF] p-6 sm:p-10 md:p-12 shadow-[8px_8px_0px_0px_#111]">

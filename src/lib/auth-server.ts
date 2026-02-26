@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/start-server-core";
 import { asc, eq } from "drizzle-orm";
 import { db } from "#/db";
-import { links, profiles } from "#/db/schema";
+import { linkSections, links, profiles } from "#/db/schema";
 import { normalizeObjectUrlForClient } from "#/lib/object-storage";
 import { auth } from "./auth";
 
@@ -55,14 +55,25 @@ export const getDashboardLinks = createServerFn().handler(async () => {
 		return access;
 	}
 
-	const profileLinks = await db.query.links.findMany({
-		where: eq(links.profileId, access.profile.id),
-		orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-	});
+	const [profileLinks, profileSections] = await Promise.all([
+		db.query.links.findMany({
+			where: eq(links.profileId, access.profile.id),
+			orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
+		}),
+		db.query.linkSections.findMany({
+			where: eq(linkSections.profileId, access.profile.id),
+			orderBy: [
+				asc(linkSections.sortOrder),
+				asc(linkSections.createdAt),
+				asc(linkSections.id),
+			],
+		}),
+	]);
 
 	return {
 		status: "ok",
 		profile: access.profile,
 		links: profileLinks,
+		sections: profileSections,
 	} as const;
 });

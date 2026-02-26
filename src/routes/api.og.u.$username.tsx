@@ -1,11 +1,11 @@
-import { ImageResponse } from "@vercel/og";
 import { createFileRoute } from "@tanstack/react-router";
-import { and, asc, eq } from "drizzle-orm";
+import { ImageResponse } from "@vercel/og";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { Link2, type LucideIcon } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { db } from "#/db";
-import { links, profiles } from "#/db/schema";
 import { LINK_ICON_OPTIONS_BY_KEY } from "#/components/links/icon-options";
+import { db } from "#/db";
+import { linkSections, links, profiles } from "#/db/schema";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { normalizeObjectUrlForClient } from "#/lib/object-storage";
 import { resolveSiteOrigin, toAbsoluteUrl } from "#/lib/site-url";
@@ -276,8 +276,14 @@ async function handler({
 				iconBgColor: links.iconBgColor,
 			})
 			.from(links)
+			.leftJoin(linkSections, eq(links.sectionId, linkSections.id))
 			.where(and(eq(links.profileId, profile.id), eq(links.isActive, true)))
-			.orderBy(asc(links.sortOrder), asc(links.createdAt), asc(links.id))
+			.orderBy(
+				sql`coalesce(${linkSections.sortOrder}, -1)`,
+				asc(links.sortOrder),
+				asc(links.createdAt),
+				asc(links.id),
+			)
 			.limit(MAX_LINKS);
 
 		const displayName = profile.displayName?.trim() || `@${profile.username}`;

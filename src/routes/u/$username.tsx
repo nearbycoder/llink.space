@@ -272,12 +272,21 @@ function ProfilePage() {
 		);
 	}
 
-	const { profile, links } = data;
+	const { profile, links, sections, unsectionedLinks } = data;
 	const theme = getTheme(profile.theme ?? "default");
 	const pageBackgroundStyle = resolveProfileBackgroundStyle(
 		profile,
 		theme.background,
 	);
+	const sectionTitleByLinkId = new Map(
+		sections.flatMap((section) =>
+			section.links.map((link) => [link.id, section.title] as const),
+		),
+	);
+	const commandLinks = links.map((link) => ({
+		...link,
+		sectionTitle: sectionTitleByLinkId.get(link.id) ?? null,
+	}));
 
 	const handleLinkClick = (linkId: string) => {
 		recordClick.mutate({
@@ -297,32 +306,71 @@ function ProfilePage() {
 				fontFamily: "'Work Sans', sans-serif",
 			}}
 		>
-			<div className="max-w-sm mx-auto px-4 py-10 sm:py-16">
+			<div className="mx-auto max-w-md px-4 py-10 sm:py-16">
 				<div className="kinetic-shell p-6 sm:p-7">
 					<ProfileHeader
 						profile={profile}
 						textColor={theme.text}
 						mutedTextColor={theme.mutedText}
 					/>
-					<PublicLinkCommandBar links={links} onVisitLink={handleLinkClick} />
+					<PublicLinkCommandBar
+						links={commandLinks}
+						onVisitLink={handleLinkClick}
+					/>
 
 					{links.length > 0 ? (
-						<div className="space-y-3">
-							{links.map((link) => (
-								<LinkCard
-									key={link.id}
-									id={link.id}
-									title={link.title}
-									url={link.url}
-									description={link.description}
-									iconUrl={link.iconUrl}
-									iconBgColor={link.iconBgColor}
-									cardBg={theme.cardBg}
-									cardBorder={theme.cardBorder}
-									textColor={theme.text}
-									mutedTextColor={theme.mutedText}
-									onClickRecord={handleLinkClick}
-								/>
+						<div className="space-y-6">
+							{unsectionedLinks.length > 0 && (
+								<div className="space-y-3">
+									{unsectionedLinks.map((link) => (
+										<LinkCard
+											key={link.id}
+											id={link.id}
+											title={link.title}
+											url={link.url}
+											description={link.description}
+											iconUrl={link.iconUrl}
+											iconBgColor={link.iconBgColor}
+											cardBg={theme.cardBg}
+											cardBorder={theme.cardBorder}
+											textColor={theme.text}
+											mutedTextColor={theme.mutedText}
+											onClickRecord={handleLinkClick}
+										/>
+									))}
+								</div>
+							)}
+
+							{sections.map((section) => (
+								<div key={section.id} className="space-y-3">
+									<div className="relative py-1">
+										<div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t-2 border-black/20" />
+										<p
+											className="relative mx-auto w-fit rounded-full border-2 border-black/60 bg-[#FFFCEF]/95 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-[1px_1px_0_0_#11110F]"
+											style={{ color: theme.mutedText }}
+										>
+											{section.title}
+										</p>
+									</div>
+									<div className="space-y-3">
+										{section.links.map((link) => (
+											<LinkCard
+												key={link.id}
+												id={link.id}
+												title={link.title}
+												url={link.url}
+												description={link.description}
+												iconUrl={link.iconUrl}
+												iconBgColor={link.iconBgColor}
+												cardBg={theme.cardBg}
+												cardBorder={theme.cardBorder}
+												textColor={theme.text}
+												mutedTextColor={theme.mutedText}
+												onClickRecord={handleLinkClick}
+											/>
+										))}
+									</div>
+								</div>
 							))}
 						</div>
 					) : (

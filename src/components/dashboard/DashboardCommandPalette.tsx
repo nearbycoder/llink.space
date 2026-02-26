@@ -1,22 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Command as CommandIcon,
 	ExternalLink,
 	Globe,
 	Link2,
-	LoaderCircle,
 	LogOut,
 	PlusCircle,
 } from "lucide-react";
-import {
-	type FormEvent,
-	type ReactNode,
-	useEffect,
-	useId,
-	useMemo,
-	useState,
-} from "react";
-import { Button } from "#/components/ui/button";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { LinkForm, type LinkFormData } from "#/components/dashboard/LinkForm";
 import {
 	CommandDialog,
 	CommandEmpty,
@@ -27,9 +19,7 @@ import {
 	CommandSeparator,
 	CommandShortcut,
 } from "#/components/ui/command";
-import { Input } from "#/components/ui/input";
 import { useTRPC } from "#/integrations/trpc/react";
-import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security";
 import { cn } from "#/lib/utils";
 
 interface IconProps {
@@ -84,12 +74,12 @@ export function DashboardCommandPalette({
 
 	const [mode, setMode] = useState<PaletteMode>("navigate");
 	const [actionError, setActionError] = useState<string | null>(null);
-	const [quickTitle, setQuickTitle] = useState("");
-	const [quickUrl, setQuickUrl] = useState("");
 	const [createError, setCreateError] = useState<string | null>(null);
 	const [isMac, setIsMac] = useState(false);
-	const quickTitleId = useId();
-	const quickUrlId = useId();
+	const { data: layoutData } = useQuery({
+		...linksQueryOptions,
+		enabled: open,
+	});
 
 	useEffect(() => {
 		setIsMac(isMacPlatform());
@@ -100,8 +90,6 @@ export function DashboardCommandPalette({
 		setMode("navigate");
 		setActionError(null);
 		setCreateError(null);
-		setQuickTitle("");
-		setQuickUrl("");
 	}, [open]);
 
 	const pageActions = useMemo<CommandAction[]>(
@@ -131,6 +119,7 @@ export function DashboardCommandPalette({
 				run: () => {
 					setMode("create");
 					setActionError(null);
+					setCreateError(null);
 				},
 			},
 			{
@@ -177,39 +166,16 @@ export function DashboardCommandPalette({
 		}
 	};
 
-	const handleQuickCreate = async (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
+	const handleQuickCreate = async (data: LinkFormData) => {
 		setCreateError(null);
 
-		const title = quickTitle.trim();
-		const rawUrl = quickUrl.trim();
-
-		if (!title) {
-			setCreateError("Title is required.");
-			return;
-		}
-		if (!rawUrl) {
-			setCreateError("URL is required.");
-			return;
-		}
-		if (!isSafeHttpUrl(rawUrl)) {
-			setCreateError("URL must start with http:// or https://.");
-			return;
-		}
-
 		try {
-			await addLink.mutateAsync({
-				title,
-				url: normalizeHttpUrl(rawUrl) ?? rawUrl,
-				isActive: true,
-			});
+			await addLink.mutateAsync(data);
 
 			await queryClient.invalidateQueries({
 				queryKey: linksQueryOptions.queryKey,
 			});
 
-			setQuickTitle("");
-			setQuickUrl("");
 			onOpenChange(false);
 		} catch (error) {
 			setCreateError(
@@ -217,8 +183,6 @@ export function DashboardCommandPalette({
 			);
 		}
 	};
-
-	const shortcutLabel = isMac ? "\u2318K" : "Ctrl K";
 
 	return (
 		<CommandDialog open={open} onOpenChange={onOpenChange}>
@@ -235,8 +199,19 @@ export function DashboardCommandPalette({
 							Jump between pages and add links quickly.
 						</p>
 					</div>
-					<kbd className="rounded-lg border-2 border-black bg-[#FFFCEF] px-2 py-1 text-[11px] font-semibold text-[#11110F] shadow-[2px_2px_0_0_#11110F]">
-						{shortcutLabel}
+					<kbd className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/35 bg-white px-2 text-xs font-semibold text-[#11110F]">
+						{isMac ? (
+							<>
+								<CommandIcon className="h-3.5 w-3.5" />
+								<span className="leading-none text-xs font-semibold text-[#11110F]">
+									K
+								</span>
+							</>
+						) : (
+							<span className="leading-none text-xs font-semibold text-[#11110F]">
+								Ctrl K
+							</span>
+						)}
 					</kbd>
 				</div>
 
@@ -290,6 +265,7 @@ export function DashboardCommandPalette({
 								{pageActions.map((action) => (
 									<CommandItem
 										key={action.id}
+										className="group/item"
 										value={`${action.label} ${action.description} ${action.keywords ?? ""}`}
 										onSelect={() => {
 											void executeAction(action);
@@ -300,7 +276,7 @@ export function DashboardCommandPalette({
 											<p className="truncate text-sm font-semibold">
 												{action.label}
 											</p>
-											<p className="truncate text-xs text-[#6A675C] data-[selected=true]:text-[#F5FF7B]/80">
+											<p className="truncate text-xs text-[#6A675C] group-data-[selected=true]/item:text-[#DDFBFD]">
 												{action.description}
 											</p>
 										</div>
@@ -315,6 +291,7 @@ export function DashboardCommandPalette({
 								{utilityActions.map((action) => (
 									<CommandItem
 										key={action.id}
+										className="group/item"
 										value={`${action.label} ${action.description} ${action.keywords ?? ""}`}
 										disabled={action.disabled}
 										onSelect={() => {
@@ -326,7 +303,7 @@ export function DashboardCommandPalette({
 											<p className="truncate text-sm font-semibold">
 												{action.label}
 											</p>
-											<p className="truncate text-xs text-[#6A675C] data-[selected=true]:text-[#F5FF7B]/80">
+											<p className="truncate text-xs text-[#6A675C] group-data-[selected=true]/item:text-[#DDFBFD]">
 												{action.description}
 											</p>
 										</div>
@@ -343,65 +320,25 @@ export function DashboardCommandPalette({
 						)}
 					</>
 				) : (
-					<form onSubmit={handleQuickCreate} className="space-y-3">
-						<div className="space-y-1.5">
-							<label
-								htmlFor={quickTitleId}
-								className="text-xs font-semibold uppercase tracking-wide text-[#4B4B45]"
-							>
-								Title
-							</label>
-							<Input
-								id={quickTitleId}
-								autoFocus={open && mode === "create"}
-								value={quickTitle}
-								onChange={(event) => setQuickTitle(event.target.value)}
-								placeholder="e.g. My portfolio"
-							/>
-						</div>
-
-						<div className="space-y-1.5">
-							<label
-								htmlFor={quickUrlId}
-								className="text-xs font-semibold uppercase tracking-wide text-[#4B4B45]"
-							>
-								URL
-							</label>
-							<Input
-								id={quickUrlId}
-								type="url"
-								value={quickUrl}
-								onChange={(event) => setQuickUrl(event.target.value)}
-								placeholder="https://example.com"
-							/>
-						</div>
-
+					<div className="space-y-3">
 						{createError && (
 							<p className="rounded-lg border border-[#D94841]/40 bg-[#FFF1EE] px-3 py-2 text-xs text-[#B42318]">
 								{createError}
 							</p>
 						)}
-
-						<div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => setMode("navigate")}
-							>
-								Back to actions
-							</Button>
-							<Button type="submit" disabled={addLink.isPending}>
-								{addLink.isPending ? (
-									<>
-										<LoaderCircle className="h-4 w-4 animate-spin" />
-										Creating...
-									</>
-								) : (
-									"Create link"
-								)}
-							</Button>
+						<div className="max-h-[65svh] overflow-y-auto pr-1">
+							<LinkForm
+								sections={layoutData?.sections ?? []}
+								onSubmit={handleQuickCreate}
+								onCancel={() => {
+									setMode("navigate");
+									setCreateError(null);
+								}}
+								submitLabel="Create link"
+								cancelLabel="Back to actions"
+							/>
 						</div>
-					</form>
+					</div>
 				)}
 			</div>
 		</CommandDialog>

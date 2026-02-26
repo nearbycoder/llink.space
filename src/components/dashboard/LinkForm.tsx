@@ -1,16 +1,17 @@
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { LINK_ICON_OPTIONS } from "#/components/links/icon-options";
 import { Button } from "#/components/ui/button";
-import { cn } from "#/lib/utils";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { Textarea } from "#/components/ui/textarea";
 import { Switch } from "#/components/ui/switch";
-import { LINK_ICON_OPTIONS } from "#/components/links/icon-options";
-import { LINK_ICON_KEYS, isLinkIconKey } from "#/lib/link-icon-keys";
+import { Textarea } from "#/components/ui/textarea";
+import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security";
-import { useId } from "react";
+import { cn } from "#/lib/utils";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 const DEFAULT_ICON_BG_COLOR = "#F5FF7B";
@@ -55,11 +56,18 @@ const schema = z
 			.transform((value) =>
 				(value.startsWith("#") ? value : `#${value}`).toUpperCase(),
 			),
+		sectionId: z.union([z.string().uuid(), z.literal("")]).optional(),
 		isActive: z.boolean(),
 	})
 	.transform((value) => ({
 		...value,
 		iconUrl: value.iconUrl ? value.iconUrl : undefined,
+		sectionId:
+			value.sectionId === undefined
+				? undefined
+				: value.sectionId === ""
+					? null
+					: value.sectionId,
 	}));
 
 type LinkFormInput = z.input<typeof schema>;
@@ -67,16 +75,20 @@ export type LinkFormData = z.output<typeof schema>;
 
 interface LinkFormProps {
 	defaultValues?: Partial<LinkFormInput>;
+	sections?: Array<{ id: string; title: string }>;
 	onSubmit: (data: LinkFormData) => Promise<void>;
 	onCancel: () => void;
 	submitLabel?: string;
+	cancelLabel?: string;
 }
 
 export function LinkForm({
 	defaultValues,
+	sections = [],
 	onSubmit,
 	onCancel,
 	submitLabel = "Save",
+	cancelLabel = "Cancel",
 }: LinkFormProps) {
 	const normalizedDefaultIcon =
 		typeof defaultValues?.iconUrl === "string" &&
@@ -101,6 +113,7 @@ export function LinkForm({
 			title: "",
 			url: "",
 			description: "",
+			sectionId: "",
 			isActive: true,
 			...defaultValues,
 			iconUrl: normalizedDefaultIcon,
@@ -111,12 +124,38 @@ export function LinkForm({
 	const isActive = watch("isActive");
 	const selectedIcon = watch("iconUrl");
 	const selectedIconBgColor = watch("iconBgColor");
+	const selectedSectionId = watch("sectionId");
 	const selectedIconTileBg = selectedIconBgColor ?? DEFAULT_ICON_BG_COLOR;
 	const selectedIconTileText = getReadableTextColor(selectedIconTileBg);
 	const titleId = useId();
 	const urlId = useId();
+	const sectionId = useId();
 	const descriptionId = useId();
 	const isActiveId = useId();
+	const sectionDropdownRef = useRef<HTMLDivElement | null>(null);
+	const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
+
+	const selectedSectionTitle = useMemo(() => {
+		if (!selectedSectionId) return "Unsectioned";
+		return (
+			sections.find((section) => section.id === selectedSectionId)?.title ??
+			"Unsectioned"
+		);
+	}, [sections, selectedSectionId]);
+
+	useEffect(() => {
+		if (!isSectionDropdownOpen) return;
+
+		const onPointerDown = (event: PointerEvent) => {
+			const target = event.target as Node | null;
+			if (!target) return;
+			if (sectionDropdownRef.current?.contains(target)) return;
+			setIsSectionDropdownOpen(false);
+		};
+
+		document.addEventListener("pointerdown", onPointerDown);
+		return () => document.removeEventListener("pointerdown", onPointerDown);
+	}, [isSectionDropdownOpen]);
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -144,6 +183,93 @@ export function LinkForm({
 					<p className="text-xs text-[#B42318]">{errors.url.message}</p>
 				)}
 			</div>
+
+			{sections.length > 0 && (
+				<div className="space-y-1.5">
+					<Label htmlFor={sectionId}>Section</Label>
+					<input type="hidden" {...register("sectionId")} />
+					<div ref={sectionDropdownRef} className="relative">
+						<button
+							id={sectionId}
+							type="button"
+							onClick={() => setIsSectionDropdownOpen((isOpen) => !isOpen)}
+							onKeyDown={(event) => {
+								if (event.key === "Escape") {
+									event.preventDefault();
+									setIsSectionDropdownOpen(false);
+								}
+							}}
+							aria-expanded={isSectionDropdownOpen}
+							aria-haspopup="listbox"
+							className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border-2 border-black bg-[#FFFDF5] px-3 py-2 text-sm text-[#11110F] shadow-[2px_2px_0_0_#11110F] outline-none transition-[color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-black/25"
+						>
+							<span className="truncate">{selectedSectionTitle}</span>
+							<ChevronDown
+								className={cn(
+									"h-4 w-4 shrink-0 text-[#5B5648] transition-transform",
+									isSectionDropdownOpen && "rotate-180",
+								)}
+							/>
+						</button>
+
+						{isSectionDropdownOpen && (
+							<div className="absolute z-50 mt-1 w-full rounded-xl border-2 border-black bg-[#FFFCEF] p-1 shadow-[3px_3px_0_0_#11110F]">
+								<button
+									type="button"
+									role="option"
+									aria-selected={!selectedSectionId}
+									onClick={() => {
+										setValue("sectionId", "", {
+											shouldDirty: true,
+											shouldTouch: true,
+											shouldValidate: true,
+										});
+										setIsSectionDropdownOpen(false);
+									}}
+									className={cn(
+										"flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors",
+										!selectedSectionId
+											? "bg-[#11110F] text-[#F5FF7B]"
+											: "text-[#11110F] hover:bg-[#F8F8F4]",
+									)}
+								>
+									Unsectioned
+								</button>
+								{sections.map((section) => {
+									const isSelected = selectedSectionId === section.id;
+									return (
+										<button
+											key={section.id}
+											type="button"
+											role="option"
+											aria-selected={isSelected}
+											onClick={() => {
+												setValue("sectionId", section.id, {
+													shouldDirty: true,
+													shouldTouch: true,
+													shouldValidate: true,
+												});
+												setIsSectionDropdownOpen(false);
+											}}
+											className={cn(
+												"flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors",
+												isSelected
+													? "bg-[#11110F] text-[#F5FF7B]"
+													: "text-[#11110F] hover:bg-[#F8F8F4]",
+											)}
+										>
+											<span className="truncate">{section.title}</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+					</div>
+					{errors.sectionId && (
+						<p className="text-xs text-[#B42318]">{errors.sectionId.message}</p>
+					)}
+				</div>
+			)}
 
 			<div className="space-y-2">
 				<Label>Icon</Label>
@@ -302,7 +428,7 @@ export function LinkForm({
 					onClick={onCancel}
 					className="w-full sm:w-auto"
 				>
-					Cancel
+					{cancelLabel}
 				</Button>
 			</div>
 		</form>

@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import { Pool } from "pg";
 import { account, user } from "../src/db/auth-schema.ts";
-import { clickEvents, links, profiles } from "../src/db/schema.ts";
+import { clickEvents, links, linkSections, profiles } from "../src/db/schema.ts";
 
 config({ path: ".env.local" });
 config();
@@ -32,6 +32,7 @@ const seedProfiles = [
 		bio: "Design drops, tutorials, and weekly resources for creators.",
 		linkCount: 120,
 		theme: "default",
+		sectionTitles: ["Featured", "Design Tools", "Tutorials", "Community"],
 	},
 	{
 		username: "maya.codes",
@@ -39,6 +40,7 @@ const seedProfiles = [
 		bio: "Frontend engineer sharing UI experiments, talks, and templates.",
 		linkCount: 95,
 		theme: "sunset",
+		sectionTitles: ["Now Shipping", "Code Labs", "Talks", "Downloads"],
 	},
 	{
 		username: "noahfitness",
@@ -46,6 +48,7 @@ const seedProfiles = [
 		bio: "Training plans, nutrition notes, and coaching links.",
 		linkCount: 85,
 		theme: "mint",
+		sectionTitles: ["Coaching", "Workouts", "Nutrition", "Recovery"],
 	},
 	{
 		username: "luna.market",
@@ -53,6 +56,7 @@ const seedProfiles = [
 		bio: "Product launches, community links, and campaign pages.",
 		linkCount: 75,
 		theme: "ocean",
+		sectionTitles: ["Launches", "Collections", "Community", "Support"],
 	},
 ];
 
@@ -80,16 +84,28 @@ const linkDescriptionPrefixes = [
 	"Featured content",
 ];
 
-function buildLinkRows(profileId: string, username: string, count: number) {
+function buildLinkRows(
+	profileId: string,
+	username: string,
+	count: number,
+	sectionIds: string[],
+) {
+	const unsectionedCount = Math.max(2, Math.floor(count * 0.07));
+
 	return Array.from({ length: count }, (_, index) => {
 		const titlePrefix = linkTitlePrefixes[index % linkTitlePrefixes.length];
 		const descriptionPrefix =
 			linkDescriptionPrefixes[index % linkDescriptionPrefixes.length];
 		const color = ICON_BG_COLORS[index % ICON_BG_COLORS.length];
 		const itemNumber = index + 1;
+		const sectionId =
+			index < unsectionedCount
+				? null
+				: sectionIds[(index - unsectionedCount) % sectionIds.length] ?? null;
 
 		return {
 			profileId,
+			sectionId,
 			title: `${titlePrefix} #${itemNumber}`,
 			url: `https://example.com/${encodeURIComponent(username)}/link-${itemNumber}`,
 			description: `${descriptionPrefix} - ${username}`,
@@ -139,6 +155,7 @@ async function main() {
 		await db.execute(sql`
 			TRUNCATE TABLE
 				"click_events",
+				"link_sections",
 				"links",
 				"profiles",
 				"session",
@@ -194,6 +211,21 @@ async function main() {
 				throw new Error(`Failed to insert profile for ${profileSeed.username}`);
 			}
 
+			const insertedSections = await db
+				.insert(linkSections)
+				.values(
+					profileSeed.sectionTitles.map((title, sortOrder) => ({
+						profileId: insertedProfile.id,
+						title,
+						sortOrder,
+						createdAt: now,
+						updatedAt: now,
+					})),
+				)
+				.returning({ id: linkSections.id });
+
+			const sectionIds = insertedSections.map((section) => section.id);
+
 			const insertedLinks = await db
 				.insert(links)
 				.values(
@@ -201,6 +233,7 @@ async function main() {
 						insertedProfile.id,
 						profileSeed.username,
 						profileSeed.linkCount,
+						sectionIds,
 					),
 				)
 				.returning({ id: links.id });
