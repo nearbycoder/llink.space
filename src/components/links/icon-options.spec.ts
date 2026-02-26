@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import {
 	LINK_ICON_OPTIONS,
 	LINK_ICON_OPTIONS_BY_KEY,
 } from "#/components/links/icon-options";
+import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 
 describe("icon-options", () => {
 	it("has one option per icon key", () => {
