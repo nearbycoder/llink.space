@@ -1,6 +1,6 @@
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
-import { Badge } from "#/components/ui/badge";
 import { LinkIcon } from "#/components/links/LinkIcon";
+import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 
 interface Link {

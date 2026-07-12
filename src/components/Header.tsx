@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { authClient } from "#/lib/auth-client";
 import { SiteBrand } from "#/components/SiteBrand";
+import { authClient } from "#/lib/auth-client";
 
 export default function Header() {
 	const { data: session, isPending } = authClient.useSession();

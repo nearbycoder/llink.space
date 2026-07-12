@@ -50,7 +50,7 @@ function OnboardingPage() {
 	const displayNameId = useId();
 	const debouncedUsername = useDebounce(usernameInput, 400);
 
-	const { data: checkData } = useQuery(
+	const usernameCheck = useQuery(
 		trpc.profile.checkUsername.queryOptions(
 			{ username: debouncedUsername },
 			{ enabled: debouncedUsername.length >= 2 },
@@ -73,9 +73,12 @@ function OnboardingPage() {
 		navigate({ to: "/dashboard" });
 	};
 
-	const isAvailable = debouncedUsername.length >= 2 && checkData?.available;
-	const isTaken =
-		debouncedUsername.length >= 2 && checkData?.available === false;
+	const isCurrentCheck =
+		usernameInput.length >= 2 && usernameInput === debouncedUsername;
+	const isCheckingUsername =
+		usernameInput.length >= 2 && (!isCurrentCheck || usernameCheck.isFetching);
+	const isAvailable = isCurrentCheck && usernameCheck.data?.available === true;
+	const isTaken = isCurrentCheck && usernameCheck.data?.available === false;
 
 	return (
 		<div className="kinetic-gradient min-h-screen flex items-center justify-center px-4">
@@ -114,8 +117,13 @@ function OnboardingPage() {
 									className="sm:pl-[108px]"
 									placeholder="yourname"
 									{...register("username", {
-										onChange: (e: ChangeEvent<HTMLInputElement>) =>
-											setUsernameInput(e.target.value.toLowerCase()),
+										onChange: (e: ChangeEvent<HTMLInputElement>) => {
+											const normalized = e.target.value
+												.toLowerCase()
+												.replace(/\s+/g, "");
+											e.target.value = normalized;
+											setUsernameInput(normalized);
+										},
 									})}
 								/>
 								{isAvailable && (
@@ -135,6 +143,14 @@ function OnboardingPage() {
 							)}
 							{isAvailable && (
 								<p className="text-xs text-[#0B7A42]">Username available!</p>
+							)}
+							{isCheckingUsername && (
+								<p className="text-xs text-[#6A675C]">Checking availability…</p>
+							)}
+							{usernameCheck.isError && isCurrentCheck && (
+								<p className="text-xs text-[#B42318]">
+									Could not check this username. Try again.
+								</p>
 							)}
 						</div>
 
@@ -156,7 +172,7 @@ function OnboardingPage() {
 						<Button
 							type="submit"
 							className="w-full"
-							disabled={isSubmitting || isTaken}
+							disabled={isSubmitting || !isAvailable}
 						>
 							{isSubmitting ? "Creating profile…" : "Continue →"}
 						</Button>

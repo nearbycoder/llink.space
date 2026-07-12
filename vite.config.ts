@@ -1,15 +1,13 @@
-import { defineConfig } from "vite";
-import { devtools } from "@tanstack/devtools-vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 import fs from "node:fs";
-
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-
-import viteReact from "@vitejs/plugin-react";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
+import { devtools } from "@tanstack/devtools-vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
+import { defineConfig } from "vite";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.resolve(__dirname, "src");
@@ -65,7 +63,11 @@ const config = defineConfig({
 		},
 	},
 	plugins: [
-		devtools(),
+		devtools({
+			eventBusConfig: {
+				port: Number(process.env.TANSTACK_DEVTOOLS_PORT ?? 42071),
+			},
+		}),
 		hashAliasPlugin,
 		nitro({
 			rollupConfig: { external: [/^@sentry\//] },

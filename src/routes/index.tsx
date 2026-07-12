@@ -128,7 +128,7 @@ function LandingPage() {
 					"linear-gradient(128deg, #F5FF7B 0%, #8AE1E7 34%, #F2B7E2 68%, #FF8A4C 100%)",
 			}}
 		>
-			<div className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14">
+			<div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-14">
 				<div
 					aria-hidden="true"
 					className="pointer-events-none absolute -top-10 -right-8 h-44 w-44 rounded-full bg-[#111]/20 blur-3xl"
@@ -151,16 +151,19 @@ function LandingPage() {
 					)}
 				</header>
 
-				<section className="rounded-[2rem] border-2 border-black bg-[#FFFCEF] p-6 sm:p-10 md:p-12 shadow-[8px_8px_0px_0px_#111]">
-					<div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-9 items-center">
+				<section className="rounded-[2rem] border-2 border-black bg-[#FFFCEF] p-6 shadow-[8px_8px_0px_0px_#111] sm:p-10 md:p-12">
+					<div className="grid items-center gap-9 lg:grid-cols-[1.25fr_0.75fr]">
 						<div>
+							<div className="mb-4 inline-flex items-center gap-2 rounded-full border-2 border-black bg-[#F5FF7B] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] shadow-[2px_2px_0_0_#11110F]">
+								<span className="h-2 w-2 rounded-full bg-[#11110F]" />
+								Your corner of the internet
+							</div>
 							<h1
-								className="text-[2rem] leading-[0.95] sm:text-6xl md:text-7xl"
+								className="text-[clamp(2.55rem,4.7vw,3.75rem)] leading-[0.94] tracking-[-0.045em]"
 								style={{ fontFamily: "'Archivo Black', sans-serif" }}
 							>
-								YOUR LINK-IN-BIO
-								<br />
-								HOME BASE.
+								<span className="block">YOUR LINK-IN-BIO</span>
+								<span className="block">HOME BASE.</span>
 							</h1>
 							<p className="mt-5 max-w-xl text-base sm:text-lg">
 								llink.space is a creator-focused profile page builder that turns
@@ -188,6 +191,11 @@ function LandingPage() {
 								>
 									Open dashboard
 								</Link>
+							</div>
+							<div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 border-t-2 border-black/15 pt-4 text-xs font-semibold text-[#4D4A40]">
+								<span>No ads on your page</span>
+								<span>Built-in click tracking</span>
+								<span>Live in minutes</span>
 							</div>
 						</div>
 

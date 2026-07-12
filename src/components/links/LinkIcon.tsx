@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { Link2 } from "lucide-react";
+import { useState } from "react";
+import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { cn } from "#/lib/utils";
 import { LINK_ICON_OPTIONS_BY_KEY } from "./icon-options";
-import { isLinkIconKey } from "#/lib/link-icon-keys";
 
 interface LinkIconProps {
 	iconUrl?: string | null;

@@ -8,6 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { useEffect, useState } from "react";
+import { Toaster } from "#/components/ui/sonner";
 import type { TRPCRouter } from "#/integrations/trpc/router";
 import { toAbsoluteUrl } from "#/lib/site-url";
 import PostHogProvider from "../integrations/posthog/provider";
@@ -114,9 +115,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				/>
 			</head>
 			<body>
+				<a href="#main-content" className="skip-link">
+					Skip to content
+				</a>
 				<TanStackQueryProvider>
 					<PostHogProvider>
-						{children}
+						{/* biome-ignore lint/correctness/useUniqueElementIds: the root document renders once */}
+						<div id="main-content">{children}</div>
+						<Toaster position="top-center" richColors closeButton />
 						<ClientOnly>
 							<TanStackDevtools
 								config={{ position: "bottom-right" }}

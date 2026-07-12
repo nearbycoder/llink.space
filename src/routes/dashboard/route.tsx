@@ -16,6 +16,7 @@ import {
 	User,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
 	DashboardCommandPalette,
 	type DashboardCommandShortcut,
@@ -115,8 +116,13 @@ function DashboardLayout() {
 	);
 
 	const openCommandPalette = () => setIsCommandPaletteOpen(true);
-	const handleSignOut = () => {
-		void authClient.signOut();
+	const handleSignOut = async () => {
+		const result = await authClient.signOut();
+		if (result.error) {
+			toast.error(result.error.message ?? "Could not sign out");
+			return;
+		}
+		await navigate({ to: "/sign-in" });
 	};
 
 	return (
@@ -261,7 +267,7 @@ function DashboardLayout() {
 				onOpenChange={setIsCommandPaletteOpen}
 				shortcuts={commandShortcuts}
 				username={profile?.username ?? null}
-				onSignOut={handleSignOut}
+				onSignOut={() => void handleSignOut()}
 			/>
 		</div>
 	);

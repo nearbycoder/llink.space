@@ -1,7 +1,7 @@
-import posthog from "posthog-js";
 import { PostHogProvider as BasePostHogProvider } from "@posthog/react";
-import { useEffect, useRef } from "react";
+import posthog from "posthog-js";
 import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 
 function normalizePosthogHost(rawHost?: string) {
 	const fallback = "https://us.i.posthog.com";

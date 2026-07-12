@@ -1,7 +1,7 @@
 import { createTRPCRouter } from "./init";
-import { profileRouter } from "./routers/profile";
-import { linksRouter } from "./routers/links";
 import { analyticsRouter } from "./routers/analytics";
+import { linksRouter } from "./routers/links";
+import { profileRouter } from "./routers/profile";
 
 export const trpcRouter = createTRPCRouter({
 	profile: profileRouter,

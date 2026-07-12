@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "#/components/ui/button";
@@ -45,6 +45,7 @@ type FormData = z.infer<typeof schema>;
 function SignUpPage() {
 	const navigate = useNavigate();
 	const [error, setError] = useState<string | null>(null);
+	const [isHydrated, setIsHydrated] = useState(false);
 	const nameId = useId();
 	const emailId = useId();
 	const passwordId = useId();
@@ -54,18 +55,26 @@ function SignUpPage() {
 		formState: { errors, isSubmitting },
 	} = useForm<FormData>({ resolver: zodResolver(schema) });
 
+	useEffect(() => {
+		setIsHydrated(true);
+	}, []);
+
 	const onSubmit = async (data: FormData) => {
 		setError(null);
-		const result = await authClient.signUp.email({
-			name: data.name,
-			email: data.email,
-			password: data.password,
-		});
-		if (result.error) {
-			setError(result.error.message ?? "Sign up failed");
-			return;
+		try {
+			const result = await authClient.signUp.email({
+				name: data.name,
+				email: data.email,
+				password: data.password,
+			});
+			if (result.error) {
+				setError(result.error.message ?? "Sign up failed");
+				return;
+			}
+			await navigate({ to: "/onboarding" });
+		} catch {
+			setError("We could not reach the server. Please try again.");
 		}
-		navigate({ to: "/onboarding" });
 	};
 
 	return (
@@ -77,9 +86,16 @@ function SignUpPage() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+				<form
+					onSubmit={handleSubmit(onSubmit)}
+					className="space-y-4"
+					aria-busy={!isHydrated || isSubmitting}
+				>
 					{error && (
-						<p className="text-sm text-[#7E1612] bg-[#FFD9CF] border-2 border-black rounded-xl px-3 py-2">
+						<p
+							role="alert"
+							className="text-sm text-[#7E1612] bg-[#FFD9CF] border-2 border-black rounded-xl px-3 py-2"
+						>
 							{error}
 						</p>
 					)}
@@ -89,6 +105,8 @@ function SignUpPage() {
 							id={nameId}
 							type="text"
 							placeholder="Your name"
+							autoComplete="name"
+							aria-invalid={Boolean(errors.name)}
 							{...register("name")}
 						/>
 						{errors.name && (
@@ -101,6 +119,8 @@ function SignUpPage() {
 							id={emailId}
 							type="email"
 							placeholder="you@example.com"
+							autoComplete="email"
+							aria-invalid={Boolean(errors.email)}
 							{...register("email")}
 						/>
 						{errors.email && (
@@ -113,6 +133,8 @@ function SignUpPage() {
 							id={passwordId}
 							type="password"
 							placeholder="Min. 8 characters"
+							autoComplete="new-password"
+							aria-invalid={Boolean(errors.password)}
 							{...register("password")}
 						/>
 						{errors.password && (
@@ -121,8 +143,16 @@ function SignUpPage() {
 							</p>
 						)}
 					</div>
-					<Button type="submit" className="w-full" disabled={isSubmitting}>
-						{isSubmitting ? "Creating account…" : "Create account"}
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={!isHydrated || isSubmitting}
+					>
+						{!isHydrated
+							? "Loading…"
+							: isSubmitting
+								? "Creating account…"
+								: "Create account"}
 					</Button>
 				</form>
 				<p className="text-sm text-center text-[#4B4B45] mt-4">

@@ -58,6 +58,8 @@ describe("site-url", () => {
 	});
 
 	it("returns origin when path input is empty", () => {
-		expect(toAbsoluteUrl("", "https://llink.space")).toBe("https://llink.space");
+		expect(toAbsoluteUrl("", "https://llink.space")).toBe(
+			"https://llink.space",
+		);
 	});
 });

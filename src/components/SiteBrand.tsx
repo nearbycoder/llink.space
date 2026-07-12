@@ -1,5 +1,5 @@
-import type { CSSProperties } from "react";
 import { Link2 } from "lucide-react";
+import type { CSSProperties } from "react";
 import { cn } from "#/lib/utils";
 
 type SiteBrandSize = "sm" | "md" | "lg";
