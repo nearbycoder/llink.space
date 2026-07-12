@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "#/components/ui/button";
@@ -44,6 +44,7 @@ type FormData = z.infer<typeof schema>;
 function SignInPage() {
 	const navigate = useNavigate();
 	const [error, setError] = useState<string | null>(null);
+	const [isHydrated, setIsHydrated] = useState(false);
 	const emailId = useId();
 	const passwordId = useId();
 	const {
@@ -52,18 +53,25 @@ function SignInPage() {
 		formState: { errors, isSubmitting },
 	} = useForm<FormData>({ resolver: zodResolver(schema) });
 
+	useEffect(() => {
+		setIsHydrated(true);
+	}, []);
+
 	const onSubmit = async (data: FormData) => {
 		setError(null);
-		const result = await authClient.signIn.email({
-			email: data.email,
-			password: data.password,
-		});
-		if (result.error) {
-			setError(result.error.message ?? "Sign in failed");
-			return;
+		try {
+			const result = await authClient.signIn.email({
+				email: data.email,
+				password: data.password,
+			});
+			if (result.error) {
+				setError(result.error.message ?? "Sign in failed");
+				return;
+			}
+			await navigate({ to: "/dashboard" });
+		} catch {
+			setError("We could not reach the server. Please try again.");
 		}
-		// Check if profile exists, go to dashboard or onboarding
-		navigate({ to: "/dashboard" });
 	};
 
 	return (
@@ -75,9 +83,16 @@ function SignInPage() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+				<form
+					onSubmit={handleSubmit(onSubmit)}
+					className="space-y-4"
+					aria-busy={!isHydrated || isSubmitting}
+				>
 					{error && (
-						<p className="text-sm text-[#7E1612] bg-[#FFD9CF] border-2 border-black rounded-xl px-3 py-2">
+						<p
+							role="alert"
+							className="text-sm text-[#7E1612] bg-[#FFD9CF] border-2 border-black rounded-xl px-3 py-2"
+						>
 							{error}
 						</p>
 					)}
@@ -87,6 +102,8 @@ function SignInPage() {
 							id={emailId}
 							type="email"
 							placeholder="you@example.com"
+							autoComplete="email"
+							aria-invalid={Boolean(errors.email)}
 							{...register("email")}
 						/>
 						{errors.email && (
@@ -99,6 +116,8 @@ function SignInPage() {
 							id={passwordId}
 							type="password"
 							placeholder="••••••••"
+							autoComplete="current-password"
+							aria-invalid={Boolean(errors.password)}
 							{...register("password")}
 						/>
 						{errors.password && (
@@ -107,8 +126,16 @@ function SignInPage() {
 							</p>
 						)}
 					</div>
-					<Button type="submit" className="w-full" disabled={isSubmitting}>
-						{isSubmitting ? "Signing in…" : "Sign in"}
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={!isHydrated || isSubmitting}
+					>
+						{!isHydrated
+							? "Loading…"
+							: isSubmitting
+								? "Signing in…"
+								: "Sign in"}
 					</Button>
 				</form>
 				<p className="text-sm text-center text-[#4B4B45] mt-4">

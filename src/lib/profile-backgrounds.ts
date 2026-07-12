@@ -48,11 +48,16 @@ export const PROFILE_BACKGROUND_GRADIENT_OPTIONS = [
 	},
 ] as const;
 
-const colorValueById = new Map(
+export type ProfileBackgroundColorId =
+	(typeof PROFILE_BACKGROUND_COLOR_OPTIONS)[number]["id"];
+export type ProfileBackgroundGradientId =
+	(typeof PROFILE_BACKGROUND_GRADIENT_OPTIONS)[number]["id"];
+
+const colorValueById = new Map<string, string>(
 	PROFILE_BACKGROUND_COLOR_OPTIONS.map((option) => [option.id, option.value]),
 );
 
-const gradientValueById = new Map(
+const gradientValueById = new Map<string, string>(
 	PROFILE_BACKGROUND_GRADIENT_OPTIONS.map((option) => [
 		option.id,
 		option.value,
@@ -67,11 +72,15 @@ export function isProfileBackgroundType(
 	return backgroundTypeSet.has(value);
 }
 
-export function isProfileBackgroundColorId(value: string): boolean {
+export function isProfileBackgroundColorId(
+	value: string,
+): value is ProfileBackgroundColorId {
 	return colorValueById.has(value);
 }
 
-export function isProfileBackgroundGradientId(value: string): boolean {
+export function isProfileBackgroundGradientId(
+	value: string,
+): value is ProfileBackgroundGradientId {
 	return gradientValueById.has(value);
 }
 

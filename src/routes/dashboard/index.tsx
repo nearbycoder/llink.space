@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { FolderPlus, Plus } from "lucide-react";
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { LinkFormData } from "#/components/dashboard/LinkForm";
 import { LinkForm } from "#/components/dashboard/LinkForm";
 import {
@@ -58,6 +59,10 @@ interface SectionDeleteState {
 interface LinkDeleteState {
 	id: string;
 	title: string;
+}
+
+function errorMessage(error: unknown, fallback: string) {
+	return error instanceof Error && error.message ? error.message : fallback;
 }
 
 function DashboardPage() {
@@ -126,20 +131,30 @@ function DashboardPage() {
 	};
 
 	const handleAddLink = async (data: LinkFormData) => {
-		await addLink.mutateAsync(data);
-		await refreshLayout();
-		setShowAddLink(false);
+		try {
+			await addLink.mutateAsync(data);
+			await refreshLayout();
+			setShowAddLink(false);
+			toast.success("Link added");
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not add the link"));
+		}
 	};
 
 	const handleUpdateLink = async (data: LinkFormData) => {
 		if (!editingLink) return;
-		await updateLink.mutateAsync({
-			id: editingLink.id,
-			...data,
-			iconUrl: data.iconUrl ?? null,
-		});
-		await refreshLayout();
-		setEditingLink(null);
+		try {
+			await updateLink.mutateAsync({
+				id: editingLink.id,
+				...data,
+				iconUrl: data.iconUrl ?? null,
+			});
+			await refreshLayout();
+			setEditingLink(null);
+			toast.success("Link updated");
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not update the link"));
+		}
 	};
 
 	const handleRequestDeleteLink = (id: string) => {
@@ -153,14 +168,24 @@ function DashboardPage() {
 
 	const handleConfirmDeleteLink = async () => {
 		if (!linkDeleteState) return;
-		await deleteLink.mutateAsync({ id: linkDeleteState.id });
-		await refreshLayout();
-		setLinkDeleteState(null);
+		try {
+			await deleteLink.mutateAsync({ id: linkDeleteState.id });
+			await refreshLayout();
+			setLinkDeleteState(null);
+			toast.success("Link deleted");
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not delete the link"));
+		}
 	};
 
 	const handleLayoutChange = async (payload: LayoutReorderPayload) => {
-		await reorderLinks.mutateAsync(payload);
-		await refreshLayout();
+		try {
+			await reorderLinks.mutateAsync(payload);
+			await refreshLayout();
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not save the new order"));
+			throw error;
+		}
 	};
 
 	const openCreateSectionDialog = (state: SectionCreateState) => {
@@ -173,13 +198,18 @@ function DashboardPage() {
 		const title = sectionTitleDraft.trim();
 		if (!title) return;
 
-		await createSection.mutateAsync({
-			title,
-			sourceSectionId: sectionCreateState.sourceSectionId,
-			splitIndex: sectionCreateState.splitIndex,
-		});
-		await refreshLayout();
-		setSectionCreateState(null);
+		try {
+			await createSection.mutateAsync({
+				title,
+				sourceSectionId: sectionCreateState.sourceSectionId,
+				splitIndex: sectionCreateState.splitIndex,
+			});
+			await refreshLayout();
+			setSectionCreateState(null);
+			toast.success("Section created");
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not create the section"));
+		}
 	};
 
 	const handleSectionCreateSubmit = async (
@@ -208,9 +238,14 @@ function DashboardPage() {
 		if (!editingSection) return;
 		const title = editingSectionTitle.trim();
 		if (!title) return;
-		await updateSection.mutateAsync({ id: editingSection.id, title });
-		await refreshLayout();
-		setEditingSection(null);
+		try {
+			await updateSection.mutateAsync({ id: editingSection.id, title });
+			await refreshLayout();
+			setEditingSection(null);
+			toast.success("Section renamed");
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not rename the section"));
+		}
 	};
 
 	const handleSectionRenameSubmit = async (
@@ -231,9 +266,14 @@ function DashboardPage() {
 
 	const handleConfirmDeleteSection = async () => {
 		if (!sectionDeleteState) return;
-		await deleteSection.mutateAsync({ id: sectionDeleteState.id });
-		await refreshLayout();
-		setSectionDeleteState(null);
+		try {
+			await deleteSection.mutateAsync({ id: sectionDeleteState.id });
+			await refreshLayout();
+			setSectionDeleteState(null);
+			toast.success("Section deleted; its links are now unsectioned");
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not delete the section"));
+		}
 	};
 
 	const isBusy =

@@ -1,18 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useTRPC } from "#/integrations/trpc/react";
 import { useQuery } from "@tanstack/react-query";
-import {
-	Area,
-	AreaChart,
-	Bar,
-	BarChart,
-	CartesianGrid,
-	Cell,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts";
+import { createFileRoute } from "@tanstack/react-router";
 import {
 	eachDayOfInterval,
 	format,
@@ -27,6 +14,19 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useId } from "react";
+import {
+	Area,
+	AreaChart,
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Cell,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
+import { useTRPC } from "#/integrations/trpc/react";
 
 export const Route = createFileRoute("/dashboard/analytics")({
 	component: AnalyticsPage,

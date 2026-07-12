@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { TRPCClientError } from "@trpc/client";
-import { Home, SearchX, UserPlus } from "lucide-react";
+import { ChevronDown, Home, SearchX, UserPlus } from "lucide-react";
 import { LinkCard } from "#/components/profile/LinkCard";
 import { ProfileHeader } from "#/components/profile/ProfileHeader";
 import { PublicLinkCommandBar } from "#/components/profile/PublicLinkCommandBar";
@@ -62,6 +62,72 @@ function resolveProfileBackgroundStyle(
 	}
 
 	return { background: fallbackBackground };
+}
+
+interface PublicProfileLink {
+	id: string;
+	title: string;
+	url: string;
+	description: string | null;
+	iconUrl: string | null;
+	iconBgColor: string | null;
+}
+
+interface PublicLinkGroupProps {
+	links: PublicProfileLink[];
+	cardBg: string;
+	cardBorder: string;
+	textColor: string;
+	mutedTextColor: string;
+	onVisit: (linkId: string) => void;
+}
+
+const PUBLIC_LINK_PREVIEW_LIMIT = 5;
+
+function PublicLinkGroup({
+	links,
+	cardBg,
+	cardBorder,
+	textColor,
+	mutedTextColor,
+	onVisit,
+}: PublicLinkGroupProps) {
+	const visibleLinks = links.slice(0, PUBLIC_LINK_PREVIEW_LIMIT);
+	const remainingLinks = links.slice(PUBLIC_LINK_PREVIEW_LIMIT);
+	const renderLink = (link: PublicProfileLink) => (
+		<LinkCard
+			key={link.id}
+			id={link.id}
+			title={link.title}
+			url={link.url}
+			description={link.description}
+			iconUrl={link.iconUrl}
+			iconBgColor={link.iconBgColor}
+			cardBg={cardBg}
+			cardBorder={cardBorder}
+			textColor={textColor}
+			mutedTextColor={mutedTextColor}
+			onClickRecord={onVisit}
+		/>
+	);
+
+	return (
+		<div className="space-y-3">
+			{visibleLinks.map(renderLink)}
+			{remainingLinks.length > 0 && (
+				<details className="group space-y-3">
+					<summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-black/40 bg-[#FFFCEF]/80 px-4 py-2.5 text-xs font-semibold text-[#11110F] transition-colors hover:border-black hover:bg-[#FFF7A8] [&::-webkit-details-marker]:hidden">
+						<span className="group-open:hidden">
+							Show {remainingLinks.length} more
+						</span>
+						<span className="hidden group-open:inline">Show fewer</span>
+						<ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+					</summary>
+					<div className="space-y-3 pt-3">{remainingLinks.map(renderLink)}</div>
+				</details>
+			)}
+		</div>
+	);
 }
 
 export const Route = createFileRoute("/u/$username")({
@@ -321,24 +387,14 @@ function ProfilePage() {
 					{links.length > 0 ? (
 						<div className="space-y-6">
 							{unsectionedLinks.length > 0 && (
-								<div className="space-y-3">
-									{unsectionedLinks.map((link) => (
-										<LinkCard
-											key={link.id}
-											id={link.id}
-											title={link.title}
-											url={link.url}
-											description={link.description}
-											iconUrl={link.iconUrl}
-											iconBgColor={link.iconBgColor}
-											cardBg={theme.cardBg}
-											cardBorder={theme.cardBorder}
-											textColor={theme.text}
-											mutedTextColor={theme.mutedText}
-											onClickRecord={handleLinkClick}
-										/>
-									))}
-								</div>
+								<PublicLinkGroup
+									links={unsectionedLinks}
+									cardBg={theme.cardBg}
+									cardBorder={theme.cardBorder}
+									textColor={theme.text}
+									mutedTextColor={theme.mutedText}
+									onVisit={handleLinkClick}
+								/>
 							)}
 
 							{sections.map((section) => (
@@ -352,24 +408,14 @@ function ProfilePage() {
 											{section.title}
 										</p>
 									</div>
-									<div className="space-y-3">
-										{section.links.map((link) => (
-											<LinkCard
-												key={link.id}
-												id={link.id}
-												title={link.title}
-												url={link.url}
-												description={link.description}
-												iconUrl={link.iconUrl}
-												iconBgColor={link.iconBgColor}
-												cardBg={theme.cardBg}
-												cardBorder={theme.cardBorder}
-												textColor={theme.text}
-												mutedTextColor={theme.mutedText}
-												onClickRecord={handleLinkClick}
-											/>
-										))}
-									</div>
+									<PublicLinkGroup
+										links={section.links}
+										cardBg={theme.cardBg}
+										cardBorder={theme.cardBorder}
+										textColor={theme.text}
+										mutedTextColor={theme.mutedText}
+										onVisit={handleLinkClick}
+									/>
 								</div>
 							))}
 						</div>

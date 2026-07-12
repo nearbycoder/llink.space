@@ -19,8 +19,8 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { LinkIcon } from "#/components/links/LinkIcon";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -194,12 +194,23 @@ function getLayoutSignature(
 ) {
 	const sortedSections = sortSections(sections);
 	const sectionPart = sortedSections
-		.map((section) => `${section.id}:${section.sortOrder ?? 0}`)
+		.map((section) =>
+			JSON.stringify([section.id, section.sortOrder ?? 0, section.title]),
+		)
 		.join("|");
 	const linkPart = sortLinksByLayout(links, sortedSections)
-		.map(
-			(link) =>
-				`${link.id}:${link.sectionId ?? "unsectioned"}:${link.sortOrder ?? 0}`,
+		.map((link) =>
+			JSON.stringify([
+				link.id,
+				link.sectionId ?? "unsectioned",
+				link.sortOrder ?? 0,
+				link.title,
+				link.url,
+				link.description,
+				link.iconUrl,
+				link.iconBgColor,
+				link.isActive,
+			]),
 		)
 		.join("|");
 	return `${sectionPart}__${linkPart}`;
@@ -254,6 +265,7 @@ function LinkRow({
 					enableDrag &&
 						"cursor-grab hover:text-[#11110F] active:cursor-grabbing",
 				)}
+				aria-label={`Drag ${link.title}`}
 				disabled={!enableDrag}
 				{...attributes}
 				{...listeners}
@@ -287,12 +299,14 @@ function LinkRow({
 				</div>
 			</div>
 
-			<div className="pointer-events-none flex gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+			<div className="flex gap-1 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100">
 				<Button
 					variant="ghost"
 					size="sm"
 					className="h-8 w-8 p-0"
 					onClick={() => onEdit(link)}
+					aria-label={`Edit ${link.title}`}
+					title={`Edit ${link.title}`}
 				>
 					<Pencil className="h-3.5 w-3.5" />
 				</Button>
@@ -301,6 +315,8 @@ function LinkRow({
 					size="sm"
 					className="h-8 w-8 p-0 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
 					onClick={() => onDelete(link.id)}
+					aria-label={`Delete ${link.title}`}
+					title={`Delete ${link.title}`}
 				>
 					<Trash2 className="h-3.5 w-3.5" />
 				</Button>
@@ -320,6 +336,7 @@ function InsertionRail({ onClick }: InsertionRailProps) {
 			<button
 				type="button"
 				onClick={onClick}
+				aria-label="Create a section at this position"
 				className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-black bg-[#FFF7A8] px-2 py-0.5 text-[10px] font-semibold text-[#11110F] opacity-0 shadow-[2px_2px_0_0_#11110F] transition-all hover:-translate-y-[55%] group-hover/rail:opacity-100 focus-visible:opacity-100"
 			>
 				<Plus className="h-3 w-3" />
@@ -340,6 +357,7 @@ interface SectionColumnProps {
 	onRenameSection?: () => void;
 	onDeleteSection?: () => void;
 	enableDrag: boolean;
+	defaultCollapsed?: boolean;
 }
 
 function SectionColumn({
@@ -353,8 +371,11 @@ function SectionColumn({
 	onRenameSection,
 	onDeleteSection,
 	enableDrag,
+	defaultCollapsed = false,
 }: SectionColumnProps) {
 	const { isOver, setNodeRef } = useDroppable({ id: containerId });
+	const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+	const contentId = useId();
 
 	return (
 		<section
@@ -364,64 +385,103 @@ function SectionColumn({
 				isOver && enableDrag && "bg-[#FFF7A8]",
 			)}
 		>
-			<div className="mb-3 flex items-start justify-between gap-3">
+			<div
+				className={cn(
+					"flex items-start justify-between gap-3",
+					!isCollapsed && "mb-3",
+				)}
+			>
 				<div>
 					<h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[#11110F]">
 						{title}
 					</h3>
 					<p className="text-xs text-[#5B5648]">{description}</p>
 				</div>
-				{onRenameSection && onDeleteSection && (
-					<div className="flex gap-1">
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							className="h-7 w-7 p-0"
-							onClick={onRenameSection}
-						>
-							<Pencil className="h-3.5 w-3.5" />
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							className="h-7 w-7 p-0 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
-							onClick={onDeleteSection}
-						>
-							<Trash2 className="h-3.5 w-3.5" />
-						</Button>
-					</div>
-				)}
+				<div className="flex gap-1">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="h-7 gap-1 px-2 text-xs"
+						onClick={() => setIsCollapsed((value) => !value)}
+						aria-expanded={!isCollapsed}
+						aria-controls={contentId}
+						aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${title} section`}
+					>
+						<ChevronDown
+							className={cn(
+								"h-3.5 w-3.5 transition-transform",
+								isCollapsed && "-rotate-90",
+							)}
+						/>
+						<span className="hidden sm:inline">
+							{isCollapsed ? "Show" : "Hide"}
+						</span>
+					</Button>
+					{onRenameSection && onDeleteSection && (
+						<>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="h-7 w-7 p-0"
+								onClick={onRenameSection}
+								aria-label={`Rename ${title} section`}
+								title={`Rename ${title} section`}
+							>
+								<Pencil className="h-3.5 w-3.5" />
+							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="h-7 w-7 p-0 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
+								onClick={onDeleteSection}
+								aria-label={`Delete ${title} section`}
+								title={`Delete ${title} section`}
+							>
+								<Trash2 className="h-3.5 w-3.5" />
+							</Button>
+						</>
+					)}
+				</div>
 			</div>
 
-			<SortableContext
-				items={links.map((link) => toLinkDragId(link.id))}
-				strategy={verticalListSortingStrategy}
-			>
-				{links.length > 0 ? (
-					<div className="space-y-1">
-						{links.map((link, index) => (
-							<Fragment key={link.id}>
-								<LinkRow
-									link={link}
-									containerId={containerId}
-									onEdit={onEditLink}
-									onDelete={onDeleteLink}
-									enableDrag={enableDrag}
-								/>
-								{index < links.length - 1 ? (
-									<InsertionRail onClick={() => onCreateSectionAt(index + 1)} />
-								) : null}
-							</Fragment>
-						))}
-					</div>
-				) : (
-					<div className="rounded-xl border-2 border-dashed border-black/30 bg-white/80 px-3 py-4 text-center text-xs text-[#5B5648]">
-						{enableDrag ? "Drop links here" : "No links in this section yet"}
-					</div>
+			<div id={contentId} hidden={isCollapsed}>
+				{!isCollapsed && (
+					<SortableContext
+						items={links.map((link) => toLinkDragId(link.id))}
+						strategy={verticalListSortingStrategy}
+					>
+						{links.length > 0 ? (
+							<div className="space-y-1">
+								{links.map((link, index) => (
+									<Fragment key={link.id}>
+										<LinkRow
+											link={link}
+											containerId={containerId}
+											onEdit={onEditLink}
+											onDelete={onDeleteLink}
+											enableDrag={enableDrag}
+										/>
+										{index < links.length - 1 ? (
+											<InsertionRail
+												onClick={() => onCreateSectionAt(index + 1)}
+											/>
+										) : null}
+									</Fragment>
+								))}
+							</div>
+						) : (
+							<div className="rounded-xl border-2 border-dashed border-black/30 bg-white/80 px-3 py-4 text-center text-xs text-[#5B5648]">
+								{enableDrag
+									? "Drop links here"
+									: "No links in this section yet"}
+							</div>
+						)}
+					</SortableContext>
 				)}
-			</SortableContext>
+			</div>
 		</section>
 	);
 }
@@ -447,6 +507,7 @@ export function SectionedLinkBoard({
 	>(() => buildContainerMap(links, orderedSections));
 	const lastHydratedSignatureRef = useRef(incomingLayoutSignature);
 	const [activeLinkId, setActiveLinkId] = useState<string | null>(null);
+	const collapseLargeSections = links.length > 40;
 
 	useEffect(() => {
 		if (incomingLayoutSignature === lastHydratedSignatureRef.current) {
@@ -568,6 +629,7 @@ export function SectionedLinkBoard({
 					onCreateSectionAt({ sourceSectionId: null, splitIndex })
 				}
 				enableDrag={enableDrag}
+				defaultCollapsed={false}
 			/>
 
 			{orderedSections.map((section) => {
@@ -591,6 +653,7 @@ export function SectionedLinkBoard({
 						onRenameSection={() => onRenameSection(section)}
 						onDeleteSection={() => onDeleteSection(section.id)}
 						enableDrag={enableDrag}
+						defaultCollapsed={collapseLargeSections && sectionLinks.length > 12}
 					/>
 				);
 			})}

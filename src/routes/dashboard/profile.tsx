@@ -1,8 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
+import { type ChangeEvent, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
@@ -20,6 +21,7 @@ import {
 	getProfileBackgroundGradientValue,
 	isProfileBackgroundColorId,
 	isProfileBackgroundGradientId,
+	isProfileBackgroundType,
 	PROFILE_BACKGROUND_COLOR_OPTIONS,
 	PROFILE_BACKGROUND_GRADIENT_OPTIONS,
 	PROFILE_BACKGROUND_TYPES,
@@ -35,6 +37,14 @@ const BACKGROUND_TYPE_LABELS: Record<ProfileBackgroundType, string> = {
 	gradient: "Gradient",
 	image: "Custom image",
 };
+
+function normalizeBackgroundType(
+	value: string | null | undefined,
+): ProfileBackgroundType {
+	return value && isProfileBackgroundType(value)
+		? value
+		: DEFAULT_PROFILE_BACKGROUND_TYPE;
+}
 
 function toCssBackgroundImageUrl(value: string) {
 	const safeValue = value.replace(/["\\\n\r\f]/g, "");
@@ -196,8 +206,9 @@ function ProfilePage() {
 			displayName: initialProfile.displayName ?? "",
 			bio: initialProfile.bio ?? "",
 			avatarUrl: initialProfile.avatarUrl ?? "",
-			pageBackgroundType:
-				initialProfile.pageBackgroundType ?? DEFAULT_PROFILE_BACKGROUND_TYPE,
+			pageBackgroundType: normalizeBackgroundType(
+				initialProfile.pageBackgroundType,
+			),
 			pageBackgroundColor:
 				initialProfile.pageBackgroundColor ??
 				DEFAULT_PROFILE_BACKGROUND_COLOR_ID,
@@ -225,24 +236,6 @@ function ProfilePage() {
 			confirmNewPassword: "",
 		},
 	});
-
-	useEffect(() => {
-		if (profile) {
-			reset({
-				displayName: profile.displayName ?? "",
-				bio: profile.bio ?? "",
-				avatarUrl: profile.avatarUrl ?? "",
-				pageBackgroundType:
-					profile.pageBackgroundType ?? DEFAULT_PROFILE_BACKGROUND_TYPE,
-				pageBackgroundColor:
-					profile.pageBackgroundColor ?? DEFAULT_PROFILE_BACKGROUND_COLOR_ID,
-				pageBackgroundGradient:
-					profile.pageBackgroundGradient ??
-					DEFAULT_PROFILE_BACKGROUND_GRADIENT_ID,
-				pageBackgroundImageUrl: profile.pageBackgroundImageUrl ?? "",
-			});
-		}
-	}, [profile, reset]);
 
 	const avatarUrl = watch("avatarUrl");
 	const pageBackgroundType = watch("pageBackgroundType");
@@ -291,6 +284,7 @@ function ProfilePage() {
 				shouldTouch: true,
 				shouldValidate: true,
 			});
+			toast.success("Avatar uploaded. Save changes to publish it.");
 		} catch (error) {
 			setAvatarUploadError(
 				error instanceof Error ? error.message : "Upload failed",
@@ -339,6 +333,7 @@ function ProfilePage() {
 				shouldTouch: true,
 				shouldValidate: true,
 			});
+			toast.success("Background uploaded. Save changes to publish it.");
 		} catch (error) {
 			setBackgroundUploadError(
 				error instanceof Error ? error.message : "Upload failed",
@@ -350,21 +345,43 @@ function ProfilePage() {
 
 	const onSubmit = async (data: FormData) => {
 		setBackgroundUploadError(null);
-		await updateProfile.mutateAsync({
-			displayName: data.displayName,
-			bio: data.bio,
-			avatarUrl: data.avatarUrl ?? null,
-			pageBackgroundType: data.pageBackgroundType,
-			pageBackgroundColor: data.pageBackgroundColor,
-			pageBackgroundGradient: data.pageBackgroundGradient,
-			pageBackgroundImageUrl:
-				data.pageBackgroundType === "image"
-					? (data.pageBackgroundImageUrl ?? null)
-					: null,
-		});
-		await queryClient.invalidateQueries({
-			queryKey: ["trpc", "profile", "getCurrent"],
-		});
+		try {
+			const updatedProfile = await updateProfile.mutateAsync({
+				displayName: data.displayName,
+				bio: data.bio,
+				avatarUrl: data.avatarUrl ?? null,
+				pageBackgroundType: data.pageBackgroundType,
+				pageBackgroundColor: data.pageBackgroundColor,
+				pageBackgroundGradient: data.pageBackgroundGradient,
+				pageBackgroundImageUrl:
+					data.pageBackgroundType === "image"
+						? (data.pageBackgroundImageUrl ?? null)
+						: null,
+			});
+			reset({
+				displayName: updatedProfile.displayName ?? "",
+				bio: updatedProfile.bio ?? "",
+				avatarUrl: updatedProfile.avatarUrl ?? "",
+				pageBackgroundType: normalizeBackgroundType(
+					updatedProfile.pageBackgroundType,
+				),
+				pageBackgroundColor:
+					updatedProfile.pageBackgroundColor ??
+					DEFAULT_PROFILE_BACKGROUND_COLOR_ID,
+				pageBackgroundGradient:
+					updatedProfile.pageBackgroundGradient ??
+					DEFAULT_PROFILE_BACKGROUND_GRADIENT_ID,
+				pageBackgroundImageUrl: updatedProfile.pageBackgroundImageUrl ?? "",
+			});
+			await queryClient.invalidateQueries({
+				queryKey: ["trpc", "profile", "getCurrent"],
+			});
+			toast.success("Profile published");
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Could not save your profile",
+			);
+		}
 	};
 
 	const onPasswordSubmit = async (data: PasswordFormData) => {
@@ -431,12 +448,6 @@ function ProfilePage() {
 
 			<div className="kinetic-panel p-6">
 				<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-					{updateProfile.isSuccess && (
-						<p className="rounded-xl border-2 border-black bg-[#DBF9E6] px-3 py-2 text-sm text-[#0B7A42]">
-							Profile updated!
-						</p>
-					)}
-
 					<div className="space-y-1.5">
 						<Label htmlFor={displayNameId}>Display name</Label>
 						<Input
@@ -517,9 +528,12 @@ function ProfilePage() {
 
 					<div className="space-y-3 rounded-xl border-2 border-black/80 bg-[#FFFCED] p-4">
 						<div>
-							<p className="text-sm font-semibold text-[#11110F]">
+							<Label
+								htmlFor={backgroundUploadId}
+								className="text-sm font-semibold text-[#11110F]"
+							>
 								Page background
-							</p>
+							</Label>
 							<p className="mt-1 text-xs text-[#6A675C]">
 								Choose a solid color, gradient, or upload your own image.
 							</p>
@@ -572,7 +586,8 @@ function ProfilePage() {
 													: "border-black/35"
 											}`}
 											style={{ background: option.value }}
-											title={option.label}
+											aria-label={`Use ${option.label} background`}
+											title={`Use ${option.label} background`}
 										/>
 									);
 								})}
