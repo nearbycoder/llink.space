@@ -120,7 +120,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				</a>
 				<TanStackQueryProvider>
 					<PostHogProvider>
-						{/* biome-ignore lint/correctness/useUniqueElementIds: the root document renders once */}
 						<div id="main-content">{children}</div>
 						<Toaster position="top-center" richColors closeButton />
 						<ClientOnly>

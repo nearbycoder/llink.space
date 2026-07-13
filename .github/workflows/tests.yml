@@ -24,6 +24,25 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: llink_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d llink_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_URL: http://127.0.0.1:3000
+      BETTER_AUTH_SECRET: playwright-only-secret-at-least-thirty-two-characters
+      BETTER_AUTH_URL: http://127.0.0.1:3000
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/llink_test
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -32,6 +51,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Apply database schema
+        run: bun --bun run db:push
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Run e2e tests

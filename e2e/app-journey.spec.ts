@@ -11,10 +11,14 @@ test("complete creator journey works end to end", async ({ page }) => {
 	const imagePath = path.resolve("public/android-chrome-192x192.png");
 
 	await page.goto("/sign-up");
+	const createAccountButton = page.getByRole("button", {
+		name: "Create account",
+	});
+	await expect(createAccountButton).toBeEnabled();
 	await page.getByLabel("Name").fill("Journey Creator");
 	await page.getByLabel("Email").fill(email);
 	await page.getByLabel("Password").fill(initialPassword);
-	await page.getByRole("button", { name: "Create account" }).click();
+	await createAccountButton.click();
 
 	await expect(page).toHaveURL(/\/onboarding/);
 	await page.getByLabel("Username").fill(username.toUpperCase());
