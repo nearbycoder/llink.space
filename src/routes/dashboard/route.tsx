@@ -21,6 +21,7 @@ import {
 	DashboardCommandPalette,
 	type DashboardCommandShortcut,
 } from "#/components/dashboard/DashboardCommandPalette";
+import { DashboardPendingShell } from "#/components/dashboard/DashboardLoading";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
 import { authClient } from "#/lib/auth-client";
@@ -51,6 +52,9 @@ export const Route = createFileRoute("/dashboard")({
 		}
 		return { initialProfile: result.profile };
 	},
+	pendingMs: 150,
+	pendingMinMs: 300,
+	pendingComponent: DashboardPendingShell,
 	component: DashboardLayout,
 });
 

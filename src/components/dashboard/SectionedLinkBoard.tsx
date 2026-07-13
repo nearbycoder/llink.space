@@ -19,7 +19,16 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+	ChevronDown,
+	CopyPlus,
+	Eye,
+	EyeOff,
+	GripVertical,
+	Pencil,
+	Plus,
+	Trash2,
+} from "lucide-react";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { LinkIcon } from "#/components/links/LinkIcon";
 import { Badge } from "#/components/ui/badge";
@@ -69,6 +78,9 @@ interface SectionedLinkBoardProps {
 	onLayoutChange: (payload: LayoutReorderPayload) => Promise<void>;
 	onEditLink: (link: DashboardLink) => void;
 	onDeleteLink: (id: string) => void;
+	onToggleLink: (link: DashboardLink) => void;
+	onDuplicateLink: (link: DashboardLink) => void;
+	busyLinkId?: string | null;
 	onCreateSectionAt: (request: SectionCreateRequest) => void;
 	onRenameSection: (section: DashboardSection) => void;
 	onDeleteSection: (sectionId: string) => void;
@@ -221,6 +233,9 @@ interface LinkRowProps {
 	containerId: ContainerId;
 	onEdit: (link: DashboardLink) => void;
 	onDelete: (id: string) => void;
+	onToggle: (link: DashboardLink) => void;
+	onDuplicate: (link: DashboardLink) => void;
+	isBusy: boolean;
 	enableDrag: boolean;
 }
 
@@ -229,6 +244,9 @@ function LinkRow({
 	containerId,
 	onEdit,
 	onDelete,
+	onToggle,
+	onDuplicate,
+	isBusy,
 	enableDrag,
 }: LinkRowProps) {
 	const {
@@ -304,6 +322,32 @@ function LinkRow({
 					variant="ghost"
 					size="sm"
 					className="h-8 w-8 p-0"
+					onClick={() => onToggle(link)}
+					disabled={isBusy}
+					aria-label={`${link.isActive === false ? "Publish" : "Pause"} ${link.title}`}
+					title={`${link.isActive === false ? "Publish" : "Pause"} ${link.title}`}
+				>
+					{link.isActive === false ? (
+						<Eye className="h-3.5 w-3.5" />
+					) : (
+						<EyeOff className="h-3.5 w-3.5" />
+					)}
+				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					className="h-8 w-8 p-0"
+					onClick={() => onDuplicate(link)}
+					disabled={isBusy}
+					aria-label={`Duplicate ${link.title}`}
+					title={`Duplicate ${link.title}`}
+				>
+					<CopyPlus className="h-3.5 w-3.5" />
+				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					className="h-8 w-8 p-0"
 					onClick={() => onEdit(link)}
 					aria-label={`Edit ${link.title}`}
 					title={`Edit ${link.title}`}
@@ -353,6 +397,9 @@ interface SectionColumnProps {
 	links: DashboardLink[];
 	onEditLink: (link: DashboardLink) => void;
 	onDeleteLink: (id: string) => void;
+	onToggleLink: (link: DashboardLink) => void;
+	onDuplicateLink: (link: DashboardLink) => void;
+	busyLinkId?: string | null;
 	onCreateSectionAt: (splitIndex: number) => void;
 	onRenameSection?: () => void;
 	onDeleteSection?: () => void;
@@ -367,6 +414,9 @@ function SectionColumn({
 	links,
 	onEditLink,
 	onDeleteLink,
+	onToggleLink,
+	onDuplicateLink,
+	busyLinkId,
 	onCreateSectionAt,
 	onRenameSection,
 	onDeleteSection,
@@ -462,6 +512,9 @@ function SectionColumn({
 											containerId={containerId}
 											onEdit={onEditLink}
 											onDelete={onDeleteLink}
+											onToggle={onToggleLink}
+											onDuplicate={onDuplicateLink}
+											isBusy={busyLinkId === link.id}
 											enableDrag={enableDrag}
 										/>
 										{index < links.length - 1 ? (
@@ -492,6 +545,9 @@ export function SectionedLinkBoard({
 	onLayoutChange,
 	onEditLink,
 	onDeleteLink,
+	onToggleLink,
+	onDuplicateLink,
+	busyLinkId = null,
 	onCreateSectionAt,
 	onRenameSection,
 	onDeleteSection,
@@ -625,6 +681,9 @@ export function SectionedLinkBoard({
 				links={containerLinks[UNSECTIONED_CONTAINER_ID] ?? []}
 				onEditLink={onEditLink}
 				onDeleteLink={onDeleteLink}
+				onToggleLink={onToggleLink}
+				onDuplicateLink={onDuplicateLink}
+				busyLinkId={busyLinkId}
 				onCreateSectionAt={(splitIndex) =>
 					onCreateSectionAt({ sourceSectionId: null, splitIndex })
 				}
@@ -644,6 +703,9 @@ export function SectionedLinkBoard({
 						links={sectionLinks}
 						onEditLink={onEditLink}
 						onDeleteLink={onDeleteLink}
+						onToggleLink={onToggleLink}
+						onDuplicateLink={onDuplicateLink}
+						busyLinkId={busyLinkId}
 						onCreateSectionAt={(splitIndex) =>
 							onCreateSectionAt({
 								sourceSectionId: section.id,

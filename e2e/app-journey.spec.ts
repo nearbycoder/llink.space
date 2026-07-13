@@ -48,19 +48,70 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await page.getByRole("button", { name: "Add link", exact: true }).click();
 	await expect(page.getByText("Link added")).toBeVisible();
 	await expect(page.getByText("Test portfolio", { exact: true })).toBeVisible();
+	await expect(page.getByTestId("link-stat-total")).toContainText("1");
+	await expect(page.getByTestId("link-stat-live")).toContainText("1");
+
+	await page.getByLabel("Search links").fill("portfolio");
+	await expect(page.getByText("Showing 1 of 1 links")).toBeVisible();
+	await page.getByLabel("Filter links by status").selectOption("live");
+	await page.getByLabel("Filter links by section").selectOption({ label: "Featured" });
+	await expect(page.getByText("Test portfolio", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Clear filters" }).click();
+
+	await page.getByRole("button", { name: "Copy page URL" }).click();
+	await expect(page.getByText("Public page URL copied")).toBeVisible();
 
 	await page.getByText("Test portfolio", { exact: true }).hover();
-	await page.getByRole("button", { name: "Edit Test portfolio" }).click();
+	await page.getByRole("button", { name: "Pause Test portfolio" }).click();
+	await expect(page.getByText("Link paused")).toBeVisible();
+	await expect(page.getByText("Hidden", { exact: true })).toBeVisible();
+	await page.getByLabel("Filter links by status").selectOption("paused");
+	await expect(page.getByText("Showing 1 of 1 links")).toBeVisible();
+	await page.getByRole("button", { name: "Clear filters" }).click();
+
+	await page.getByText("Test portfolio", { exact: true }).hover();
+	await page.getByRole("button", { name: "Duplicate Test portfolio" }).click();
+	await expect(page.getByText("Link duplicated")).toBeVisible();
+	await expect(page.getByText("Test portfolio copy", { exact: true })).toBeVisible();
+	await expect(page.getByTestId("link-stat-total")).toContainText("2");
+	await expect(page.getByTestId("link-stat-paused")).toContainText("2");
+
+	await page.getByText("Test portfolio", { exact: true }).hover();
+	await page
+		.getByRole("button", { name: "Publish Test portfolio", exact: true })
+		.click();
+	await expect(page.getByText("Link published")).toBeVisible();
+	await expect(page.getByTestId("link-stat-live")).toContainText("1");
+	await expect(page.getByTestId("link-stat-paused")).toContainText("1");
+
+	await page.getByText("Test portfolio", { exact: true }).hover();
+	await page
+		.getByRole("button", { name: "Edit Test portfolio", exact: true })
+		.click();
 	await page.getByLabel("Title").fill("Creator portfolio");
 	await page.getByRole("button", { name: "Save", exact: true }).click();
 	await expect(page.getByText("Link updated")).toBeVisible();
 	await expect(page.getByText("Creator portfolio", { exact: true })).toBeVisible();
 
+	await page.reload();
+	await expect(page.getByRole("heading", { name: "Links" })).toBeVisible();
+	await expect(page.getByText("Creator portfolio", { exact: true })).toBeVisible();
+
 	await page.getByRole("link", { name: "Profile" }).click();
+	await expect(page.getByTestId("profile-form")).toHaveAttribute(
+		"aria-busy",
+		"false",
+	);
+	await expect(page.getByText("0/300")).toBeVisible();
+	await page.getByLabel("Display name").fill("Temporary name");
+	await expect(page.getByText("Unsaved changes")).toBeVisible();
+	await page.getByRole("button", { name: "Discard changes" }).click();
+	await expect(page.getByLabel("Display name")).toHaveValue("Journey Creator");
 	await page.getByLabel("Display name").fill("Journey Studio");
 	await page
 		.getByLabel("Bio")
 		.fill("Design systems, useful experiments, and practical resources.");
+	await expect(page.getByText("60/300")).toBeVisible();
 	await page.getByLabel("Avatar").setInputFiles(imagePath);
 	await expect(page.getByText(/Avatar uploaded/)).toBeVisible();
 	await page.getByRole("button", { name: "Custom image" }).click();
@@ -68,6 +119,12 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await expect(page.getByText(/Background uploaded/)).toBeVisible();
 	await page.getByRole("button", { name: "Save changes" }).click();
 	await expect(page.getByText("Profile published")).toBeVisible();
+
+	await page.reload();
+	await expect(page.getByLabel("Display name")).toHaveValue("Journey Studio");
+	await expect(page.getByLabel("Bio")).toHaveValue(
+		"Design systems, useful experiments, and practical resources.",
+	);
 
 	await page.goto(`/u/${username}`);
 	await expect(page.getByRole("heading", { name: "Journey Studio" })).toBeVisible();
@@ -89,11 +146,23 @@ test("complete creator journey works end to end", async ({ page }) => {
 
 	await page.goto("/dashboard/analytics");
 	await expect(page.getByRole("heading", { name: "Analytics" })).toBeVisible();
+	const downloadPromise = page.waitForEvent("download");
+	await page.getByRole("button", { name: "Export CSV" }).click();
+	const download = await downloadPromise;
+	expect(download.suggestedFilename()).toMatch(/^llink-analytics-\d{4}-\d{2}-\d{2}\.csv$/);
+	await expect(page.getByText("Total clicks").locator("../..")).toContainText(
+		"1",
+	);
+	await page.reload();
 	await expect(page.getByText("Total clicks").locator("../..")).toContainText(
 		"1",
 	);
 
 	await page.getByRole("link", { name: "Profile" }).click();
+	await expect(page.getByTestId("profile-form")).toHaveAttribute(
+		"aria-busy",
+		"false",
+	);
 	await page.getByLabel("Current password").fill(initialPassword);
 	await page.getByLabel("New password", { exact: true }).fill(updatedPassword);
 	await page.getByLabel("Confirm new password").fill(updatedPassword);

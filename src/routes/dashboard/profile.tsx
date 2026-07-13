@@ -1,10 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { type ChangeEvent, useId, useRef, useState } from "react";
+import { RotateCcw } from "lucide-react";
+import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ProfileLoadingState } from "#/components/dashboard/DashboardLoading";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
@@ -88,6 +90,9 @@ export const Route = createFileRoute("/dashboard/profile")({
 		}
 		return { profile: result.profile };
 	},
+	pendingMs: 150,
+	pendingMinMs: 300,
+	pendingComponent: ProfileLoadingState,
 	component: ProfilePage,
 });
 
@@ -169,6 +174,7 @@ function ProfilePage() {
 		initialData: initialProfile,
 	});
 	const updateProfile = useMutation(trpc.profile.update.mutationOptions());
+	const [isHydrated, setIsHydrated] = useState(false);
 	const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 	const [avatarUploadError, setAvatarUploadError] = useState<string | null>(
 		null,
@@ -238,6 +244,7 @@ function ProfilePage() {
 	});
 
 	const avatarUrl = watch("avatarUrl");
+	const bioValue = watch("bio") ?? "";
 	const pageBackgroundType = watch("pageBackgroundType");
 	const pageBackgroundColor = watch("pageBackgroundColor");
 	const pageBackgroundGradient = watch("pageBackgroundGradient");
@@ -251,6 +258,28 @@ function ProfilePage() {
 		gradientId: pageBackgroundGradient,
 		imageUrl: previewBackgroundImageUrl,
 	});
+
+	useEffect(() => {
+		setIsHydrated(true);
+	}, []);
+
+	const handleDiscardChanges = () => {
+		reset({
+			displayName: profile.displayName ?? "",
+			bio: profile.bio ?? "",
+			avatarUrl: profile.avatarUrl ?? "",
+			pageBackgroundType: normalizeBackgroundType(profile.pageBackgroundType),
+			pageBackgroundColor:
+				profile.pageBackgroundColor ?? DEFAULT_PROFILE_BACKGROUND_COLOR_ID,
+			pageBackgroundGradient:
+				profile.pageBackgroundGradient ??
+				DEFAULT_PROFILE_BACKGROUND_GRADIENT_ID,
+			pageBackgroundImageUrl: profile.pageBackgroundImageUrl ?? "",
+		});
+		setAvatarUploadError(null);
+		setBackgroundUploadError(null);
+		toast.message("Unsaved profile changes discarded");
+	};
 
 	const handleAvatarUpload = async (event: ChangeEvent<HTMLInputElement>) => {
 		const file = event.currentTarget.files?.[0];
@@ -447,7 +476,13 @@ function ProfilePage() {
 			</div>
 
 			<div className="kinetic-panel p-6">
-				<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+				<form
+					onSubmit={handleSubmit(onSubmit)}
+					className="space-y-5"
+					data-testid="profile-form"
+					aria-busy={!isHydrated}
+					inert={!isHydrated}
+				>
 					<div className="space-y-1.5">
 						<Label htmlFor={displayNameId}>Display name</Label>
 						<Input
@@ -471,6 +506,17 @@ function ProfilePage() {
 							rows={3}
 							{...register("bio")}
 						/>
+						<div className="flex items-center justify-between gap-3">
+							<p className="text-xs text-[#6A675C]">
+								Keep it concise and memorable.
+							</p>
+							<p
+								className={`text-xs font-semibold ${bioValue.length > 270 ? "text-[#B42318]" : "text-[#6A675C]"}`}
+								aria-live="polite"
+							>
+								{bioValue.length}/300
+							</p>
+						</div>
 						{errors.bio && (
 							<p className="text-xs text-[#B42318]">{errors.bio.message}</p>
 						)}
@@ -690,13 +736,31 @@ function ProfilePage() {
 						<input type="hidden" {...register("pageBackgroundImageUrl")} />
 					</div>
 
-					<Button
-						type="submit"
-						disabled={isSubmitting || !isDirty}
-						className="w-full sm:w-auto"
-					>
-						{isSubmitting ? "Saving…" : "Save changes"}
-					</Button>
+					<div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex items-center gap-2">
+							{isDirty && (
+								<span className="rounded-full border border-black/25 bg-[#FFF7A8] px-2.5 py-1 text-xs font-semibold text-[#5B5648]">
+									Unsaved changes
+								</span>
+							)}
+							<Button
+								type="button"
+								variant="ghost"
+								disabled={isSubmitting || !isDirty}
+								onClick={handleDiscardChanges}
+							>
+								<RotateCcw className="mr-1.5 h-4 w-4" />
+								Discard changes
+							</Button>
+						</div>
+						<Button
+							type="submit"
+							disabled={isSubmitting || !isDirty}
+							className="w-full sm:w-auto"
+						>
+							{isSubmitting ? "Saving…" : "Save changes"}
+						</Button>
+					</div>
 				</form>
 			</div>
 
@@ -709,6 +773,8 @@ function ProfilePage() {
 				<form
 					onSubmit={handlePasswordSubmit(onPasswordSubmit)}
 					className="mt-4 space-y-4"
+					aria-busy={!isHydrated}
+					inert={!isHydrated}
 				>
 					{passwordUpdateError && (
 						<p className="rounded-xl border-2 border-black bg-[#FFD9CF] px-3 py-2 text-sm text-[#7E1612]">

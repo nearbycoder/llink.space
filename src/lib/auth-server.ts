@@ -3,6 +3,7 @@ import { getRequest } from "@tanstack/start-server-core";
 import { asc, eq } from "drizzle-orm";
 import { db } from "#/db";
 import { linkSections, links, profiles } from "#/db/schema";
+import { trpcRouter } from "#/integrations/trpc/router";
 import { normalizeObjectUrlForClient } from "#/lib/object-storage";
 import { auth } from "./auth";
 
@@ -75,5 +76,28 @@ export const getDashboardLinks = createServerFn().handler(async () => {
 		profile: access.profile,
 		links: profileLinks,
 		sections: profileSections,
+	} as const;
+});
+
+/**
+ * Include analytics in the authenticated route response so a refresh can
+ * render real metrics immediately instead of starting with empty cards.
+ */
+export const getDashboardAnalytics = createServerFn().handler(async () => {
+	const request = getRequest();
+	const access = await resolveDashboardAccess(request.headers);
+
+	if (access.status !== "ok") {
+		return access;
+	}
+
+	const caller = trpcRouter.createCaller({
+		request,
+		userId: access.profile.userId,
+	});
+
+	return {
+		status: "ok",
+		summary: await caller.analytics.getSummary(),
 	} as const;
 });
