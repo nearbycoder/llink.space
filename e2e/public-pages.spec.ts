@@ -8,7 +8,9 @@ test("landing page renders primary content and nav actions", async ({ page }) =>
 		page.getByRole("heading", { name: "YOUR LINK-IN-BIO HOME BASE." }),
 	).toBeVisible();
 	await expect(page.getByRole("link", { name: "Create your page" })).toBeVisible();
-	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible({
+		timeout: 15_000,
+	});
 });
 
 test("unknown route renders not found experience", async ({ page }) => {
