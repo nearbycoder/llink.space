@@ -1,0 +1,1 @@
+ALTER TABLE "subscribers" ADD COLUMN "sync_attempted_at" timestamp with time zone;

@@ -1,4 +1,11 @@
-export type LinkStatusFilter = "all" | "live" | "paused";
+import { publishingStatus } from "./link-publishing";
+
+export type LinkStatusFilter =
+	| "all"
+	| "live"
+	| "paused"
+	| "scheduled"
+	| "expired";
 
 export interface FilterableDashboardLink {
 	sectionId: string | null;
@@ -6,6 +13,8 @@ export interface FilterableDashboardLink {
 	url: string;
 	description: string | null;
 	isActive: boolean | null;
+	publishAt?: string | null;
+	expireAt?: string | null;
 }
 
 export function filterDashboardLinks<T extends FilterableDashboardLink>(
@@ -26,9 +35,7 @@ export function filterDashboardLinks<T extends FilterableDashboardLink>(
 			);
 		const matchesStatus =
 			filters.status === "all" ||
-			(filters.status === "live"
-				? link.isActive !== false
-				: link.isActive === false);
+			publishingStatus(link).toLowerCase() === filters.status;
 		const matchesSection =
 			filters.sectionId === "all" ||
 			(filters.sectionId === "unsectioned"
@@ -40,12 +47,21 @@ export function filterDashboardLinks<T extends FilterableDashboardLink>(
 }
 
 export function dashboardLinkStats(links: FilterableDashboardLink[]) {
-	const live = links.filter((link) => link.isActive !== false).length;
-	return {
+	const stats = {
 		total: links.length,
-		live,
-		paused: links.length - live,
+		live: 0,
+		paused: 0,
+		scheduled: 0,
+		expired: 0,
 	};
+	for (const link of links) {
+		const status = publishingStatus(link).toLowerCase() as Exclude<
+			LinkStatusFilter,
+			"all"
+		>;
+		stats[status]++;
+	}
+	return stats;
 }
 
 export function csvCell(value: unknown) {
@@ -136,7 +152,7 @@ export function buildLinksCsv(
 			link.sectionId
 				? (sectionTitles.get(link.sectionId) ?? "")
 				: "Unsectioned",
-			link.isActive === false ? "Paused" : "Live",
+			publishingStatus(link),
 			link.iconUrl ?? "",
 		]),
 	];

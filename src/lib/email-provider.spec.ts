@@ -32,6 +32,20 @@ describe("Brevo contract", () => {
 			"https://api.brevo.com/v3/contacts/lists/42/contacts/remove",
 		);
 	});
+	it("treats an absent removed contact as success but still rejects missing signup lists", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi
+				.fn()
+				.mockImplementation(() =>
+					Promise.resolve(new Response(null, { status: 404 })),
+				),
+		);
+		await expect(
+			removeEmailContact("test", 42, "missing@example.test"),
+		).resolves.toBeUndefined();
+		await expect(verifyEmailProvider("test", 42)).rejects.toThrow("404");
+	});
 	it("reports failures without copying response data or secrets", async () => {
 		vi.stubGlobal(
 			"fetch",

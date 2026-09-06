@@ -150,6 +150,7 @@ export const subscribers = pgTable(
 		unsubscribeHash: text("unsubscribe_hash").notNull().unique(),
 		unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
 		syncedAt: timestamp("synced_at", { withTimezone: true }),
+		syncAttemptedAt: timestamp("sync_attempted_at", { withTimezone: true }),
 		providerRemovedAt: timestamp("provider_removed_at", { withTimezone: true }),
 	},
 	(t) => [

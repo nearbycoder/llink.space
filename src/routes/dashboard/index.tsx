@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
+	CalendarX,
 	Check,
+	Clock,
 	Copy,
 	Download,
 	Eye,
@@ -45,6 +47,7 @@ import {
 	type LinkStatusFilter,
 } from "#/lib/dashboard-tools";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
+import { publishingStatus } from "#/lib/link-publishing";
 
 export const Route = createFileRoute("/dashboard/")({
 	headers: () => ({
@@ -93,6 +96,8 @@ const LINK_STAT_CARDS = [
 	{ id: "total", label: "Total links", Icon: Link2, color: "bg-[#F5FF7B]" },
 	{ id: "live", label: "Live", Icon: Eye, color: "bg-[#8AE1E7]" },
 	{ id: "paused", label: "Paused", Icon: EyeOff, color: "bg-[#F2B7E2]" },
+	{ id: "scheduled", label: "Scheduled", Icon: Clock, color: "bg-[#C5B8FF]" },
+	{ id: "expired", label: "Expired", Icon: CalendarX, color: "bg-[#FFCEA1]" },
 ] as const;
 
 function errorMessage(error: unknown, fallback: string) {
@@ -266,7 +271,16 @@ function DashboardPage() {
 			const nextIsActive = link.isActive === false;
 			await updateLink.mutateAsync({ id: link.id, isActive: nextIsActive });
 			await refreshLayout();
-			toast.success(nextIsActive ? "Link published" : "Link paused");
+			const status = publishingStatus({ ...link, isActive: nextIsActive });
+			toast.success(
+				status === "Live"
+					? "Link published"
+					: status === "Scheduled"
+						? "Schedule enabled"
+						: status === "Expired"
+							? "Link enabled; end time has passed"
+							: "Link paused",
+			);
 		} catch (error) {
 			toast.error(errorMessage(error, "Could not update link visibility"));
 		} finally {
@@ -576,7 +590,7 @@ function DashboardPage() {
 				</div>
 			</div>
 
-			<div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+			<div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
 				{LINK_STAT_CARDS.map(({ id, label, Icon, color }) => (
 					<div
 						key={id}
@@ -623,6 +637,8 @@ function DashboardPage() {
 						<option value="all">All statuses</option>
 						<option value="live">Live only</option>
 						<option value="paused">Paused only</option>
+						<option value="scheduled">Scheduled only</option>
+						<option value="expired">Expired only</option>
 					</select>
 					<select
 						aria-label="Filter links by section"

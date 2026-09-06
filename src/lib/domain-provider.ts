@@ -102,7 +102,12 @@ export async function provisionDomain(domain: string) {
 	};
 }
 export async function deleteHostedDomain(id: string) {
-	await graphql("mutation($id:String!){customDomainDelete(id:$id)}", { id });
+	const result = await graphql(
+		"mutation($id:String!){customDomainDelete(id:$id)}",
+		{ id },
+	);
+	if (result.customDomainDelete !== true)
+		throw new Error("Hosting provider did not confirm removal");
 }
 export function hostingReady(hosted: HostedDomain) {
 	return (

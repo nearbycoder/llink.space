@@ -44,8 +44,47 @@ describe("dashboard link tools", () => {
 		).toEqual([links[1]]);
 	});
 
+	it("keeps scheduled and expired links out of live counts, filters and exports", () => {
+		const scheduled = {
+			...links[0],
+			publishAt: new Date(Date.now() + 86400000).toISOString(),
+		};
+		const expired = {
+			...links[0],
+			expireAt: new Date(Date.now() - 86400000).toISOString(),
+		};
+		const rows = [...links, scheduled, expired];
+		expect(dashboardLinkStats(rows)).toEqual({
+			total: 4,
+			live: 1,
+			paused: 1,
+			scheduled: 1,
+			expired: 1,
+		});
+		expect(
+			filterDashboardLinks(rows, {
+				query: "",
+				status: "live",
+				sectionId: "all",
+			}),
+		).toEqual([links[0]]);
+		expect(
+			filterDashboardLinks(rows, {
+				query: "",
+				status: "scheduled",
+				sectionId: "all",
+			}),
+		).toEqual([scheduled]);
+		expect(buildLinksCsv([expired], [])).toContain(",Expired,");
+	});
 	it("summarizes live and paused links", () => {
-		expect(dashboardLinkStats(links)).toEqual({ total: 2, live: 1, paused: 1 });
+		expect(dashboardLinkStats(links)).toEqual({
+			total: 2,
+			live: 1,
+			paused: 1,
+			scheduled: 0,
+			expired: 0,
+		});
 	});
 });
 

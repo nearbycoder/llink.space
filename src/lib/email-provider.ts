@@ -1,4 +1,9 @@
-async function brevo(path: string, key: string, body?: unknown) {
+async function brevo(
+	path: string,
+	key: string,
+	body?: unknown,
+	absentIsSuccess = false,
+) {
 	const response = await fetch(`https://api.brevo.com/v3/${path}`, {
 		method: body ? "POST" : "GET",
 		headers: { "api-key": key, "content-type": "application/json" },
@@ -7,7 +12,7 @@ async function brevo(path: string, key: string, body?: unknown) {
 		redirect: "error",
 	});
 	await response.body?.cancel();
-	if (!response.ok)
+	if (!response.ok && !(absentIsSuccess && response.status === 404))
 		throw new Error(`Email provider returned ${response.status}`);
 }
 export async function verifyEmailProvider(key: string, listId: number) {
@@ -31,7 +36,12 @@ export async function removeEmailContact(
 	listId: number,
 	email: string,
 ) {
-	await brevo(`contacts/lists/${listId}/contacts/remove`, key, {
-		emails: [email],
-	});
+	await brevo(
+		`contacts/lists/${listId}/contacts/remove`,
+		key,
+		{
+			emails: [email],
+		},
+		true,
+	);
 }

@@ -48,6 +48,7 @@ export const audienceRouter = createTRPCRouter({
 						consentAt: subscribers.consentAt,
 						unsubscribedAt: subscribers.unsubscribedAt,
 						syncedAt: subscribers.syncedAt,
+						syncAttemptedAt: subscribers.syncAttemptedAt,
 						providerRemovedAt: subscribers.providerRemovedAt,
 					})
 					.from(subscribers)
@@ -179,6 +180,8 @@ export const audienceRouter = createTRPCRouter({
 							syncedAt: null,
 							providerRemovedAt: null,
 							consentAt: new Date(),
+							consentText: `I agree to receive email updates from ${p.displayName || p.username}. I can unsubscribe at any time.`,
+							name: input.name,
 							unsubscribeHash: tokenHash(token),
 						},
 						setWhere: and(
@@ -196,31 +199,41 @@ export const audienceRouter = createTRPCRouter({
 	unsubscribe: publicProcedure
 		.input(z.object({ token: z.string().regex(/^[\w-]{43}$/) }))
 		.mutation(async ({ input }) => {
-			const [row] = await db
-				.update(subscribers)
-				.set({ unsubscribedAt: new Date() })
-				.where(eq(subscribers.unsubscribeHash, tokenHash(input.token)))
-				.returning();
-			if (row) {
-				const c = await db.query.emailConnections.findFirst({
-					where: eq(emailConnections.profileId, row.profileId),
-				});
-				if (c) {
-					try {
-						await removeEmailContact(
-							decryptCredential(c.encryptedKey, row.profileId),
-							c.listId,
-							row.email,
-						);
-						await db
+			const candidate = await db.query.subscribers.findFirst({
+				where: eq(subscribers.unsubscribeHash, tokenHash(input.token)),
+			});
+			if (candidate)
+				await db.transaction(async (tx) => {
+					// Lock the connection before the subscriber, matching reconnect/remove.
+					const [c] = await tx
+						.select()
+						.from(emailConnections)
+						.where(eq(emailConnections.profileId, candidate.profileId))
+						.for("update");
+					const [row] = await tx
+						.update(subscribers)
+						.set({ unsubscribedAt: new Date() })
+						.where(eq(subscribers.unsubscribeHash, tokenHash(input.token)))
+						.returning();
+					if (!row || row.providerRemovedAt) return;
+					if (c && (row.syncAttemptedAt || row.syncedAt)) {
+						try {
+							await removeEmailContact(
+								decryptCredential(c.encryptedKey, row.profileId),
+								c.listId,
+								row.email,
+							);
+						} catch {
+							// Commit the opt-out even when the provider is unavailable; sync retries it.
+							return;
+						}
+					}
+					if ((!row.syncAttemptedAt && !row.syncedAt) || c)
+						await tx
 							.update(subscribers)
 							.set({ providerRemovedAt: new Date() })
 							.where(eq(subscribers.id, row.id));
-					} catch {
-						/* Pending removals are retried by sync. */
-					}
-				}
-			}
+				});
 			return { success: true };
 		}),
 	remove: protectedProcedure
@@ -228,6 +241,11 @@ export const audienceRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const p = await owner(ctx.userId);
 			await db.transaction(async (tx) => {
+				const [c] = await tx
+					.select()
+					.from(emailConnections)
+					.where(eq(emailConnections.profileId, p.id))
+					.for("update");
 				const [row] = await tx
 					.select()
 					.from(subscribers)
@@ -236,12 +254,12 @@ export const audienceRouter = createTRPCRouter({
 					)
 					.for("update");
 				if (!row) return;
-				const [c] = await tx
-					.select()
-					.from(emailConnections)
-					.where(eq(emailConnections.profileId, p.id))
-					.for("update");
-				if (c && row.syncedAt && !row.providerRemovedAt) {
+
+				if (
+					c &&
+					(row.syncAttemptedAt || row.syncedAt) &&
+					!row.providerRemovedAt
+				) {
 					try {
 						await removeEmailContact(
 							decryptCredential(c.encryptedKey, p.id),
@@ -410,6 +428,10 @@ export const audienceRouter = createTRPCRouter({
 						),
 						and(
 							isNotNull(subscribers.unsubscribedAt),
+							or(
+								isNotNull(subscribers.syncAttemptedAt),
+								isNotNull(subscribers.syncedAt),
+							),
 							isNull(subscribers.providerRemovedAt),
 						),
 					),
@@ -417,40 +439,60 @@ export const audienceRouter = createTRPCRouter({
 				limit: 20,
 				orderBy: desc(subscribers.consentAt),
 			});
-			for (const row of rows) {
-				try {
-					await db.transaction(async (tx) => {
-						const [current] = await tx
-							.select()
-							.from(subscribers)
+			let next = 0;
+			const worker = async () => {
+				while (!failed && next < rows.length) {
+					const row = rows[next++];
+					try {
+						// Persist before contacting the provider: even an ambiguous response or
+						// process exit must leave enough information to retry a later opt-out.
+						await db
+							.update(subscribers)
+							.set({ syncAttemptedAt: new Date() })
 							.where(
 								and(
-									eq(subscribers.profileId, p.id),
 									eq(subscribers.id, row.id),
+									isNull(subscribers.unsubscribedAt),
 								),
-							)
-							.for("update");
-						if (!current) return;
-						if (current.unsubscribedAt) {
-							await removeEmailContact(key, connection.listId, current.email);
-							await tx
-								.update(subscribers)
-								.set({ providerRemovedAt: new Date() })
-								.where(eq(subscribers.id, current.id));
-						} else {
-							await syncEmailContact(key, connection.listId, current.email);
-							await tx
-								.update(subscribers)
-								.set({ syncedAt: new Date() })
-								.where(eq(subscribers.id, current.id));
-						}
-					});
-					synced++;
-				} catch {
-					failed++;
-					break;
+							);
+						const processed = await db.transaction(async (tx) => {
+							const [current] = await tx
+								.select()
+								.from(subscribers)
+								.where(
+									and(
+										eq(subscribers.profileId, p.id),
+										eq(subscribers.id, row.id),
+									),
+								)
+								.for("update");
+							if (!current) return false;
+							if (current.unsubscribedAt) {
+								if (current.providerRemovedAt) return false;
+								await removeEmailContact(key, connection.listId, current.email);
+								await tx
+									.update(subscribers)
+									.set({ providerRemovedAt: new Date() })
+									.where(eq(subscribers.id, current.id));
+							} else {
+								if (current.syncedAt) return false;
+								await syncEmailContact(key, connection.listId, current.email);
+								await tx
+									.update(subscribers)
+									.set({ syncedAt: new Date() })
+									.where(eq(subscribers.id, current.id));
+							}
+							return true;
+						});
+						if (processed) synced++;
+					} catch {
+						failed++;
+					}
 				}
-			}
+			};
+			await Promise.all(
+				Array.from({ length: Math.min(3, rows.length) }, worker),
+			);
 
 			return { synced, failed };
 		} finally {

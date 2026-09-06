@@ -328,13 +328,18 @@ export const linksRouter = createTRPCRouter({
 				}
 			}
 
-			assertSchedule({ ...existingLink, ...input });
 			return db.transaction(async (tx) => {
 				await tx
 					.select({ id: profiles.id })
 					.from(profiles)
 					.where(eq(profiles.id, profile.id))
 					.for("update");
+				const latest = await tx.query.links.findFirst({
+					where: and(eq(links.id, input.id), eq(links.profileId, profile.id)),
+				});
+				if (!latest)
+					throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
+				assertSchedule({ ...latest, ...input });
 				if (input.featured)
 					await tx
 						.update(links)
@@ -345,7 +350,7 @@ export const linksRouter = createTRPCRouter({
 					.update(links)
 					.set({
 						...data,
-						...(data.url && data.url !== existingLink.url
+						...(data.url && data.url !== latest.url
 							? {
 									healthState: null,
 									healthStatusCode: null,

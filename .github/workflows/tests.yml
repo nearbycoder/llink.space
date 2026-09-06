@@ -58,7 +58,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Apply database schema
-        run: bun --bun run db:push
+        run: bun --bun run db:migrate
+      - name: Verify isolated provider workflows
+        run: bun run test:providers
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Run e2e tests
