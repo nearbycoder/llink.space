@@ -4,15 +4,14 @@ import {
 	putProfileAvatarObject,
 	putProfileBackgroundObject,
 } from "#/lib/object-storage";
+import {
+	allowedImageMimeTypes,
+	hasExpectedImageSignature,
+	MAX_PROFILE_IMAGE_SIZE_BYTES,
+} from "#/lib/profile-image";
+import { PayloadTooLargeError, readStreamWithLimit } from "#/lib/request-body";
 import { isTrustedRequestOrigin } from "#/lib/security";
 
-const MAX_PROFILE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-const allowedImageMimeTypes = new Set([
-	"image/jpeg",
-	"image/png",
-	"image/webp",
-	"image/gif",
-]);
 const imageUploadPurposes = new Set(["avatar", "background"]);
 
 function jsonResponse(status: number, body: Record<string, string>) {
@@ -23,54 +22,6 @@ function jsonResponse(status: number, body: Record<string, string>) {
 			"cache-control": "no-store",
 		},
 	});
-}
-
-function hasExpectedImageSignature(bytes: Uint8Array, mimeType: string) {
-	switch (mimeType) {
-		case "image/jpeg":
-			return (
-				bytes.length >= 3 &&
-				bytes[0] === 0xff &&
-				bytes[1] === 0xd8 &&
-				bytes[2] === 0xff
-			);
-		case "image/png":
-			return (
-				bytes.length >= 8 &&
-				bytes[0] === 0x89 &&
-				bytes[1] === 0x50 &&
-				bytes[2] === 0x4e &&
-				bytes[3] === 0x47 &&
-				bytes[4] === 0x0d &&
-				bytes[5] === 0x0a &&
-				bytes[6] === 0x1a &&
-				bytes[7] === 0x0a
-			);
-		case "image/gif":
-			return (
-				bytes.length >= 6 &&
-				bytes[0] === 0x47 &&
-				bytes[1] === 0x49 &&
-				bytes[2] === 0x46 &&
-				bytes[3] === 0x38 &&
-				(bytes[4] === 0x37 || bytes[4] === 0x39) &&
-				bytes[5] === 0x61
-			);
-		case "image/webp":
-			return (
-				bytes.length >= 12 &&
-				bytes[0] === 0x52 &&
-				bytes[1] === 0x49 &&
-				bytes[2] === 0x46 &&
-				bytes[3] === 0x46 &&
-				bytes[8] === 0x57 &&
-				bytes[9] === 0x45 &&
-				bytes[10] === 0x42 &&
-				bytes[11] === 0x50
-			);
-		default:
-			return false;
-	}
 }
 
 async function postHandler({ request }: { request: Request }) {
@@ -84,7 +35,7 @@ async function postHandler({ request }: { request: Request }) {
 	);
 	if (
 		Number.isFinite(contentLength) &&
-		contentLength > MAX_PROFILE_IMAGE_SIZE_BYTES + 1024
+		contentLength > MAX_PROFILE_IMAGE_SIZE_BYTES + 64 * 1024
 	) {
 		return jsonResponse(413, { error: "Request payload too large" });
 	}
@@ -96,8 +47,16 @@ async function postHandler({ request }: { request: Request }) {
 
 	let formData: FormData;
 	try {
-		formData = await request.formData();
-	} catch {
+		const body = await readStreamWithLimit(
+			request.body,
+			MAX_PROFILE_IMAGE_SIZE_BYTES + 64 * 1024,
+		);
+		formData = await new Response(body, {
+			headers: { "content-type": request.headers.get("content-type") ?? "" },
+		}).formData();
+	} catch (error) {
+		if (error instanceof PayloadTooLargeError)
+			return jsonResponse(413, { error: "Request payload too large" });
 		return jsonResponse(400, { error: "Expected multipart/form-data" });
 	}
 

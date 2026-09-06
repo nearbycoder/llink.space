@@ -18,8 +18,14 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Check source formatting and lint
+        run: bun run check src
       - name: Run unit tests
         run: bun --bun run test:unit
+      - name: Build production app
+        run: bun run build
 
   e2e:
     name: E2E (Playwright)

@@ -1,17 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import {
-	eachDayOfInterval,
-	format,
-	formatDistanceToNow,
-	subDays,
-} from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
 	Activity,
 	Clock3,
 	Download,
 	Globe2,
 	MousePointerClick,
+	RefreshCw,
 	TrendingUp,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
@@ -34,8 +30,12 @@ import { getDashboardAnalytics } from "#/lib/auth-server";
 import { buildAnalyticsCsv } from "#/lib/dashboard-tools";
 
 export const Route = createFileRoute("/dashboard/analytics")({
-	loader: async () => {
-		const result = await getDashboardAnalytics();
+	validateSearch: (search: Record<string, unknown>): { days: 7 | 30 | 90 } => ({
+		days: Number(search.days) === 30 ? 30 : Number(search.days) === 90 ? 90 : 7,
+	}),
+	loaderDeps: ({ search }) => ({ days: search.days }),
+	loader: async ({ deps }) => {
+		const result = await getDashboardAnalytics({ data: { days: deps.days } });
 		if (result.status === "unauthenticated") {
 			throw redirect({ to: "/sign-in" });
 		}
@@ -70,24 +70,21 @@ function normalizeReferrer(value: string | null | undefined) {
 	return raw.replace(/^https?:\/\/(www\.)?/i, "").split("/")[0] || "Direct";
 }
 
-function buildSevenDayTrend(
+function buildTrend(
 	clicksByDay: Array<{ day: string; count: number }>,
+	days: number,
 ) {
-	const counts = new Map(clicksByDay.map((item) => [item.day, item.count]));
-	const days = eachDayOfInterval({
-		start: subDays(new Date(), 6),
-		end: new Date(),
-	});
-
-	return days.map((day) => {
-		const key = format(day, "yyyy-MM-dd");
-		return {
-			day: key,
-			label: format(day, "EEE"),
-			fullLabel: format(day, "MMM d"),
-			count: counts.get(key) ?? 0,
-		};
-	});
+	const formatter = new Intl.DateTimeFormat(
+		"en-US",
+		days === 7
+			? { weekday: "short", timeZone: "UTC" }
+			: { month: "short", day: "numeric", timeZone: "UTC" },
+	);
+	return clicksByDay.map((item) => ({
+		...item,
+		label: formatter.format(new Date(`${item.day}T00:00:00Z`)),
+		fullLabel: `${item.day} (UTC)`,
+	}));
 }
 
 function AnalyticsPage() {
@@ -95,18 +92,30 @@ function AnalyticsPage() {
 	const trpc = useTRPC();
 	const trendFillId = useId();
 	const [isHydrated, setIsHydrated] = useState(false);
-	const { data: summary = initialSummary } = useQuery({
-		...trpc.analytics.getSummary.queryOptions(),
-		initialData: initialSummary,
+	const { days: rangeDays } = Route.useSearch();
+	const navigate = Route.useNavigate();
+	const {
+		data: summary = initialSummary,
+		isFetching,
+		isError,
+		refetch,
+	} = useQuery({
+		...trpc.analytics.getSummary.queryOptions({ days: rangeDays }),
+		initialData:
+			rangeDays === initialSummary.rangeDays ? initialSummary : undefined,
+		staleTime: 30_000,
+		placeholderData: (previous) => previous,
 	});
 
 	const totalClicks = summary?.totalClicks ?? 0;
 	const directClicks = summary?.directClicks ?? 0;
+	const periodClicks = summary?.periodClicks ?? 0;
+	const displayRangeDays = summary?.rangeDays ?? rangeDays;
 	const directPercent =
-		totalClicks > 0 ? Math.round((directClicks / totalClicks) * 100) : 0;
+		periodClicks > 0 ? Math.round((directClicks / periodClicks) * 100) : 0;
 
 	const chartData =
-		summary?.clicksByLink.map((item, index) => {
+		summary?.clicksByLink.slice(0, 20).map((item, index) => {
 			const label = item.title || item.url || "Untitled link";
 			return {
 				...item,
@@ -116,7 +125,7 @@ function AnalyticsPage() {
 			};
 		}) ?? [];
 
-	const trendData = buildSevenDayTrend(summary?.clicksByDay ?? []);
+	const trendData = buildTrend(summary?.clicksByDay ?? [], displayRangeDays);
 	const topLink = chartData[0];
 	useEffect(() => {
 		setIsHydrated(true);
@@ -150,18 +159,54 @@ function AnalyticsPage() {
 						Track click volume, traffic sources, and top-performing links
 					</p>
 				</div>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={handleExportCsv}
-					disabled={!isHydrated}
-				>
-					<Download className="mr-1.5 h-4 w-4" />
-					Export CSV
-				</Button>
+				<div className="flex flex-wrap gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => void refetch()}
+						disabled={isFetching}
+						aria-label="Refresh analytics"
+					>
+						<RefreshCw className="h-4 w-4" aria-hidden="true" />
+					</Button>
+					<fieldset
+						className="inline-flex rounded-xl border-2 border-black bg-white p-1 shadow-[2px_2px_0_0_#11110F]"
+						aria-label="Analytics date range"
+					>
+						{([7, 30, 90] as const).map((days) => (
+							<button
+								key={days}
+								type="button"
+								onClick={() => void navigate({ search: { days } })}
+								aria-pressed={rangeDays === days}
+								className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${rangeDays === days ? "bg-[#11110F] text-[#F5FF7B]" : "text-[#4B4B45] hover:bg-[#FFF7A8]"}`}
+							>
+								{days}d
+							</button>
+						))}
+					</fieldset>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={handleExportCsv}
+						disabled={!isHydrated || isFetching}
+					>
+						<Download className="mr-1.5 h-4 w-4" />
+						Export CSV
+					</Button>
+				</div>
 			</div>
 
-			<div className="space-y-6">
+			{isError && (
+				<p
+					role="alert"
+					className="mb-4 rounded-xl border-2 border-[#B42318] bg-white p-3 text-sm text-[#B42318]"
+				>
+					Analytics could not refresh. Showing the last available data. Use
+					Refresh analytics to try again.
+				</p>
+			)}
+			<div className="space-y-6" aria-busy={isFetching}>
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<div className="kinetic-panel p-5 bg-[#FFFCEF]">
 						<div className="mb-2 flex items-center gap-2">
@@ -190,11 +235,11 @@ function AnalyticsPage() {
 							<span className="inline-flex items-center justify-center rounded-md border-2 border-black bg-[#F2B7E2] p-1">
 								<TrendingUp className="h-3.5 w-3.5 text-[#11110F]" />
 							</span>
-							<span className="text-sm text-[#4B4B45]">Last 7 days</span>
+							<span className="text-sm text-[#4B4B45]">
+								Last {displayRangeDays} days
+							</span>
 						</div>
-						<p className="text-3xl font-bold text-[#11110F]">
-							{summary?.clicksLast7d ?? 0}
-						</p>
+						<p className="text-3xl font-bold text-[#11110F]">{periodClicks}</p>
 					</div>
 
 					<div className="kinetic-panel p-5 bg-[#FFFCEF]">
@@ -221,7 +266,7 @@ function AnalyticsPage() {
 									Clicks by link
 								</h2>
 								<p className="mt-1 text-xs text-[#6A675C]">
-									Top performing links in your profile
+									Top 20 performing links in the last {displayRangeDays} days
 								</p>
 							</div>
 							{topLink ? (
@@ -279,6 +324,7 @@ function AnalyticsPage() {
 									/>
 									<Bar
 										dataKey="count"
+										isAnimationActive={false}
 										radius={[8, 8, 0, 0]}
 										stroke="#11110F"
 										strokeWidth={1.5}
@@ -297,10 +343,10 @@ function AnalyticsPage() {
 					<div className="kinetic-panel p-5 xl:col-span-3">
 						<div className="mb-4">
 							<h2 className="text-sm font-medium text-[#11110F]">
-								Clicks trend (7 days)
+								Clicks trend ({displayRangeDays} days)
 							</h2>
 							<p className="mt-1 text-xs text-[#6A675C]">
-								Daily click volume over the last week
+								Daily click volume in the selected window (UTC)
 							</p>
 						</div>
 						<div className="rounded-xl border-2 border-black/15 bg-white px-2 py-3">
@@ -364,6 +410,7 @@ function AnalyticsPage() {
 									<Area
 										type="monotone"
 										dataKey="count"
+										isAnimationActive={false}
 										stroke="#11110F"
 										strokeWidth={2}
 										fill={`url(#${trendFillId})`}
@@ -384,8 +431,8 @@ function AnalyticsPage() {
 						</div>
 						<div className="space-y-2">
 							{(summary?.topReferrers ?? []).slice(0, 6).map((item) => {
-								const percent = totalClicks
-									? Math.round((item.count / totalClicks) * 100)
+								const percent = periodClicks
+									? Math.round((item.count / periodClicks) * 100)
 									: 0;
 								return (
 									<div
@@ -458,10 +505,12 @@ function AnalyticsPage() {
 					</div>
 				)}
 
-				{totalClicks === 0 && (
+				{periodClicks === 0 && (
 					<div className="kinetic-panel py-16 text-center">
 						<Activity className="mx-auto mb-3 h-8 w-8 text-[#6A675C]" />
-						<p className="text-sm text-[#4B4B45]">No clicks yet</p>
+						<p className="text-sm text-[#4B4B45]">
+							No clicks in the last {displayRangeDays} days
+						</p>
 						<p className="mt-1 text-xs text-[#6A675C]">
 							Share your profile link to start collecting analytics
 						</p>

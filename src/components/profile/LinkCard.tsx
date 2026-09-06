@@ -51,7 +51,7 @@ export function LinkCard({
 				}
 				handleClick();
 			}}
-			className="group block w-full rounded-xl border-2 px-5 py-4 transition-all shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
+			className="group block w-full rounded-xl border-2 px-5 py-4 transition-transform shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
 			style={{
 				backgroundColor: cardBg,
 				borderColor: cardBorder,
@@ -78,6 +78,7 @@ export function LinkCard({
 					</div>
 				</div>
 				<ExternalLink
+					aria-hidden="true"
 					className="w-3.5 h-3.5 ml-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
 					style={{ color: mutedTextColor }}
 				/>

@@ -13,6 +13,18 @@ export function normalizeHttpUrl(value: string): string | null {
 	}
 }
 
+/**
+ * Makes ordinary domain input friendlier without weakening URL validation.
+ * Explicit schemes are left untouched so callers can still reject unsafe ones.
+ */
+export function prepareHttpUrl(value: string): string {
+	const trimmed = value.trim();
+	if (!trimmed) return trimmed;
+	if (trimmed.startsWith("//")) return `https:${trimmed}`;
+	if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+	return `https://${trimmed}`;
+}
+
 export function isSafeHttpUrl(value: string): boolean {
 	return normalizeHttpUrl(value) !== null;
 }

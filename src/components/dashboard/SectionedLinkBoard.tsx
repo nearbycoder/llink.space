@@ -36,6 +36,8 @@ import { Button } from "#/components/ui/button";
 import { cn } from "#/lib/utils";
 
 const UNSECTIONED_CONTAINER_ID = "container:unsectioned";
+const EMPTY_LINK_SELECTION = new Set<string>();
+const NOOP_SELECTION_HANDLER = () => {};
 
 type SectionId = string;
 type ContainerId = string;
@@ -85,6 +87,9 @@ interface SectionedLinkBoardProps {
 	onRenameSection: (section: DashboardSection) => void;
 	onDeleteSection: (sectionId: string) => void;
 	enableDrag?: boolean;
+	selectionMode?: boolean;
+	selectedLinkIds?: ReadonlySet<string>;
+	onToggleLinkSelection?: (linkId: string) => void;
 }
 
 function toContainerId(sectionId: SectionId | null): ContainerId {
@@ -237,6 +242,9 @@ interface LinkRowProps {
 	onDuplicate: (link: DashboardLink) => void;
 	isBusy: boolean;
 	enableDrag: boolean;
+	selectionMode: boolean;
+	isSelected: boolean;
+	onToggleSelection: (linkId: string) => void;
 }
 
 function LinkRow({
@@ -248,6 +256,9 @@ function LinkRow({
 	onDuplicate,
 	isBusy,
 	enableDrag,
+	selectionMode,
+	isSelected,
+	onToggleSelection,
 }: LinkRowProps) {
 	const {
 		attributes,
@@ -272,24 +283,35 @@ function LinkRow({
 			ref={setNodeRef}
 			style={style}
 			className={cn(
-				"group flex items-center gap-3 rounded-xl border-2 border-black bg-[#FFFCEF] p-4 shadow-[3px_3px_0_0_#11110F]",
+				"group grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 sm:flex sm:gap-3 rounded-xl border-2 border-black bg-[#FFFCEF] p-4 shadow-[3px_3px_0_0_#11110F]",
 				isDragging && "opacity-50",
+				isSelected && "bg-[#E6FAFC] shadow-[4px_4px_0_0_#11110F]",
 			)}
 		>
-			<button
-				type="button"
-				className={cn(
-					"touch-none text-[#6A675C]",
-					enableDrag &&
-						"cursor-grab hover:text-[#11110F] active:cursor-grabbing",
-				)}
-				aria-label={`Drag ${link.title}`}
-				disabled={!enableDrag}
-				{...attributes}
-				{...listeners}
-			>
-				<GripVertical className="h-4 w-4" />
-			</button>
+			{selectionMode ? (
+				<input
+					type="checkbox"
+					checked={isSelected}
+					onChange={() => onToggleSelection(link.id)}
+					aria-label={`Select ${link.title}`}
+					className="h-5 w-5 shrink-0 cursor-pointer accent-[#11110F]"
+				/>
+			) : (
+				<button
+					type="button"
+					className={cn(
+						"touch-none text-[#6A675C]",
+						enableDrag &&
+							"cursor-grab hover:text-[#11110F] active:cursor-grabbing",
+					)}
+					aria-label={`Drag ${link.title}`}
+					disabled={!enableDrag}
+					{...attributes}
+					{...listeners}
+				>
+					<GripVertical className="h-4 w-4" />
+				</button>
+			)}
 
 			<div className="min-w-0 flex-1">
 				<div className="flex items-start gap-3">
@@ -317,54 +339,56 @@ function LinkRow({
 				</div>
 			</div>
 
-			<div className="flex gap-1 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100">
-				<Button
-					variant="ghost"
-					size="sm"
-					className="h-8 w-8 p-0"
-					onClick={() => onToggle(link)}
-					disabled={isBusy}
-					aria-label={`${link.isActive === false ? "Publish" : "Pause"} ${link.title}`}
-					title={`${link.isActive === false ? "Publish" : "Pause"} ${link.title}`}
-				>
-					{link.isActive === false ? (
-						<Eye className="h-3.5 w-3.5" />
-					) : (
-						<EyeOff className="h-3.5 w-3.5" />
-					)}
-				</Button>
-				<Button
-					variant="ghost"
-					size="sm"
-					className="h-8 w-8 p-0"
-					onClick={() => onDuplicate(link)}
-					disabled={isBusy}
-					aria-label={`Duplicate ${link.title}`}
-					title={`Duplicate ${link.title}`}
-				>
-					<CopyPlus className="h-3.5 w-3.5" />
-				</Button>
-				<Button
-					variant="ghost"
-					size="sm"
-					className="h-8 w-8 p-0"
-					onClick={() => onEdit(link)}
-					aria-label={`Edit ${link.title}`}
-					title={`Edit ${link.title}`}
-				>
-					<Pencil className="h-3.5 w-3.5" />
-				</Button>
-				<Button
-					variant="ghost"
-					size="sm"
-					className="h-8 w-8 p-0 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
-					onClick={() => onDelete(link.id)}
-					aria-label={`Delete ${link.title}`}
-					title={`Delete ${link.title}`}
-				>
-					<Trash2 className="h-3.5 w-3.5" />
-				</Button>
-			</div>
+			{!selectionMode && (
+				<div className="col-span-2 flex justify-end gap-1 border-t border-black/10 pt-2 sm:border-0 sm:pt-0 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-10 w-10 p-0 sm:h-8 sm:w-8"
+						onClick={() => onToggle(link)}
+						disabled={isBusy}
+						aria-label={`${link.isActive === false ? "Publish" : "Pause"} ${link.title}`}
+						title={`${link.isActive === false ? "Publish" : "Pause"} ${link.title}`}
+					>
+						{link.isActive === false ? (
+							<Eye className="h-3.5 w-3.5" />
+						) : (
+							<EyeOff className="h-3.5 w-3.5" />
+						)}
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-10 w-10 p-0 sm:h-8 sm:w-8"
+						onClick={() => onDuplicate(link)}
+						disabled={isBusy}
+						aria-label={`Duplicate ${link.title}`}
+						title={`Duplicate ${link.title}`}
+					>
+						<CopyPlus className="h-3.5 w-3.5" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-10 w-10 p-0 sm:h-8 sm:w-8"
+						onClick={() => onEdit(link)}
+						aria-label={`Edit ${link.title}`}
+						title={`Edit ${link.title}`}
+					>
+						<Pencil className="h-3.5 w-3.5" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-10 w-10 p-0 sm:h-8 sm:w-8 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
+						onClick={() => onDelete(link.id)}
+						aria-label={`Delete ${link.title}`}
+						title={`Delete ${link.title}`}
+					>
+						<Trash2 className="h-3.5 w-3.5" />
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -405,6 +429,9 @@ interface SectionColumnProps {
 	onDeleteSection?: () => void;
 	enableDrag: boolean;
 	defaultCollapsed?: boolean;
+	selectionMode: boolean;
+	selectedLinkIds: ReadonlySet<string>;
+	onToggleLinkSelection: (linkId: string) => void;
 }
 
 function SectionColumn({
@@ -422,6 +449,9 @@ function SectionColumn({
 	onDeleteSection,
 	enableDrag,
 	defaultCollapsed = false,
+	selectionMode,
+	selectedLinkIds,
+	onToggleLinkSelection,
 }: SectionColumnProps) {
 	const { isOver, setNodeRef } = useDroppable({ id: containerId });
 	const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
@@ -516,8 +546,11 @@ function SectionColumn({
 											onDuplicate={onDuplicateLink}
 											isBusy={busyLinkId === link.id}
 											enableDrag={enableDrag}
+											selectionMode={selectionMode}
+											isSelected={selectedLinkIds.has(link.id)}
+											onToggleSelection={onToggleLinkSelection}
 										/>
-										{index < links.length - 1 ? (
+										{!selectionMode && index < links.length - 1 ? (
 											<InsertionRail
 												onClick={() => onCreateSectionAt(index + 1)}
 											/>
@@ -552,6 +585,9 @@ export function SectionedLinkBoard({
 	onRenameSection,
 	onDeleteSection,
 	enableDrag = true,
+	selectionMode = false,
+	selectedLinkIds = EMPTY_LINK_SELECTION,
+	onToggleLinkSelection = NOOP_SELECTION_HANDLER,
 }: SectionedLinkBoardProps) {
 	const orderedSections = useMemo(() => sortSections(sections), [sections]);
 	const incomingLayoutSignature = useMemo(
@@ -689,6 +725,9 @@ export function SectionedLinkBoard({
 				}
 				enableDrag={enableDrag}
 				defaultCollapsed={false}
+				selectionMode={selectionMode}
+				selectedLinkIds={selectedLinkIds}
+				onToggleLinkSelection={onToggleLinkSelection}
 			/>
 
 			{orderedSections.map((section) => {
@@ -716,6 +755,9 @@ export function SectionedLinkBoard({
 						onDeleteSection={() => onDeleteSection(section.id)}
 						enableDrag={enableDrag}
 						defaultCollapsed={collapseLargeSections && sectionLinks.length > 12}
+						selectionMode={selectionMode}
+						selectedLinkIds={selectedLinkIds}
+						onToggleLinkSelection={onToggleLinkSelection}
 					/>
 				);
 			})}

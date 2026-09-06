@@ -49,13 +49,24 @@ export function dashboardLinkStats(links: FilterableDashboardLink[]) {
 }
 
 function csvCell(value: unknown) {
-	const normalized = value == null ? "" : String(value);
+	const raw = value == null ? "" : String(value);
+	// Prevent user-controlled cells from being interpreted as spreadsheet formulas.
+	const normalized =
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: Strip spreadsheet formula prefixes even after control characters.
+		typeof value === "string" && /^[\s\u0000-\u001f]*[=+@-]|^[\t\r\n]/.test(raw)
+			? `'${raw}`
+			: raw;
 	return /[",\n\r]/.test(normalized)
 		? `"${normalized.replaceAll('"', '""')}"`
 		: normalized;
 }
 
 export interface AnalyticsCsvSummary {
+	rangeDays?: number;
+	rangeStart?: string;
+	rangeEnd?: string;
+	periodClicks?: number;
+	clicksByDay?: Array<{ day: string; count: number }>;
 	totalClicks: number;
 	clicksLast24h: number;
 	clicksLast7d: number;
@@ -73,11 +84,19 @@ export function buildAnalyticsCsv(summary: AnalyticsCsvSummary) {
 	const rows: unknown[][] = [
 		["Analytics summary"],
 		["Metric", "Value"],
+		["Range (days, UTC)", summary.rangeDays ?? ""],
+		["Start date (UTC)", summary.rangeStart ?? ""],
+		["End date (UTC)", summary.rangeEnd ?? ""],
+		["Selected period clicks", summary.periodClicks ?? ""],
 		["Total clicks", summary.totalClicks],
 		["Last 24 hours", summary.clicksLast24h],
 		["Last 7 days", summary.clicksLast7d],
 		["Traffic sources", summary.uniqueReferrers],
 		["Direct clicks", summary.directClicks],
+		[],
+		["Daily clicks (UTC)"],
+		["Date", "Clicks"],
+		...(summary.clicksByDay ?? []).map((day) => [day.day, day.count]),
 		[],
 		["Clicks by link"],
 		["Title", "URL", "Clicks"],
@@ -90,6 +109,34 @@ export function buildAnalyticsCsv(summary: AnalyticsCsvSummary) {
 		["Referrer sources"],
 		["Source", "Clicks"],
 		...summary.topReferrers.map((source) => [source.source, source.count]),
+	];
+
+	return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+}
+
+export interface ExportableDashboardLink extends FilterableDashboardLink {
+	iconUrl?: string | null;
+}
+
+export function buildLinksCsv(
+	links: ExportableDashboardLink[],
+	sections: Array<{ id: string; title: string }>,
+) {
+	const sectionTitles = new Map(
+		sections.map((section) => [section.id, section.title]),
+	);
+	const rows: unknown[][] = [
+		["Title", "URL", "Description", "Section", "Status", "Icon"],
+		...links.map((link) => [
+			link.title,
+			link.url,
+			link.description ?? "",
+			link.sectionId
+				? (sectionTitles.get(link.sectionId) ?? "")
+				: "Unsectioned",
+			link.isActive === false ? "Paused" : "Live",
+			link.iconUrl ?? "",
+		]),
 	];
 
 	return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");

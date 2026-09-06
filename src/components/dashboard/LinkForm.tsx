@@ -10,7 +10,11 @@ import { Label } from "#/components/ui/label";
 import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
-import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security";
+import {
+	isSafeHttpUrl,
+	normalizeHttpUrl,
+	prepareHttpUrl,
+} from "#/lib/security";
 import { cn } from "#/lib/utils";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
@@ -44,9 +48,14 @@ const schema = z
 		url: z
 			.string()
 			.trim()
-			.max(2048)
-			.refine(isSafeHttpUrl, "URL must start with http:// or https://")
-			.transform((value) => normalizeHttpUrl(value) ?? value),
+			.transform(prepareHttpUrl)
+			.pipe(
+				z
+					.string()
+					.max(2048)
+					.refine(isSafeHttpUrl, "Enter a valid website URL")
+					.transform((value) => normalizeHttpUrl(value) ?? value),
+			),
 		description: z.string().max(200).optional(),
 		iconUrl: z.union([z.enum(LINK_ICON_KEYS), z.literal("")]).optional(),
 		iconBgColor: z
@@ -122,6 +131,8 @@ export function LinkForm({
 	});
 
 	const isActive = watch("isActive");
+	const titleValue = watch("title") ?? "";
+	const descriptionValue = watch("description") ?? "";
 	const selectedIcon = watch("iconUrl");
 	const selectedIconBgColor = watch("iconBgColor");
 	const selectedSectionId = watch("sectionId");
@@ -164,8 +175,15 @@ export function LinkForm({
 				<Input
 					id={titleId}
 					placeholder="e.g. My Website"
+					maxLength={100}
 					{...register("title")}
 				/>
+				<p
+					className="text-right text-[11px] font-semibold text-[#6A675C]"
+					aria-live="polite"
+				>
+					{titleValue.length}/100
+				</p>
 				{errors.title && (
 					<p className="text-xs text-[#B42318]">{errors.title.message}</p>
 				)}
@@ -175,10 +193,17 @@ export function LinkForm({
 				<Label htmlFor={urlId}>URL</Label>
 				<Input
 					id={urlId}
-					type="url"
-					placeholder="https://example.com"
+					type="text"
+					inputMode="url"
+					autoCapitalize="none"
+					autoCorrect="off"
+					spellCheck={false}
+					placeholder="example.com"
 					{...register("url")}
 				/>
+				<p className="text-[11px] text-[#6A675C]">
+					HTTPS is added automatically when you omit it.
+				</p>
 				{errors.url && (
 					<p className="text-xs text-[#B42318]">{errors.url.message}</p>
 				)}
@@ -396,8 +421,15 @@ export function LinkForm({
 					placeholder="A short description of this link"
 					className="resize-none"
 					rows={2}
+					maxLength={200}
 					{...register("description")}
 				/>
+				<p
+					className="text-right text-[11px] font-semibold text-[#6A675C]"
+					aria-live="polite"
+				>
+					{descriptionValue.length}/200
+				</p>
 				{errors.description && (
 					<p className="text-xs text-[#B42318]">{errors.description.message}</p>
 				)}

@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { objectReadOptions } from "#/lib/http-cache";
 import { getStoredObjectByKey } from "#/lib/object-storage";
 
 const OBJECT_PROXY_BASE_PATH = "/api/storage/";
+const SAFE_PROFILE_IMAGE_CONTENT_TYPES = new Set([
+	"image/jpeg",
+	"image/png",
+	"image/webp",
+	"image/gif",
+]);
 
 function decodeObjectPath(pathValue: string) {
 	try {
@@ -39,33 +46,62 @@ async function getObjectHandler({ request }: { request: Request }) {
 	}
 
 	try {
-		const storedObject = await getStoredObjectByKey(objectKey);
+		const storedObject = await getStoredObjectByKey(
+			objectKey,
+			objectReadOptions(request),
+		);
 		if (!storedObject) {
 			return new Response("Not Found", {
 				status: 404,
 				headers: { "cache-control": "public, max-age=60" },
 			});
 		}
+		if (storedObject.notModified)
+			return new Response(null, {
+				status: 304,
+				headers: {
+					"cache-control":
+						storedObject.cacheControl ?? "public, max-age=31536000, immutable",
+					...(storedObject.etag ? { etag: storedObject.etag } : {}),
+					...(storedObject.lastModified
+						? { "last-modified": storedObject.lastModified.toUTCString() }
+						: {}),
+				},
+			});
+		if (
+			!storedObject.contentType ||
+			!SAFE_PROFILE_IMAGE_CONTENT_TYPES.has(
+				storedObject.contentType.toLowerCase(),
+			)
+		) {
+			await storedObject.body?.cancel();
+			return new Response("Unsupported Media Type", {
+				status: 415,
+				headers: {
+					"cache-control": "no-store",
+					"x-content-type-options": "nosniff",
+				},
+			});
+		}
 
 		const headers = new Headers();
-		headers.set(
-			"content-type",
-			storedObject.contentType ?? "application/octet-stream",
-		);
+		headers.set("content-type", storedObject.contentType);
 		headers.set(
 			"cache-control",
 			storedObject.cacheControl ?? "public, max-age=31536000, immutable",
 		);
 		headers.set("x-content-type-options", "nosniff");
+		headers.set("content-security-policy", "default-src 'none'; sandbox");
+		headers.set("cross-origin-resource-policy", "same-origin");
 		if (storedObject.etag) headers.set("etag", storedObject.etag);
 		if (storedObject.lastModified) {
 			headers.set("last-modified", storedObject.lastModified.toUTCString());
 		}
 
-		const responseBody = new ArrayBuffer(storedObject.body.byteLength);
-		new Uint8Array(responseBody).set(storedObject.body);
+		if (storedObject.contentLength !== null)
+			headers.set("content-length", String(storedObject.contentLength));
 
-		return new Response(responseBody, {
+		return new Response(storedObject.body, {
 			status: 200,
 			headers,
 		});
@@ -82,6 +118,7 @@ export const Route = createFileRoute("/api/storage/$")({
 	server: {
 		handlers: {
 			GET: getObjectHandler,
+			HEAD: getObjectHandler,
 		},
 	},
 });

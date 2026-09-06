@@ -9,6 +9,12 @@ test("complete creator journey works end to end", async ({ page }) => {
 	const initialPassword = "JourneyPassword123!";
 	const updatedPassword = "UpdatedJourney456!";
 	const imagePath = path.resolve("public/android-chrome-192x192.png");
+	await page.addInitScript(() => {
+		Object.defineProperty(navigator, "share", {
+			configurable: true,
+			value: undefined,
+		});
+	});
 
 	await page.goto("/sign-up");
 	const createAccountButton = page.getByRole("button", {
@@ -38,12 +44,17 @@ test("complete creator journey works end to end", async ({ page }) => {
 
 	await page.getByRole("button", { name: "Add link" }).click();
 	await page.getByLabel("Title").fill("Test portfolio");
-	await page.getByLabel("URL").fill("https://example.com/portfolio");
+	await expect(page.getByText("14/100")).toBeVisible();
+	await page.getByLabel("URL").fill("example.com/portfolio");
+	await expect(
+		page.getByText("HTTPS is added automatically when you omit it."),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Section", exact: true }).click();
 	await page.getByRole("option", { name: "Featured" }).click();
 	await page
 		.getByLabel("Description (optional)")
 		.fill("A portfolio created by the full journey test");
+	await expect(page.getByText("44/200")).toBeVisible();
 	await page.getByRole("button", { name: "Select Website icon" }).click();
 	await page.getByRole("button", { name: "Add link", exact: true }).click();
 	await expect(page.getByText("Link added")).toBeVisible();
@@ -84,6 +95,38 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await expect(page.getByTestId("link-stat-live")).toContainText("1");
 	await expect(page.getByTestId("link-stat-paused")).toContainText("1");
 
+	const linksDownloadPromise = page.waitForEvent("download");
+	await page.getByRole("button", { name: "Export links" }).click();
+	const linksDownload = await linksDownloadPromise;
+	expect(linksDownload.suggestedFilename()).toMatch(
+		/^llink-links-\d{4}-\d{2}-\d{2}\.csv$/,
+	);
+
+	await page.getByRole("button", { name: "Select", exact: true }).click();
+	await page.getByRole("button", { name: "Select visible (2)" }).click();
+	await expect(page.getByText("2 selected")).toBeVisible();
+	await page.getByRole("button", { name: "Pause", exact: true }).click();
+	await expect(page.getByText("2 links paused")).toBeVisible();
+	await expect(page.getByTestId("link-stat-paused")).toContainText("2");
+
+	await page.getByRole("button", { name: "Select visible (2)" }).click();
+	await page.getByRole("button", { name: "Publish", exact: true }).click();
+	await expect(page.getByText("2 links published")).toBeVisible();
+	await expect(page.getByTestId("link-stat-live")).toContainText("2");
+
+	await page.getByLabel("Select Test portfolio copy").check();
+	await page.getByLabel("Bulk move destination").selectOption("unsectioned");
+	await page.getByRole("button", { name: "Move", exact: true }).click();
+	await expect(page.getByText("1 link moved")).toBeVisible();
+	await page.getByLabel("Select Test portfolio copy").check();
+	await page.getByRole("button", { name: "Delete", exact: true }).click();
+	await page.getByRole("button", { name: "Delete selected" }).click();
+	await expect(page.getByText("1 link deleted")).toBeVisible();
+	await expect(page.getByText("Test portfolio copy", { exact: true })).toHaveCount(
+		0,
+	);
+	await page.getByRole("button", { name: "Done", exact: true }).click();
+
 	await page.getByText("Test portfolio", { exact: true }).hover();
 	await page
 		.getByRole("button", { name: "Edit Test portfolio", exact: true })
@@ -103,7 +146,25 @@ test("complete creator journey works end to end", async ({ page }) => {
 		"false",
 	);
 	await expect(page.getByText("0/300")).toBeVisible();
+	await page.getByLabel("New password", { exact: true }).fill("UnsavedPassword123!");
+	page.once("dialog", (dialog) => dialog.accept());
+	await page.getByRole("link", { name: "Links", exact: true }).click();
+	await expect(page).toHaveURL(/\/dashboard$/);
+	await page.getByRole("link", { name: "Profile", exact: true }).click();
+	await expect(page.getByLabel("New password", { exact: true })).toHaveValue("");
+
 	await page.getByLabel("Display name").fill("Temporary name");
+	page.once("dialog", (dialog) => dialog.dismiss());
+	await page.getByRole("link", { name: "Links", exact: true }).click();
+	await expect(page).toHaveURL(/\/dashboard\/profile$/);
+	await expect(page.getByLabel("Display name")).toHaveValue("Temporary name");
+	page.once("dialog", (dialog) => dialog.dismiss());
+	await page.getByRole("button", { name: "Sign out", exact: true }).click();
+	await expect(page).toHaveURL(/\/dashboard\/profile$/);
+	const sessionAfterCancel = await page.request.get("/api/auth/get-session");
+	expect((await sessionAfterCancel.json())?.user?.email).toBe(email);
+	expect(await page.evaluate(() => !window.dispatchEvent(new Event("beforeunload", { cancelable: true })))).toBe(true);
+
 	await expect(page.getByText("Unsaved changes")).toBeVisible();
 	await page.getByRole("button", { name: "Discard changes" }).click();
 	await expect(page.getByLabel("Display name")).toHaveValue("Journey Creator");
@@ -133,6 +194,10 @@ test("complete creator journey works end to end", async ({ page }) => {
 	).toBeVisible();
 	await expect(page.getByRole("link", { name: /Creator portfolio/ })).toBeVisible();
 	await expect(page.getByAltText("Journey Studio avatar")).toBeVisible();
+	await page.getByRole("button", { name: "Share profile" }).click();
+	await expect(page.getByRole("button", { name: "Share profile" })).toContainText(
+		"Link copied",
+	);
 
 	await page.getByRole("button", { name: /Ctrl \+ K|Command \+ K/ }).click();
 	await page.getByLabel("Search links").fill("portfolio");
@@ -153,7 +218,19 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await expect(page.getByText("Total clicks").locator("../..")).toContainText(
 		"1",
 	);
+	await page.getByRole("button", { name: "30d" }).click();
+	await expect(page.getByRole("button", { name: "30d" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await expect(
+		page.getByText("Last 30 days", { exact: true }).locator("../.."),
+	).toContainText("1");
+	await page.getByRole("button", { name: "90d" }).click();
+	await expect(page.getByText("Clicks trend (90 days)")).toBeVisible();
+	await expect(page).toHaveURL(/days=90/);
 	await page.reload();
+	await expect(page.getByRole("button", { name: "90d" })).toHaveAttribute("aria-pressed", "true");
 	await expect(page.getByText("Total clicks").locator("../..")).toContainText(
 		"1",
 	);
@@ -182,4 +259,30 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await page.getByRole("button", { name: "Delete link" }).click();
 	await expect(page.getByText("Link deleted")).toBeVisible();
 	await expect(page.getByText("Creator portfolio", { exact: true })).toHaveCount(0);
+	await page.getByRole("button", { name: "Import links", exact: true }).click();
+	await page.getByLabel("Website URLs").fill("javascript:alert(1)");
+	await expect(page.getByRole("button", { name: "Import as drafts" })).toBeDisabled();
+	await page.getByLabel("Website URLs").fill("example.com/import-one\tImported portfolio\nexample.com/import-two\nhttps://example.com/import-one");
+	await expect(page.getByText("2 new links · 1 duplicates skipped")).toBeVisible();
+	await page.getByRole("button", { name: "Import as drafts" }).click();
+	await expect(page.getByText("2 links imported as drafts")).toBeVisible();
+	await expect(page.getByTestId("link-stat-paused")).toContainText("2");
+	await page.reload();
+	await expect(page.getByText("Imported portfolio", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Import links", exact: true }).click();
+	await page.getByLabel("Website URLs").fill("example.com/import-one");
+	await expect(page.getByText("0 new links · 1 duplicates skipped")).toBeVisible();
+	await expect(page.getByRole("button", { name: "Import as drafts" })).toBeDisabled();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.evaluate(() => window.scrollTo(0, 0));
+	await page.getByRole("button", { name: "Import links", exact: true }).click();
+	await expect(page.getByRole("dialog")).toBeVisible();
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	await page.screenshot({ path: "/tmp/llink-import-mobile.png", animations: "disabled" });
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	await page.screenshot({ path: "/tmp/llink-dashboard-mobile.png", animations: "disabled" });
+
 });

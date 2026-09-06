@@ -1,7 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { authClient } from "#/lib/auth-client";
 
 export default function BetterAuthHeader() {
+	const queryClient = useQueryClient();
 	const { data: session, isPending } = authClient.useSession();
 
 	if (isPending) {
@@ -17,6 +20,8 @@ export default function BetterAuthHeader() {
 					<img
 						src={session.user.image}
 						alt=""
+						width={32}
+						height={32}
 						className="h-8 w-8 rounded-full border-2 border-black"
 					/>
 				) : (
@@ -28,8 +33,13 @@ export default function BetterAuthHeader() {
 				)}
 				<button
 					type="button"
-					onClick={() => {
-						void authClient.signOut();
+					onClick={async () => {
+						const result = await authClient.signOut();
+						if (result.error) {
+							toast.error(result.error.message ?? "Could not sign out");
+							return;
+						}
+						queryClient.clear();
 					}}
 					className="flex-1 h-9 px-4 text-sm font-semibold rounded-xl border-2 border-black bg-[#11110F] text-[#F5FF7B] shadow-[2px_2px_0_0_#11110F] hover:-translate-y-0.5 transition-transform"
 				>

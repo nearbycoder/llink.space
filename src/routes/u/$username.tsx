@@ -5,6 +5,7 @@ import { ChevronDown, Home, SearchX, UserPlus } from "lucide-react";
 import { LinkCard } from "#/components/profile/LinkCard";
 import { ProfileHeader } from "#/components/profile/ProfileHeader";
 import { PublicLinkCommandBar } from "#/components/profile/PublicLinkCommandBar";
+import { PublicProfileShare } from "#/components/profile/PublicProfileShare";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
 import {
@@ -374,6 +375,10 @@ function ProfilePage() {
 		>
 			<div className="mx-auto max-w-md px-4 py-10 sm:py-16">
 				<div className="kinetic-shell p-6 sm:p-7">
+					<PublicProfileShare
+						displayName={profile.displayName?.trim() || `@${profile.username}`}
+						username={profile.username}
+					/>
 					<ProfileHeader
 						profile={profile}
 						textColor={theme.text}

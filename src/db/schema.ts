@@ -1,5 +1,6 @@
 import {
 	boolean,
+	index,
 	integer,
 	pgTable,
 	text,
@@ -29,46 +30,80 @@ export const profiles = pgTable("profiles", {
 	updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const linkSections = pgTable("link_sections", {
-	id: uuid().primaryKey().defaultRandom(),
-	profileId: uuid("profile_id")
-		.notNull()
-		.references(() => profiles.id, { onDelete: "cascade" }),
-	title: text().notNull(),
-	sortOrder: integer("sort_order").default(0),
-	createdAt: timestamp("created_at").defaultNow(),
-	updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const linkSections = pgTable(
+	"link_sections",
+	{
+		id: uuid().primaryKey().defaultRandom(),
+		profileId: uuid("profile_id")
+			.notNull()
+			.references(() => profiles.id, { onDelete: "cascade" }),
+		title: text().notNull(),
+		sortOrder: integer("sort_order").default(0),
+		createdAt: timestamp("created_at").defaultNow(),
+		updatedAt: timestamp("updated_at").defaultNow(),
+	},
+	(table) => [
+		index("link_sections_profile_order_idx").on(
+			table.profileId,
+			table.sortOrder,
+		),
+	],
+);
 
-export const links = pgTable("links", {
-	id: uuid().primaryKey().defaultRandom(),
-	profileId: uuid("profile_id")
-		.notNull()
-		.references(() => profiles.id, { onDelete: "cascade" }),
-	sectionId: uuid("section_id").references(() => linkSections.id, {
-		onDelete: "set null",
-	}),
-	title: text().notNull(),
-	url: text().notNull(),
-	description: text(),
-	iconUrl: text("icon_url"),
-	iconBgColor: text("icon_bg_color").notNull().default("#F5FF7B"),
-	isActive: boolean("is_active").default(true),
-	sortOrder: integer("sort_order").default(0),
-	createdAt: timestamp("created_at").defaultNow(),
-	updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const links = pgTable(
+	"links",
+	{
+		id: uuid().primaryKey().defaultRandom(),
+		profileId: uuid("profile_id")
+			.notNull()
+			.references(() => profiles.id, { onDelete: "cascade" }),
+		sectionId: uuid("section_id").references(() => linkSections.id, {
+			onDelete: "set null",
+		}),
+		title: text().notNull(),
+		url: text().notNull(),
+		description: text(),
+		iconUrl: text("icon_url"),
+		iconBgColor: text("icon_bg_color").notNull().default("#F5FF7B"),
+		isActive: boolean("is_active").default(true),
+		sortOrder: integer("sort_order").default(0),
+		createdAt: timestamp("created_at").defaultNow(),
+		updatedAt: timestamp("updated_at").defaultNow(),
+	},
+	(table) => [
+		index("links_profile_order_idx").on(table.profileId, table.sortOrder),
+		index("links_section_idx").on(table.sectionId),
+	],
+);
 
-export const clickEvents = pgTable("click_events", {
-	id: uuid().primaryKey().defaultRandom(),
-	linkId: uuid("link_id")
-		.notNull()
-		.references(() => links.id, { onDelete: "cascade" }),
-	profileId: uuid("profile_id")
-		.notNull()
-		.references(() => profiles.id, { onDelete: "cascade" }),
-	referrer: text(),
-	userAgent: text("user_agent"),
-	country: text(),
-	clickedAt: timestamp("clicked_at").defaultNow(),
-});
+export const clickEvents = pgTable(
+	"click_events",
+	{
+		id: uuid().primaryKey().defaultRandom(),
+		linkId: uuid("link_id")
+			.notNull()
+			.references(() => links.id, { onDelete: "cascade" }),
+		profileId: uuid("profile_id")
+			.notNull()
+			.references(() => profiles.id, { onDelete: "cascade" }),
+		referrer: text(),
+		userAgent: text("user_agent"),
+		country: text(),
+		clickedAt: timestamp("clicked_at").defaultNow(),
+	},
+	(table) => [
+		index("click_events_profile_date_idx").on(table.profileId, table.clickedAt),
+		index("click_events_link_idx").on(table.linkId),
+	],
+);
+
+/** Short-lived, hashed counters shared by all app instances. */
+export const analyticsGuards = pgTable(
+	"analytics_guards",
+	{
+		key: text().primaryKey(),
+		count: integer().notNull(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+	},
+	(table) => [index("analytics_guards_expiry_idx").on(table.expiresAt)],
+);

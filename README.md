@@ -13,6 +13,15 @@ It lets users:
 
 ## Latest Updates
 
+- Paste up to 50 URLs with optional spreadsheet titles via **Import links**. Preview validation and duplicates before saving drafts, then publish with bulk actions.
+- Analytics ranges are bookmarkable (`/dashboard/analytics?days=30`). Charts and CSV exports share UTC day boundaries and include days with zero clicks.
+- CSV exports neutralize formula-like user text. Mobile link actions sit below the title for readable cards and larger touch targets.
+- Optional PostHog loads only when configured, after hydration. Analytics uses fewer queries, link reordering uses bulk SQL updates, and indexed profile/date lookups support growing click histories.
+- Public click tracking now filters known crawlers, suppresses rapid duplicates, and applies a shared database rate limit. Profile settings warn before leaving with unsaved changes.
+- Uploads enforce a byte limit before multipart parsing. Storage responses stream with ETag/date validation and HEAD support; social previews use validated uploaded images.
+- New installations and existing deployments should run `bun run db:migrate` before starting the updated app. `0004_query_indexes.sql` adds query indexes; `0005_analytics_guards.sql` adds the shared click protection table. Both are represented in the Drizzle schema for `db:push` workflows.
+- See [project review](PROJECT_REVIEW.md) for measurements, verification, and resolved findings.
+
 - Server-rendered dashboard data flow for auth/profile/link state to reduce UI flashing on refresh.
 - Added a static, hydration-safe dashboard link list fallback before drag-and-drop mounts.
 - Public profile and missing-profile experiences are fully server-rendered, including a custom 404-style page for unknown usernames.
@@ -74,6 +83,9 @@ PUBLIC_URL=http://localhost:3000
 # Optional extra trusted origins (comma-separated)
 BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000
 
+# Optional for a trusted reverse proxy outside Railway; see Analytics below
+# ANALYTICS_TRUSTED_IP_HEADER=x-real-ip
+
 # Optional (PostHog)
 VITE_POSTHOG_KEY=
 VITE_POSTHOG_HOST=https://us.i.posthog.com
@@ -107,6 +119,12 @@ Notes:
 - `S3_PUBLIC_BASE_URL` is optional. If omitted, uploaded assets are served through the app at `/api/storage/*`, which works with private buckets.
 - Railway bucket plugins commonly provide `S3_BUCKET_NAME`; this is supported directly by the app.
 - In production, set `BETTER_AUTH_URL` to your canonical HTTPS domain and keep `BETTER_AUTH_SECRET` stable.
+
+### Analytics protection
+
+Click tracking allows 60 attempts per client IP and profile per minute. A repeated click with the same link, client, user agent, and referrer within five seconds is ignored. Duplicates consume the attempt budget; known crawler user agents are ignored before database queries. These are abuse controls, and counts still represent clicks rather than unique visitors. Shared networks can reach the same budget.
+
+On Railway, the app uses the platform's [`X-Real-IP` header](https://docs.railway.com/networking/public-networking/specs-and-limits). Elsewhere, set `ANALYTICS_TRUSTED_IP_HEADER` only when your reverse proxy overwrites that header and clients cannot bypass the proxy. Missing or invalid trusted IPs share an anonymous budget per profile. Client IPs are HMAC-hashed with `BETTER_AUTH_SECRET`; raw IPs are not stored. Expiring budgets live in `analytics_guards` and are cleaned in bounded batches during click traffic.
 
 ## Local Development
 
@@ -194,8 +212,10 @@ bun --bun run db:studio
 ## Security Notes
 
 - User-provided link URLs are normalized and restricted to `http`/`https`.
-- Avatar uploads accept only JPG/PNG/WEBP/GIF, enforce size limits, and verify file signatures.
+- Avatar/background uploads accept only JPG/PNG/WEBP/GIF, enforce a 5 MiB file limit, and verify file signatures. The entire request is limited to 5 MiB plus 64 KiB for multipart overhead, including requests without Content-Length, before multipart parsing.
+- Social previews load only validated upload keys from configured storage, with a five-second timeout and 5 MiB image limit. External image URLs fall back to initials in previews; they may still appear on the public profile in the browser.
 - Object storage supports local disk and S3-compatible buckets.
+- The storage proxy streams GET responses and supports HEAD, If-None-Match, and If-Modified-Since. Explicit Nitro API routing keeps image requests from falling through to Vite's asset middleware in development.
 - Local uploads are in `public/uploads/`, which is git-ignored to prevent committing user files.
 - State-changing API routes validate request origin.
 - Auth and API mutation responses use `cache-control: no-store`.
