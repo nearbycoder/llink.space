@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ProfileLoadingState } from "#/components/dashboard/DashboardLoading";
+import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
@@ -35,6 +36,7 @@ import {
 } from "#/lib/security";
 
 const BACKGROUND_TYPE_LABELS: Record<ProfileBackgroundType, string> = {
+	theme: "Theme preset",
 	color: "Color",
 	gradient: "Gradient",
 	image: "Custom image",
@@ -436,6 +438,16 @@ function ProfilePage() {
 
 	return (
 		<div className="max-w-2xl px-4 py-5 sm:px-6 md:p-8">
+			<UnsavedChangesGuard
+				when={
+					isDirty ||
+					isPasswordFormDirty ||
+					isUploadingAvatar ||
+					isUploadingBackground ||
+					isSubmitting ||
+					isUpdatingPassword
+				}
+			/>
 			<div className="mb-6">
 				<h1
 					className="text-2xl text-[#11110F]"

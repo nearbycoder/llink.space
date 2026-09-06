@@ -21,7 +21,7 @@ module.exports = defineConfig({
 		trace: "on-first-retry",
 	},
 	webServer: {
-		command: `DATABASE_URL=${databaseUrl} BETTER_AUTH_SECRET=${authSecret} BETTER_AUTH_URL=${baseURL} APP_URL=${baseURL} TANSTACK_DEVTOOLS_PORT=${port + 39000} ./node_modules/.bin/vite dev --host 127.0.0.1 --port ${port}`,
+		command: `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=.example.com DATABASE_URL=${databaseUrl} BETTER_AUTH_SECRET=${authSecret} BETTER_AUTH_URL=${baseURL} APP_URL=${baseURL} TANSTACK_DEVTOOLS_PORT=${port + 39000} ./node_modules/.bin/vite dev --host 127.0.0.1 --port ${port}`,
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,

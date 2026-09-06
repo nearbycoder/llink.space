@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { auth } from "#/lib/auth";
+import { isTrustedRequestOrigin } from "#/lib/security";
 
 export interface TRPCContext {
 	userId: string | null;
@@ -29,6 +30,12 @@ export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 	if (!ctx.userId) {
 		throw new TRPCError({ code: "UNAUTHORIZED" });
+	}
+	if (!isTrustedRequestOrigin(ctx.request)) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Invalid request origin",
+		});
 	}
 	return next({ ctx: { ...ctx, userId: ctx.userId } });
 });

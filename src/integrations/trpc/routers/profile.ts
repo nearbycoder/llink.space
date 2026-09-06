@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "#/db";
 import { profiles } from "#/db/schema";
 import { normalizeObjectUrlForClient } from "#/lib/object-storage";
+import { BUTTON_STYLES, blocksSchema } from "#/lib/page-design";
 import {
 	isProfileBackgroundColorId,
 	isProfileBackgroundGradientId,
@@ -13,6 +14,7 @@ import {
 	isAllowedAvatarUrl,
 	isAllowedBackgroundImageUrl,
 } from "#/lib/security";
+import { themes } from "#/lib/themes";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 const avatarUrlSchema = z
@@ -108,6 +110,18 @@ export const profileRouter = createTRPCRouter({
 			z.object({
 				displayName: z.string().min(1).max(100).optional(),
 				bio: z.string().max(300).optional(),
+				theme: z
+					.string()
+					.refine((v) => Object.hasOwn(themes, v))
+					.optional(),
+				fontFamily: z.enum(["work", "editorial", "mono"]).optional(),
+				buttonStyle: z.enum(BUTTON_STYLES).optional(),
+				accentColor: z
+					.string()
+					.regex(/^#[a-fA-F0-9]{6}$/)
+					.nullable()
+					.optional(),
+				contentBlocks: blocksSchema.optional(),
 				avatarUrl: avatarUrlSchema.optional().nullable(),
 				pageBackgroundType: z.enum(PROFILE_BACKGROUND_TYPES).optional(),
 				pageBackgroundColor: backgroundColorIdSchema.optional(),
@@ -140,6 +154,11 @@ export const profileRouter = createTRPCRouter({
 				.update(profiles)
 				.set({
 					displayName: input.displayName,
+					theme: input.theme,
+					fontFamily: input.fontFamily,
+					buttonStyle: input.buttonStyle,
+					accentColor: input.accentColor,
+					contentBlocks: input.contentBlocks,
 					bio: input.bio,
 					avatarUrl: normalizedAvatarUrl,
 					pageBackgroundType: input.pageBackgroundType,

@@ -1,12 +1,40 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "#/db";
-import { linkSections, links, profiles } from "#/db/schema";
+import { customDomains, linkSections, links, profiles } from "#/db/schema";
 import { LINK_ICON_KEYS } from "#/lib/link-icon-keys";
+import { MAX_IMPORT_LINKS, parseLinkImport } from "#/lib/link-import";
+import { validSchedule } from "#/lib/link-publishing";
+import { publishedLinkFilter } from "#/lib/link-publishing-server";
 import { normalizeObjectUrlForClient } from "#/lib/object-storage";
-import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security";
+import {
+	isAllowedAvatarUrl,
+	isSafeHttpUrl,
+	normalizeHttpUrl,
+	prepareHttpUrl,
+} from "#/lib/security";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
+
+const publishingFields = {
+	featured: z.boolean().optional(),
+	featureImageUrl: z
+		.string()
+		.max(500)
+		.refine(isAllowedAvatarUrl)
+		.nullable()
+		.optional(),
+	ctaLabel: z.string().trim().max(40).nullable().optional(),
+	publishAt: z.string().datetime().nullable().optional(),
+	expireAt: z.string().datetime().nullable().optional(),
+};
+function assertSchedule(link: Parameters<typeof validSchedule>[0]) {
+	if (!validSchedule(link))
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "End time must be after publish time",
+		});
+}
 
 const linkIconSchema = z.enum(LINK_ICON_KEYS);
 const iconBgColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
@@ -14,9 +42,14 @@ const sectionTitleSchema = z.string().trim().min(1).max(60);
 const linkUrlSchema = z
 	.string()
 	.trim()
-	.max(2048)
-	.refine(isSafeHttpUrl, "URL must start with http:// or https://")
-	.transform((value) => normalizeHttpUrl(value) ?? value);
+	.transform(prepareHttpUrl)
+	.pipe(
+		z
+			.string()
+			.max(2048)
+			.refine(isSafeHttpUrl, "Enter a valid website URL")
+			.transform((value) => normalizeHttpUrl(value) ?? value),
+	);
 
 type LinkRow = typeof links.$inferSelect;
 type SectionRow = typeof linkSections.$inferSelect;
@@ -96,7 +129,7 @@ async function fetchProfileLayout(input: {
 	onlyActiveLinks: boolean;
 }) {
 	const linkWhere = input.onlyActiveLinks
-		? and(eq(links.profileId, input.profileId), eq(links.isActive, true))
+		? and(eq(links.profileId, input.profileId), publishedLinkFilter())
 		: eq(links.profileId, input.profileId);
 
 	const [profileLinks, profileSections] = await Promise.all([
@@ -132,9 +165,55 @@ export const linksRouter = createTRPCRouter({
 		});
 	}),
 
+	importLinks: protectedProcedure
+		.input(z.object({ text: z.string().trim().min(1).max(110_000) }))
+		.mutation(async ({ ctx, input }) => {
+			const profile = await requireProfileByUserId(ctx.userId);
+			return db.transaction(async (tx) => {
+				// Serialize imports for this profile so two submissions cannot create duplicates.
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
+				const existing = await tx
+					.select({ url: links.url })
+					.from(links)
+					.where(eq(links.profileId, profile.id));
+				const parsed = parseLinkImport(
+					input.text,
+					existing.map((link) => link.url),
+				);
+				if (parsed.errors.length || parsed.links.length > MAX_IMPORT_LINKS) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: parsed.errors[0]?.message ?? "Too many links",
+					});
+				}
+				if (parsed.links.length === 0)
+					return { count: 0, duplicates: parsed.duplicates };
+				const [order] = await tx
+					.select({
+						max: sql<number>`coalesce(max(${links.sortOrder}), -1)::int`,
+					})
+					.from(links)
+					.where(and(eq(links.profileId, profile.id), isNull(links.sectionId)));
+				await tx.insert(links).values(
+					parsed.links.map((link, index) => ({
+						...link,
+						profileId: profile.id,
+						isActive: false,
+						sortOrder: order.max + index + 1,
+					})),
+				);
+				return { count: parsed.links.length, duplicates: parsed.duplicates };
+			});
+		}),
+
 	add: protectedProcedure
 		.input(
 			z.object({
+				...publishingFields,
 				title: z.string().min(1).max(100),
 				url: linkUrlSchema,
 				description: z.string().max(200).optional(),
@@ -162,37 +241,59 @@ export const linksRouter = createTRPCRouter({
 				}
 			}
 
-			const existing = await db.query.links.findMany({
-				where: eq(links.profileId, profile.id),
-			});
 			const targetSectionId = input.sectionId ?? null;
-			const nextSortOrder =
-				existing
-					.filter((link) => link.sectionId === targetSectionId)
-					.reduce((max, link) => Math.max(max, link.sortOrder ?? -1), -1) + 1;
-
-			const [link] = await db
-				.insert(links)
-				.values({
-					profileId: profile.id,
-					sectionId: targetSectionId,
-					title: input.title,
-					url: input.url,
-					description: input.description ?? null,
-					iconUrl: input.iconUrl ?? null,
-					iconBgColor: input.iconBgColor ?? "#F5FF7B",
-					isActive: input.isActive,
-					sortOrder: nextSortOrder,
+			const [order] = await db
+				.select({
+					max: sql<number>`coalesce(max(${links.sortOrder}), -1)::int`,
 				})
-				.returning();
+				.from(links)
+				.where(
+					and(
+						eq(links.profileId, profile.id),
+						targetSectionId
+							? eq(links.sectionId, targetSectionId)
+							: isNull(links.sectionId),
+					),
+				);
+			const nextSortOrder = order.max + 1;
 
-			return link;
+			assertSchedule(input);
+			return db.transaction(async (tx) => {
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
+				if (input.featured)
+					await tx
+						.update(links)
+						.set({ featured: false })
+						.where(eq(links.profileId, profile.id));
+				const [link] = await tx
+					.insert(links)
+					.values({
+						...input,
+						profileId: profile.id,
+						sectionId: targetSectionId,
+						title: input.title,
+						url: input.url,
+						description: input.description ?? null,
+						iconUrl: input.iconUrl ?? null,
+						iconBgColor: input.iconBgColor ?? "#F5FF7B",
+						isActive: input.isActive,
+						sortOrder: nextSortOrder,
+					})
+					.returning();
+
+				return link;
+			});
 		}),
 
 	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
+				...publishingFields,
 				title: z.string().min(1).max(100).optional(),
 				url: linkUrlSchema.optional(),
 				description: z.string().max(200).optional().nullable(),
@@ -227,18 +328,47 @@ export const linksRouter = createTRPCRouter({
 				}
 			}
 
-			const { id, ...data } = input;
-			const [updated] = await db
-				.update(links)
-				.set({ ...data, updatedAt: new Date() })
-				.where(and(eq(links.id, id), eq(links.profileId, profile.id)))
-				.returning();
+			return db.transaction(async (tx) => {
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
+				const latest = await tx.query.links.findFirst({
+					where: and(eq(links.id, input.id), eq(links.profileId, profile.id)),
+				});
+				if (!latest)
+					throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
+				assertSchedule({ ...latest, ...input });
+				if (input.featured)
+					await tx
+						.update(links)
+						.set({ featured: false })
+						.where(eq(links.profileId, profile.id));
+				const { id, ...data } = input;
+				const [updated] = await tx
+					.update(links)
+					.set({
+						...data,
+						...(data.url && data.url !== latest.url
+							? {
+									healthState: null,
+									healthStatusCode: null,
+									healthFinalUrl: null,
+									healthCheckedAt: null,
+								}
+							: {}),
+						updatedAt: new Date(),
+					})
+					.where(and(eq(links.id, id), eq(links.profileId, profile.id)))
+					.returning();
 
-			if (!updated) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
-			}
+				if (!updated) {
+					throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
+				}
 
-			return updated;
+				return updated;
+			});
 		}),
 
 	delete: protectedProcedure
@@ -249,6 +379,113 @@ export const linksRouter = createTRPCRouter({
 				.delete(links)
 				.where(and(eq(links.id, input.id), eq(links.profileId, profile.id)));
 			return { success: true };
+		}),
+
+	bulkAction: protectedProcedure
+		.input(
+			z.object({
+				ids: z.array(z.string().uuid()).min(1).max(200),
+				action: z.enum(["publish", "pause", "move", "delete"]),
+				sectionId: z.string().uuid().nullable().optional(),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const profile = await requireProfileByUserId(ctx.userId);
+			const uniqueIds = [...new Set(input.ids)];
+			if (uniqueIds.length !== input.ids.length) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Link selection contains duplicate ids",
+				});
+			}
+
+			const ownedLinks = await db.query.links.findMany({
+				where: and(
+					eq(links.profileId, profile.id),
+					inArray(links.id, uniqueIds),
+				),
+			});
+			if (ownedLinks.length !== uniqueIds.length) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "One or more selected links were not found",
+				});
+			}
+
+			if (input.action === "move" && input.sectionId) {
+				const section = await db.query.linkSections.findFirst({
+					where: and(
+						eq(linkSections.id, input.sectionId),
+						eq(linkSections.profileId, profile.id),
+					),
+				});
+				if (!section) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Destination section not found",
+					});
+				}
+			}
+
+			await db.transaction(async (tx) => {
+				if (input.action === "delete") {
+					await tx
+						.delete(links)
+						.where(
+							and(
+								eq(links.profileId, profile.id),
+								inArray(links.id, uniqueIds),
+							),
+						);
+					return;
+				}
+
+				if (input.action === "publish" || input.action === "pause") {
+					await tx
+						.update(links)
+						.set({
+							isActive: input.action === "publish",
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(links.profileId, profile.id),
+								inArray(links.id, uniqueIds),
+							),
+						);
+					return;
+				}
+
+				const targetSectionId = input.sectionId ?? null;
+				const targetLinks = await tx.query.links.findMany({
+					where: and(
+						eq(links.profileId, profile.id),
+						targetSectionId
+							? eq(links.sectionId, targetSectionId)
+							: isNull(links.sectionId),
+					),
+				});
+				const nextSortOrder =
+					targetLinks.reduce(
+						(max, link) => Math.max(max, link.sortOrder ?? -1),
+						-1,
+					) + 1;
+
+				await Promise.all(
+					uniqueIds.map((id, index) =>
+						tx
+							.update(links)
+							.set({
+								sectionId: targetSectionId,
+								sortOrder: nextSortOrder + index,
+								updatedAt: new Date(),
+							})
+							.where(and(eq(links.id, id), eq(links.profileId, profile.id))),
+					),
+				);
+			});
+
+			return { success: true, count: uniqueIds.length };
 		}),
 
 	reorder: protectedProcedure
@@ -353,53 +590,30 @@ export const linksRouter = createTRPCRouter({
 			}
 
 			await db.transaction(async (tx) => {
-				await Promise.all(
-					input.sectionOrderIds.map((sectionId, index) =>
-						tx
-							.update(linkSections)
-							.set({
-								sortOrder: index,
-								updatedAt: new Date(),
-							})
-							.where(
-								and(
-									eq(linkSections.id, sectionId),
-									eq(linkSections.profileId, profile.id),
-								),
-							),
-					),
-				);
-
-				await Promise.all(
-					input.unsectionedLinkIds.map((linkId, index) =>
-						tx
-							.update(links)
-							.set({
-								sectionId: null,
-								sortOrder: index,
-								updatedAt: new Date(),
-							})
-							.where(
-								and(eq(links.id, linkId), eq(links.profileId, profile.id)),
-							),
-					),
-				);
-
-				for (const sectionOrder of input.sectionLinkOrders) {
-					await Promise.all(
-						sectionOrder.linkIds.map((linkId, index) =>
-							tx
-								.update(links)
-								.set({
-									sectionId: sectionOrder.sectionId,
-									sortOrder: index,
-									updatedAt: new Date(),
-								})
-								.where(
-									and(eq(links.id, linkId), eq(links.profileId, profile.id)),
-								),
-						),
+				if (input.sectionOrderIds.length) {
+					const positions = input.sectionOrderIds.map(
+						(id, index) => sql`(${id}::uuid, ${index}::int)`,
 					);
+					await tx.execute(sql`update ${linkSections} set sort_order = position.sort_order, updated_at = now()
+						from (values ${sql.join(positions, sql`, `)}) as position(id, sort_order)
+						where ${linkSections.id} = position.id and ${linkSections.profileId} = ${profile.id}::uuid`);
+				}
+				const positions = [
+					...input.unsectionedLinkIds.map(
+						(id, index) => sql`(${id}::uuid, null::uuid, ${index}::int)`,
+					),
+					...input.sectionLinkOrders.flatMap((section) =>
+						section.linkIds.map(
+							(id, index) =>
+								sql`(${id}::uuid, ${section.sectionId}::uuid, ${index}::int)`,
+						),
+					),
+				];
+				// Chunk parameters to remain below PostgreSQL's bind limit for large profiles.
+				for (let offset = 0; offset < positions.length; offset += 1000) {
+					await tx.execute(sql`update ${links} set section_id = position.section_id, sort_order = position.sort_order, updated_at = now()
+						from (values ${sql.join(positions.slice(offset, offset + 1000), sql`, `)}) as position(id, section_id, sort_order)
+						where ${links.id} = position.id and ${links.profileId} = ${profile.id}::uuid`);
 				}
 			});
 
@@ -661,7 +875,15 @@ export const linksRouter = createTRPCRouter({
 				(link) => link.sectionId === null,
 			);
 
+			const domain = await db.query.customDomains.findFirst({
+				where: and(
+					eq(customDomains.profileId, profile.id),
+					eq(customDomains.status, "active"),
+				),
+				columns: { hostname: true },
+			});
 			return {
+				customDomain: domain?.hostname ?? null,
 				profile: {
 					...profile,
 					avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),

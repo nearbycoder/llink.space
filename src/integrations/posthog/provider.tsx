@@ -1,5 +1,3 @@
-import { PostHogProvider as BasePostHogProvider } from "@posthog/react";
-import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 
@@ -23,6 +21,7 @@ export default function PostHogProvider({ children }: PostHogProviderProps) {
 	const initializedRef = useRef(false);
 
 	useEffect(() => {
+		let cancelled = false;
 		if (initializedRef.current) return;
 		if (!import.meta.env.VITE_POSTHOG_KEY) return;
 
@@ -30,14 +29,24 @@ export default function PostHogProvider({ children }: PostHogProviderProps) {
 		const allowInDev = import.meta.env.VITE_POSTHOG_DEV_ENABLED === "true";
 		if (import.meta.env.DEV && !allowInDev) return;
 
-		posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
-			api_host: normalizePosthogHost(import.meta.env.VITE_POSTHOG_HOST),
-			person_profiles: "identified_only",
-			capture_pageview: false,
-			defaults: "2025-11-30",
-		});
-		initializedRef.current = true;
+		void import("posthog-js")
+			.then(({ default: posthog }) => {
+				if (cancelled) return;
+				posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+					api_host: normalizePosthogHost(import.meta.env.VITE_POSTHOG_HOST),
+					person_profiles: "identified_only",
+					capture_pageview: false,
+					defaults: "2025-11-30",
+				});
+				initializedRef.current = true;
+			})
+			.catch(() => {
+				/* Optional telemetry must not interrupt the app. */
+			});
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
-	return <BasePostHogProvider client={posthog}>{children}</BasePostHogProvider>;
+	return <>{children}</>;
 }

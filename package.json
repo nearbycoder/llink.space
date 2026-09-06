@@ -32,7 +32,9 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "typecheck": "tsc --noEmit",
+    "test:providers": "bun scripts/verify-provider-workflows.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1085.0",

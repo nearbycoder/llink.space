@@ -7,8 +7,8 @@ import { LINK_ICON_OPTIONS_BY_KEY } from "#/components/links/icon-options";
 import { db } from "#/db";
 import { linkSections, links, profiles } from "#/db/schema";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
-import { normalizeObjectUrlForClient } from "#/lib/object-storage";
-import { resolveSiteOrigin, toAbsoluteUrl } from "#/lib/site-url";
+import { publishedLinkFilter } from "#/lib/link-publishing-server";
+import { storedPreviewImage } from "#/lib/og-image";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -134,13 +134,6 @@ function avatarLetters(name: string) {
 	return `${parts[0].slice(0, 1)}${parts[1].slice(0, 1)}`.toUpperCase();
 }
 
-function normalizeImageUrl(url: string | null | undefined, origin: string) {
-	if (!url) return null;
-	const normalized = normalizeObjectUrlForClient(url);
-	if (!normalized || typeof normalized !== "string") return null;
-	return toAbsoluteUrl(normalized, origin);
-}
-
 function renderUnavailableImage(username: string) {
 	const palette = paletteFor(username);
 
@@ -238,16 +231,9 @@ function renderUnavailableImage(username: string) {
 	);
 }
 
-async function handler({
-	params,
-	request,
-}: {
-	params: { username: string };
-	request: Request;
-}) {
+async function handler({ params }: { params: { username: string } }) {
 	const username = params.username.toLowerCase();
 	const palette = paletteFor(username);
-	const origin = resolveSiteOrigin(request);
 
 	try {
 		const [profile] = await db
@@ -277,7 +263,7 @@ async function handler({
 			})
 			.from(links)
 			.leftJoin(linkSections, eq(links.sectionId, linkSections.id))
-			.where(and(eq(links.profileId, profile.id), eq(links.isActive, true)))
+			.where(and(eq(links.profileId, profile.id), publishedLinkFilter()))
 			.orderBy(
 				sql`coalesce(${linkSections.sortOrder}, -1)`,
 				asc(links.sortOrder),
@@ -290,7 +276,13 @@ async function handler({
 		const subtitle = profile.bio?.trim()
 			? clampText(profile.bio.trim(), 92)
 			: "This is my personal bio page";
-		const avatarUrl = normalizeImageUrl(profile.avatarUrl, origin);
+		const [avatarUrl, ...iconImages] = await Promise.all([
+			storedPreviewImage(profile.avatarUrl),
+			...publicLinks.map((link) => storedPreviewImage(link.iconUrl)),
+		]);
+		const iconImagesById = new Map(
+			publicLinks.map((link, index) => [link.id, iconImages[index]]),
+		);
 
 		return new ImageResponse(
 			<div
@@ -467,7 +459,7 @@ async function handler({
 										? LINK_ICON_OPTIONS_BY_KEY[iconKey]
 										: undefined;
 									const iconImageUrl = !iconKey
-										? normalizeImageUrl(iconValue, origin)
+										? iconImagesById.get(link.id)
 										: null;
 									const iconGlyphUrl = iconOption
 										? getLucideIconDataUri(

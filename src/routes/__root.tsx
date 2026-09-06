@@ -88,6 +88,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				"frame-ancestors 'none'",
 				"form-action 'self'",
 				"object-src 'none'",
+				"frame-src https://www.youtube-nocookie.com https://player.vimeo.com",
 				"img-src 'self' data: blob: https:",
 				"font-src 'self' data: https://fonts.gstatic.com",
 				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",

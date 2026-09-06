@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, open, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
 import {
 	GetObjectCommand,
+	HeadObjectCommand,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
+import { type ObjectReadOptions, objectNotModified } from "./http-cache";
 
 interface PutObjectInput {
 	key: string;
@@ -18,8 +21,10 @@ interface PutObjectResult {
 	url: string;
 }
 
-interface GetObjectResult {
-	body: Uint8Array;
+export interface GetObjectResult {
+	body: ReadableStream<Uint8Array> | null;
+	contentLength: number | null;
+	notModified: boolean;
 	contentType: string | null;
 	cacheControl: string | null;
 	etag: string | null;
@@ -28,7 +33,10 @@ interface GetObjectResult {
 
 interface ObjectStorage {
 	putObject(input: PutObjectInput): Promise<PutObjectResult>;
-	getObject(key: string): Promise<GetObjectResult | null>;
+	getObject(
+		key: string,
+		options?: ObjectReadOptions,
+	): Promise<GetObjectResult | null>;
 }
 
 interface S3StorageConfig {
@@ -42,7 +50,7 @@ interface S3StorageConfig {
 	keyPrefix?: string;
 }
 
-class LocalObjectStorage implements ObjectStorage {
+export class LocalObjectStorage implements ObjectStorage {
 	private rootDir: string;
 	private publicBasePath: string;
 
@@ -72,7 +80,10 @@ class LocalObjectStorage implements ObjectStorage {
 		};
 	}
 
-	async getObject(key: string): Promise<GetObjectResult | null> {
+	async getObject(
+		key: string,
+		options: ObjectReadOptions = {},
+	): Promise<GetObjectResult | null> {
 		const normalizedKey = key.replace(/^\/+/, "");
 		const rootPath = path.resolve(this.rootDir);
 		const fullPath = path.resolve(rootPath, normalizedKey);
@@ -81,14 +92,35 @@ class LocalObjectStorage implements ObjectStorage {
 		}
 
 		try {
-			const body = await readFile(fullPath);
-			return {
-				body: new Uint8Array(body),
-				contentType: contentTypeFromObjectKey(normalizedKey),
-				cacheControl: "public, max-age=31536000, immutable",
-				etag: null,
-				lastModified: null,
-			};
+			const file = await open(fullPath, "r");
+			try {
+				const stat = await file.stat();
+				if (!stat.isFile()) {
+					await file.close();
+					return null;
+				}
+				const etag = `W/"${stat.size.toString(16)}-${stat.mtimeMs.toString(16)}"`;
+				const notModified = objectNotModified(options, etag, stat.mtime);
+				const body =
+					options.head || notModified
+						? null
+						: (Readable.toWeb(
+								file.createReadStream({ signal: options.signal }),
+							) as ReadableStream<Uint8Array>);
+				if (!body) await file.close();
+				return {
+					body,
+					notModified,
+					contentLength: stat.size,
+					contentType: contentTypeFromObjectKey(normalizedKey),
+					cacheControl: "public, max-age=31536000, immutable",
+					etag,
+					lastModified: stat.mtime,
+				};
+			} catch (error) {
+				await file.close();
+				throw error;
+			}
 		} catch (error) {
 			if (
 				error &&
@@ -103,7 +135,7 @@ class LocalObjectStorage implements ObjectStorage {
 	}
 }
 
-class S3ObjectStorage implements ObjectStorage {
+export class S3ObjectStorage implements ObjectStorage {
 	private client: S3Client;
 	private config: S3StorageConfig;
 
@@ -143,25 +175,67 @@ class S3ObjectStorage implements ObjectStorage {
 		};
 	}
 
-	async getObject(key: string): Promise<GetObjectResult | null> {
+	async getObject(
+		key: string,
+		options: ObjectReadOptions = {},
+	): Promise<GetObjectResult | null> {
 		const normalizedKey = key.replace(/^\/+/, "");
 
 		try {
+			const input = {
+				Bucket: this.config.bucket,
+				Key: normalizedKey,
+				IfNoneMatch: options.ifNoneMatch,
+				// ETag validation takes precedence over dates, as for the local backend.
+				IfModifiedSince:
+					options.ifNoneMatch === undefined
+						? options.ifModifiedSince
+						: undefined,
+			};
 			const response = await this.client.send(
-				new GetObjectCommand({
-					Bucket: this.config.bucket,
-					Key: normalizedKey,
-				}),
+				options.head
+					? new HeadObjectCommand(input)
+					: new GetObjectCommand(input),
+				{ abortSignal: options.signal },
 			);
-			const body = await objectBodyToUint8Array(response.Body);
+			const body =
+				"Body" in response && response.Body
+					? response.Body.transformToWebStream()
+					: null;
 			return {
 				body,
+				notModified: false,
+				contentLength: response.ContentLength ?? null,
 				contentType: response.ContentType ?? null,
 				cacheControl: response.CacheControl ?? null,
 				etag: response.ETag ?? null,
 				lastModified: response.LastModified ?? null,
 			};
 		} catch (error) {
+			if (
+				error &&
+				typeof error === "object" &&
+				"$metadata" in error &&
+				(error.$metadata as { httpStatusCode?: number }).httpStatusCode === 304
+			) {
+				const headers = (
+					error as { $response?: { headers?: Record<string, string> } }
+				).$response?.headers;
+				const modified = headers?.["last-modified"];
+				const lastModified = modified ? new Date(modified) : null;
+				return {
+					body: null,
+					notModified: true,
+					contentLength: null,
+					contentType: null,
+					cacheControl: headers?.["cache-control"] ?? null,
+					etag: headers?.etag ?? null,
+					lastModified:
+						lastModified && Number.isFinite(lastModified.getTime())
+							? lastModified
+							: null,
+				};
+			}
 			if (isS3ObjectNotFoundError(error)) {
 				return null;
 			}
@@ -333,55 +407,6 @@ function getObjectStorage(): ObjectStorage {
 
 const storage = getObjectStorage();
 
-async function objectBodyToUint8Array(body: unknown): Promise<Uint8Array> {
-	if (!body) return new Uint8Array();
-	if (body instanceof Uint8Array) return body;
-	if (body instanceof ArrayBuffer) return new Uint8Array(body);
-
-	const maybeTransform = body as {
-		transformToByteArray?: () => Promise<Uint8Array>;
-	};
-	if (typeof maybeTransform.transformToByteArray === "function") {
-		return maybeTransform.transformToByteArray();
-	}
-
-	const maybeArrayBuffer = body as { arrayBuffer?: () => Promise<ArrayBuffer> };
-	if (typeof maybeArrayBuffer.arrayBuffer === "function") {
-		return new Uint8Array(await maybeArrayBuffer.arrayBuffer());
-	}
-
-	const asyncIterable = body as AsyncIterable<Uint8Array | Buffer | string>;
-	if (
-		typeof (asyncIterable as { [Symbol.asyncIterator]?: unknown })[
-			Symbol.asyncIterator
-		] === "function"
-	) {
-		const chunks: Uint8Array[] = [];
-		let totalLength = 0;
-		for await (const chunk of asyncIterable) {
-			let asUint8Array: Uint8Array;
-			if (chunk instanceof Uint8Array) {
-				asUint8Array = chunk;
-			} else if (typeof chunk === "string") {
-				asUint8Array = Buffer.from(chunk);
-			} else {
-				asUint8Array = Buffer.from(chunk);
-			}
-			chunks.push(asUint8Array);
-			totalLength += asUint8Array.byteLength;
-		}
-		const joined = new Uint8Array(totalLength);
-		let offset = 0;
-		for (const chunk of chunks) {
-			joined.set(chunk, offset);
-			offset += chunk.byteLength;
-		}
-		return joined;
-	}
-
-	throw new Error("Unsupported object body type");
-}
-
 function isS3ObjectNotFoundError(error: unknown) {
 	if (!error || typeof error !== "object") return false;
 
@@ -539,8 +564,11 @@ export async function putProfileBackgroundObject(input: {
 	});
 }
 
-export async function getStoredObjectByKey(key: string) {
-	return storage.getObject(key);
+export async function getStoredObjectByKey(
+	key: string,
+	options?: ObjectReadOptions,
+) {
+	return storage.getObject(key, options);
 }
 
 export function normalizeObjectUrlForClient(url: string): string;

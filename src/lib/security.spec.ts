@@ -4,6 +4,7 @@ import {
 	isAllowedBackgroundImageUrl,
 	isTrustedRequestOrigin,
 	normalizeHttpUrl,
+	prepareHttpUrl,
 	resolveTrustedOrigins,
 } from "#/lib/security";
 
@@ -25,6 +26,21 @@ describe("security", () => {
 
 		it("rejects credentials in URL", () => {
 			expect(normalizeHttpUrl("https://user:pass@llink.space")).toBeNull();
+		});
+	});
+
+	describe("prepareHttpUrl", () => {
+		it("adds HTTPS to plain domains and protocol-relative URLs", () => {
+			expect(prepareHttpUrl(" example.com/path ")).toBe(
+				"https://example.com/path",
+			);
+			expect(prepareHttpUrl("//example.com/path")).toBe(
+				"https://example.com/path",
+			);
+		});
+
+		it("does not disguise explicit unsafe schemes", () => {
+			expect(prepareHttpUrl("javascript:alert(1)")).toBe("javascript:alert(1)");
 		});
 	});
 

@@ -39,6 +39,8 @@ const config = defineConfig({
 		}),
 		nitro({
 			rollupConfig: { external: [/^@sentry\//] },
+			// API image URLs must reach Start even when browsers request them as assets.
+			routes: { "/api/**": "./server/tanstack-api.ts" },
 			routeRules: {
 				"/uploads/**": {
 					headers: {

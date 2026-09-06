@@ -1,8 +1,12 @@
 import { ExternalLink } from "lucide-react";
 import { LinkIcon } from "#/components/links/LinkIcon";
-import { normalizeHttpUrl } from "#/lib/security";
+import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
 
 interface LinkCardProps {
+	buttonStyle?: string;
+	featured?: boolean;
+	featureImageUrl?: string | null;
+	ctaLabel?: string | null;
 	id: string;
 	title: string;
 	url: string;
@@ -18,6 +22,10 @@ interface LinkCardProps {
 
 export function LinkCard({
 	id,
+	buttonStyle,
+	featured,
+	featureImageUrl,
+	ctaLabel,
 	title,
 	url,
 	description,
@@ -51,12 +59,32 @@ export function LinkCard({
 				}
 				handleClick();
 			}}
-			className="group block w-full rounded-xl border-2 px-5 py-4 transition-all shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
+			className="group block w-full rounded-xl border-2 px-5 py-4 transition-transform shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
 			style={{
 				backgroundColor: cardBg,
+				borderRadius:
+					buttonStyle === "pill" ? 32 : buttonStyle === "square" ? 0 : 12,
 				borderColor: cardBorder,
 			}}
 		>
+			{featured && (
+				<div className="mb-4 space-y-3">
+					{featureImageUrl && isAllowedAvatarUrl(featureImageUrl) && (
+						<img
+							src={featureImageUrl}
+							alt=""
+							className="aspect-video w-full rounded-lg object-cover"
+							loading="lazy"
+						/>
+					)}
+					<span
+						className="text-[10px] font-bold uppercase tracking-[0.2em]"
+						style={{ color: mutedTextColor }}
+					>
+						In the spotlight
+					</span>
+				</div>
+			)}
 			<div className="flex items-center justify-between">
 				<div className="min-w-0 flex items-center gap-3">
 					<LinkIcon iconUrl={iconUrl} iconBgColor={iconBgColor} />
@@ -78,10 +106,16 @@ export function LinkCard({
 					</div>
 				</div>
 				<ExternalLink
+					aria-hidden="true"
 					className="w-3.5 h-3.5 ml-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
 					style={{ color: mutedTextColor }}
 				/>
 			</div>
+			{featured && (
+				<p className="mt-4 text-sm font-bold" style={{ color: textColor }}>
+					{ctaLabel || "Explore more"} ↗
+				</p>
+			)}
 		</a>
 	);
 }

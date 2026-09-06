@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/start-server-core";
 import { asc, eq } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "#/db";
 import { linkSections, links, profiles } from "#/db/schema";
 import { trpcRouter } from "#/integrations/trpc/router";
@@ -83,21 +84,62 @@ export const getDashboardLinks = createServerFn().handler(async () => {
  * Include analytics in the authenticated route response so a refresh can
  * render real metrics immediately instead of starting with empty cards.
  */
-export const getDashboardAnalytics = createServerFn().handler(async () => {
+export const getDashboardAnalytics = createServerFn()
+	.validator(
+		z.object({ days: z.union([z.literal(7), z.literal(30), z.literal(90)]) }),
+	)
+	.handler(async ({ data }) => {
+		const request = getRequest();
+		const access = await resolveDashboardAccess(request.headers);
+
+		if (access.status !== "ok") {
+			return access;
+		}
+
+		const caller = trpcRouter.createCaller({
+			request,
+			userId: access.profile.userId,
+		});
+
+		return {
+			status: "ok",
+			summary: await caller.analytics.getSummary({ days: data.days }),
+		} as const;
+	});
+
+export const getDashboardDesign = createServerFn().handler(async () => {
 	const request = getRequest();
 	const access = await resolveDashboardAccess(request.headers);
-
-	if (access.status !== "ok") {
-		return access;
-	}
-
+	if (access.status !== "ok") return access;
 	const caller = trpcRouter.createCaller({
 		request,
 		userId: access.profile.userId,
 	});
+	const layout = await caller.links.list();
+	return { status: "ok" as const, profile: access.profile, layout };
+});
 
+export const getDashboardAudience = createServerFn().handler(async () => {
+	const request = getRequest();
+	const access = await resolveDashboardAccess(request.headers);
+	if (access.status !== "ok") return access;
+	const caller = trpcRouter.createCaller({
+		request,
+		userId: access.profile.userId,
+	});
 	return {
-		status: "ok",
-		summary: await caller.analytics.getSummary(),
-	} as const;
+		status: "ok" as const,
+		audience: await caller.audience.list({ page: 0 }),
+	};
+});
+
+export const getDashboardDomain = createServerFn().handler(async () => {
+	const request = getRequest();
+	const access = await resolveDashboardAccess(request.headers);
+	if (access.status !== "ok") return access;
+	const caller = trpcRouter.createCaller({
+		request,
+		userId: access.profile.userId,
+	});
+	return { status: "ok" as const, domain: await caller.domains.current() };
 });

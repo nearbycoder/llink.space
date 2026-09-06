@@ -10,7 +10,13 @@ import { Label } from "#/components/ui/label";
 import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
-import { isSafeHttpUrl, normalizeHttpUrl } from "#/lib/security";
+import { localDateInput, validSchedule } from "#/lib/link-publishing";
+import {
+	isAllowedAvatarUrl,
+	isSafeHttpUrl,
+	normalizeHttpUrl,
+	prepareHttpUrl,
+} from "#/lib/security";
 import { cn } from "#/lib/utils";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
@@ -44,9 +50,14 @@ const schema = z
 		url: z
 			.string()
 			.trim()
-			.max(2048)
-			.refine(isSafeHttpUrl, "URL must start with http:// or https://")
-			.transform((value) => normalizeHttpUrl(value) ?? value),
+			.transform(prepareHttpUrl)
+			.pipe(
+				z
+					.string()
+					.max(2048)
+					.refine(isSafeHttpUrl, "Enter a valid website URL")
+					.transform((value) => normalizeHttpUrl(value) ?? value),
+			),
 		description: z.string().max(200).optional(),
 		iconUrl: z.union([z.enum(LINK_ICON_KEYS), z.literal("")]).optional(),
 		iconBgColor: z
@@ -58,9 +69,26 @@ const schema = z
 			),
 		sectionId: z.union([z.string().uuid(), z.literal("")]).optional(),
 		isActive: z.boolean(),
+		featured: z.boolean().optional(),
+		featureImageUrl: z
+			.string()
+			.max(500)
+			.refine((v) => !v || isAllowedAvatarUrl(v), "Use a valid image URL")
+			.optional(),
+		ctaLabel: z.string().max(40).optional(),
+		publishAt: z.string().optional(),
+		expireAt: z.string().optional(),
+	})
+	.refine(validSchedule, {
+		message: "End time must be after publish time",
+		path: ["expireAt"],
 	})
 	.transform((value) => ({
 		...value,
+		publishAt: value.publishAt ? new Date(value.publishAt).toISOString() : null,
+		expireAt: value.expireAt ? new Date(value.expireAt).toISOString() : null,
+		featureImageUrl: value.featureImageUrl || null,
+		ctaLabel: value.ctaLabel || null,
 		iconUrl: value.iconUrl ? value.iconUrl : undefined,
 		sectionId:
 			value.sectionId === undefined
@@ -116,18 +144,26 @@ export function LinkForm({
 			sectionId: "",
 			isActive: true,
 			...defaultValues,
+			featured: defaultValues?.featured ?? false,
+			featureImageUrl: defaultValues?.featureImageUrl ?? "",
+			ctaLabel: defaultValues?.ctaLabel ?? "",
+			publishAt: localDateInput(defaultValues?.publishAt),
+			expireAt: localDateInput(defaultValues?.expireAt),
 			iconUrl: normalizedDefaultIcon,
 			iconBgColor: normalizedDefaultIconBgColor,
 		},
 	});
 
 	const isActive = watch("isActive");
+	const titleValue = watch("title") ?? "";
+	const descriptionValue = watch("description") ?? "";
 	const selectedIcon = watch("iconUrl");
 	const selectedIconBgColor = watch("iconBgColor");
 	const selectedSectionId = watch("sectionId");
 	const selectedIconTileBg = selectedIconBgColor ?? DEFAULT_ICON_BG_COLOR;
 	const selectedIconTileText = getReadableTextColor(selectedIconTileBg);
 	const titleId = useId();
+	const publishingId = useId();
 	const urlId = useId();
 	const sectionId = useId();
 	const descriptionId = useId();
@@ -164,8 +200,15 @@ export function LinkForm({
 				<Input
 					id={titleId}
 					placeholder="e.g. My Website"
+					maxLength={100}
 					{...register("title")}
 				/>
+				<p
+					className="text-right text-[11px] font-semibold text-[#6A675C]"
+					aria-live="polite"
+				>
+					{titleValue.length}/100
+				</p>
 				{errors.title && (
 					<p className="text-xs text-[#B42318]">{errors.title.message}</p>
 				)}
@@ -175,10 +218,17 @@ export function LinkForm({
 				<Label htmlFor={urlId}>URL</Label>
 				<Input
 					id={urlId}
-					type="url"
-					placeholder="https://example.com"
+					type="text"
+					inputMode="url"
+					autoCapitalize="none"
+					autoCorrect="off"
+					spellCheck={false}
+					placeholder="example.com"
 					{...register("url")}
 				/>
+				<p className="text-[11px] text-[#6A675C]">
+					HTTPS is added automatically when you omit it.
+				</p>
 				{errors.url && (
 					<p className="text-xs text-[#B42318]">{errors.url.message}</p>
 				)}
@@ -396,8 +446,15 @@ export function LinkForm({
 					placeholder="A short description of this link"
 					className="resize-none"
 					rows={2}
+					maxLength={200}
 					{...register("description")}
 				/>
+				<p
+					className="text-right text-[11px] font-semibold text-[#6A675C]"
+					aria-live="polite"
+				>
+					{descriptionValue.length}/200
+				</p>
 				{errors.description && (
 					<p className="text-xs text-[#B42318]">{errors.description.message}</p>
 				)}
@@ -414,6 +471,67 @@ export function LinkForm({
 				</Label>
 			</div>
 
+			<fieldset className="space-y-3 rounded-xl border-2 border-black/20 p-4">
+				<legend className="px-2 text-sm font-semibold">
+					Publishing & spotlight
+				</legend>
+				<label className="flex items-center gap-2 text-sm">
+					<input type="checkbox" {...register("featured")} />
+					Feature this link (replaces the current spotlight)
+				</label>
+				{watch("featured") && (
+					<>
+						<label
+							htmlFor={`${publishingId}-featureImageUrl`}
+							className="block text-sm"
+						>
+							Feature image URL
+							<Input
+								id={`${publishingId}-featureImageUrl`}
+								{...register("featureImageUrl")}
+								placeholder="https://…"
+							/>
+						</label>
+						{errors.featureImageUrl && (
+							<p role="alert">{errors.featureImageUrl.message}</p>
+						)}
+						<label
+							htmlFor={`${publishingId}-ctaLabel`}
+							className="block text-sm"
+						>
+							Call to action
+							<Input
+								id={`${publishingId}-ctaLabel`}
+								{...register("ctaLabel")}
+								placeholder="Explore more"
+							/>
+						</label>
+					</>
+				)}
+				<div className="grid gap-3 sm:grid-cols-2">
+					<label htmlFor={`${publishingId}-publishAt`} className="text-sm">
+						Publish at
+						<Input
+							type="datetime-local"
+							id={`${publishingId}-publishAt`}
+							{...register("publishAt")}
+						/>
+					</label>
+					<label htmlFor={`${publishingId}-expireAt`} className="text-sm">
+						Hide at
+						<Input
+							type="datetime-local"
+							id={`${publishingId}-expireAt`}
+							{...register("expireAt")}
+						/>
+					</label>
+				</div>
+				<p className="text-xs text-[#4B4B45]">
+					Times use your device’s timezone. Leave blank for no schedule. Paused
+					links stay hidden.
+				</p>
+				{errors.expireAt && <p role="alert">{errors.expireAt.message}</p>}
+			</fieldset>
 			<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
 				<Button
 					type="submit"

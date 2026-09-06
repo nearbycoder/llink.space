@@ -1,8 +1,20 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "#/db";
 import { clickEvents, links, profiles } from "#/db/schema";
+import { analyticsRangeStart, fillDailyClicks } from "#/lib/analytics-tools";
+import {
+	CLICK_DEDUP_SECONDS,
+	CLICK_LIMIT_PER_MINUTE,
+	isKnownCrawler,
+} from "#/lib/click-protection";
+import {
+	cleanupClickGuards,
+	clickGuardKeys,
+	consumeClickBudget,
+} from "#/lib/click-protection-server";
+import { publishedLinkFilter } from "#/lib/link-publishing-server";
 import { normalizeHttpUrl } from "#/lib/security";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
@@ -17,11 +29,13 @@ export const analyticsRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			if (isKnownCrawler(ctx.request.headers.get("user-agent") ?? ""))
+				return { success: true };
 			const profileLink = await db.query.links.findFirst({
 				where: and(
 					eq(links.id, input.linkId),
 					eq(links.profileId, input.profileId),
-					eq(links.isActive, true),
+					publishedLinkFilter(),
 				),
 			});
 			if (!profileLink) {
@@ -33,136 +47,165 @@ export const analyticsRouter = createTRPCRouter({
 				input.referrer ?? ctx.request.headers.get("referer") ?? "",
 			);
 			const userAgent =
-				input.userAgent?.slice(0, 512) ??
-				ctx.request.headers.get("user-agent")?.slice(0, 512) ??
-				null;
-
-			await db.insert(clickEvents).values({
-				linkId: profileLink.id,
-				profileId: profileLink.profileId,
-				referrer: normalizedReferrer,
-				userAgent,
+				ctx.request.headers.get("user-agent")?.slice(0, 512) ?? null;
+			const keys = clickGuardKeys(
+				ctx.request,
+				profileLink.profileId,
+				profileLink.id,
+				normalizedReferrer ?? "",
+			);
+			await cleanupClickGuards(db);
+			await db.transaction(async (tx) => {
+				if (
+					!(await consumeClickBudget(tx, keys.rate, CLICK_LIMIT_PER_MINUTE, 60))
+				)
+					return;
+				if (
+					!(await consumeClickBudget(
+						tx,
+						keys.duplicate,
+						1,
+						CLICK_DEDUP_SECONDS,
+					))
+				)
+					return;
+				await tx.insert(clickEvents).values({
+					linkId: profileLink.id,
+					profileId: profileLink.profileId,
+					referrer: normalizedReferrer,
+					userAgent,
+				});
 			});
 			return { success: true };
 		}),
 
-	getSummary: protectedProcedure.query(async ({ ctx }) => {
-		const profile = await db.query.profiles.findFirst({
-			where: eq(profiles.userId, ctx.userId),
-		});
-		if (!profile) {
-			throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" });
-		}
+	getSummary: protectedProcedure
+		.input(
+			z.object({
+				days: z.union([z.literal(7), z.literal(30), z.literal(90)]),
+			}),
+		)
+		.query(async ({ ctx, input }) => {
+			const profile = await db.query.profiles.findFirst({
+				where: eq(profiles.userId, ctx.userId),
+			});
+			if (!profile) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Profile not found",
+				});
+			}
 
-		const totalClicks = await db
-			.select({ count: sql<number>`count(*)::int` })
-			.from(clickEvents)
-			.where(eq(clickEvents.profileId, profile.id));
-
-		const clicksLast24h = await db
-			.select({ count: sql<number>`count(*)::int` })
-			.from(clickEvents)
-			.where(
-				and(
-					eq(clickEvents.profileId, profile.id),
-					sql`${clickEvents.clickedAt} >= now() - interval '24 hours'`,
-				),
+			const now = new Date();
+			const rangeStart = analyticsRangeStart(input.days, now);
+			const previousStart = new Date(
+				rangeStart.getTime() - input.days * 86400000,
+			);
+			const rangeWhere = and(
+				eq(clickEvents.profileId, profile.id),
+				gte(clickEvents.clickedAt, rangeStart),
 			);
 
-		const clicksLast7d = await db
-			.select({ count: sql<number>`count(*)::int` })
-			.from(clickEvents)
-			.where(
-				and(
-					eq(clickEvents.profileId, profile.id),
-					sql`${clickEvents.clickedAt} >= now() - interval '7 days'`,
-				),
-			);
+			const referrerSourceExpr = sql<string>`coalesce(nullif(split_part(split_part(split_part(regexp_replace(${clickEvents.referrer}, '^https?://(www\\.)?', ''), '/', 1), '?', 1), '#', 1), ''), 'Direct')`;
+			const dayExpr = sql`date_trunc('day', ${clickEvents.clickedAt})`;
 
-		const uniqueReferrers = await db
-			.select({
-				count: sql<number>`count(distinct nullif(${clickEvents.referrer}, ''))::int`,
-			})
-			.from(clickEvents)
-			.where(eq(clickEvents.profileId, profile.id));
+			// One aggregate scan replaces six sequential count queries. The remaining
+			// independent, range-scoped queries can use the profile/date index.
+			const [totals, clicksByLink, topReferrers, clicksByDay, recentClicks] =
+				await Promise.all([
+					db
+						.select({
+							totalClicks: sql<number>`count(*)::int`,
+							clicksLast24h: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 86400000)})::int`,
+							clicksLast7d: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 7 * 86400000)})::int`,
+							previousPeriodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${previousStart} and ${clickEvents.clickedAt} < ${rangeStart})::int`,
+							periodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
+							uniqueReferrers: sql<number>`count(distinct ${referrerSourceExpr}) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is not null)::int`,
+							directClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is null)::int`,
+						})
+						.from(clickEvents)
+						.where(eq(clickEvents.profileId, profile.id)),
+					db
+						.select({
+							linkId: clickEvents.linkId,
+							previousCount: sql<number>`count(*) filter (where ${clickEvents.clickedAt} < ${rangeStart})::int`,
+							count: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
+							title: links.title,
+							url: links.url,
+						})
+						.from(clickEvents)
+						.leftJoin(links, eq(clickEvents.linkId, links.id))
+						.where(
+							and(
+								eq(clickEvents.profileId, profile.id),
+								gte(clickEvents.clickedAt, previousStart),
+							),
+						)
+						.groupBy(clickEvents.linkId, links.title, links.url)
+						.orderBy(
+							desc(
+								sql`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})`,
+							),
+						),
 
-		const directClicks = await db
-			.select({
-				count: sql<number>`count(*) filter (where ${clickEvents.referrer} is null or btrim(${clickEvents.referrer}) = '')::int`,
-			})
-			.from(clickEvents)
-			.where(eq(clickEvents.profileId, profile.id));
+					db
+						.select({
+							source: referrerSourceExpr,
+							count: sql<number>`count(*)::int`,
+						})
+						.from(clickEvents)
+						.where(rangeWhere)
+						.groupBy(referrerSourceExpr)
+						.orderBy(desc(sql`count(*)`))
+						.limit(8),
 
-		const clicksByLink = await db
-			.select({
-				linkId: clickEvents.linkId,
-				count: sql<number>`count(*)::int`,
-				title: links.title,
-				url: links.url,
-			})
-			.from(clickEvents)
-			.leftJoin(links, eq(clickEvents.linkId, links.id))
-			.where(eq(clickEvents.profileId, profile.id))
-			.groupBy(clickEvents.linkId, links.title, links.url)
-			.orderBy(desc(sql`count(*)`));
+					db
+						.select({
+							day: sql<string>`to_char(${dayExpr}, 'YYYY-MM-DD')`,
+							count: sql<number>`count(*)::int`,
+						})
+						.from(clickEvents)
+						.where(rangeWhere)
+						.groupBy(dayExpr)
+						.orderBy(asc(dayExpr)),
 
-		const referrerSourceExpr = sql<string>`coalesce(nullif(split_part(regexp_replace(${clickEvents.referrer}, '^https?://(www\\.)?', ''), '/', 1), ''), 'Direct')`;
+					db
+						.select({
+							id: clickEvents.id,
+							linkId: clickEvents.linkId,
+							referrer: clickEvents.referrer,
+							userAgent: clickEvents.userAgent,
+							country: clickEvents.country,
+							clickedAt: clickEvents.clickedAt,
+							linkTitle: links.title,
+							linkUrl: links.url,
+						})
+						.from(clickEvents)
+						.leftJoin(links, eq(clickEvents.linkId, links.id))
+						.where(rangeWhere)
+						.orderBy(desc(clickEvents.clickedAt))
+						.limit(12),
+				]);
 
-		const topReferrers = await db
-			.select({
-				source: referrerSourceExpr,
-				count: sql<number>`count(*)::int`,
-			})
-			.from(clickEvents)
-			.where(eq(clickEvents.profileId, profile.id))
-			.groupBy(referrerSourceExpr)
-			.orderBy(desc(sql`count(*)`))
-			.limit(8);
-
-		const dayExpr = sql`date_trunc('day', ${clickEvents.clickedAt})`;
-
-		const clicksByDay = await db
-			.select({
-				day: sql<string>`to_char(${dayExpr}, 'YYYY-MM-DD')`,
-				count: sql<number>`count(*)::int`,
-			})
-			.from(clickEvents)
-			.where(
-				and(
-					eq(clickEvents.profileId, profile.id),
-					sql`${clickEvents.clickedAt} >= now() - interval '6 days'`,
-				),
-			)
-			.groupBy(dayExpr)
-			.orderBy(asc(dayExpr));
-
-		const recentClicks = await db
-			.select({
-				id: clickEvents.id,
-				linkId: clickEvents.linkId,
-				referrer: clickEvents.referrer,
-				userAgent: clickEvents.userAgent,
-				country: clickEvents.country,
-				clickedAt: clickEvents.clickedAt,
-				linkTitle: links.title,
-				linkUrl: links.url,
-			})
-			.from(clickEvents)
-			.leftJoin(links, eq(clickEvents.linkId, links.id))
-			.where(eq(clickEvents.profileId, profile.id))
-			.orderBy(desc(clickEvents.clickedAt))
-			.limit(50);
-
-		return {
-			totalClicks: totalClicks[0]?.count ?? 0,
-			clicksLast24h: clicksLast24h[0]?.count ?? 0,
-			clicksLast7d: clicksLast7d[0]?.count ?? 0,
-			uniqueReferrers: uniqueReferrers[0]?.count ?? 0,
-			directClicks: directClicks[0]?.count ?? 0,
-			clicksByLink,
-			topReferrers,
-			clicksByDay,
-			recentClicks,
-		};
-	}),
+			return {
+				rangeDays: input.days,
+				previousPeriodClicks: totals[0]?.previousPeriodClicks ?? 0,
+				previousRangeStart: previousStart.toISOString().slice(0, 10),
+				previousRangeEnd: new Date(rangeStart.getTime() - 1)
+					.toISOString()
+					.slice(0, 10),
+				periodClicks: totals[0]?.periodClicks ?? 0,
+				totalClicks: totals[0]?.totalClicks ?? 0,
+				clicksLast24h: totals[0]?.clicksLast24h ?? 0,
+				clicksLast7d: totals[0]?.clicksLast7d ?? 0,
+				uniqueReferrers: totals[0]?.uniqueReferrers ?? 0,
+				directClicks: totals[0]?.directClicks ?? 0,
+				clicksByLink,
+				topReferrers,
+				rangeStart: rangeStart.toISOString().slice(0, 10),
+				rangeEnd: now.toISOString().slice(0, 10),
+				clicksByDay: fillDailyClicks(clicksByDay, input.days, now),
+				recentClicks,
+			};
+		}),
 });

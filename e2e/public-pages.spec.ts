@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test("landing page renders primary content and nav actions", async ({ page }) => {
-	await page.goto("/");
+	const response = await page.goto("/");
+	expect(response?.headers()["x-frame-options"]).toBe("DENY");
+	expect(response?.headers()["x-content-type-options"]).toBe("nosniff");
 
 	await expect(page).toHaveTitle(/llink\.space/i);
 	await expect(
@@ -11,6 +13,16 @@ test("landing page renders primary content and nav actions", async ({ page }) =>
 	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible({
 		timeout: 15_000,
 	});
+});
+
+test("cross-origin API writes are rejected", async ({ request }) => {
+	const response = await request.post("/api/trpc/security-probe", {
+		headers: { origin: "https://attacker.example" },
+		data: {},
+	});
+
+	expect(response.status()).toBe(403);
+	expect(await response.json()).toEqual({ error: "Invalid request origin" });
 });
 
 test("unknown route renders not found experience", async ({ page }) => {

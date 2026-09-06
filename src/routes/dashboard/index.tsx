@@ -1,14 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
+	CalendarX,
 	Check,
+	Clock,
 	Copy,
+	Download,
 	Eye,
 	EyeOff,
 	FolderPlus,
 	Link2,
+	ListChecks,
+	MoveRight,
 	Plus,
 	Search,
+	Trash2,
 	X,
 } from "lucide-react";
 import type { FormEvent } from "react";
@@ -17,6 +23,7 @@ import { toast } from "sonner";
 import { LinksLoadingState } from "#/components/dashboard/DashboardLoading";
 import type { LinkFormData } from "#/components/dashboard/LinkForm";
 import { LinkForm } from "#/components/dashboard/LinkForm";
+import { LinkImportDialog } from "#/components/dashboard/LinkImportDialog";
 import {
 	type DashboardLink,
 	type DashboardSection,
@@ -34,11 +41,13 @@ import { Input } from "#/components/ui/input";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardLinks } from "#/lib/auth-server";
 import {
+	buildLinksCsv,
 	dashboardLinkStats,
 	filterDashboardLinks,
 	type LinkStatusFilter,
 } from "#/lib/dashboard-tools";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
+import { publishingStatus } from "#/lib/link-publishing";
 
 export const Route = createFileRoute("/dashboard/")({
 	headers: () => ({
@@ -81,10 +90,14 @@ interface LinkDeleteState {
 	title: string;
 }
 
+type BulkLinkAction = "publish" | "pause" | "move" | "delete";
+
 const LINK_STAT_CARDS = [
 	{ id: "total", label: "Total links", Icon: Link2, color: "bg-[#F5FF7B]" },
 	{ id: "live", label: "Live", Icon: Eye, color: "bg-[#8AE1E7]" },
 	{ id: "paused", label: "Paused", Icon: EyeOff, color: "bg-[#F2B7E2]" },
+	{ id: "scheduled", label: "Scheduled", Icon: Clock, color: "bg-[#C5B8FF]" },
+	{ id: "expired", label: "Expired", Icon: CalendarX, color: "bg-[#FFCEA1]" },
 ] as const;
 
 function errorMessage(error: unknown, fallback: string) {
@@ -136,6 +149,12 @@ function DashboardPage() {
 	const [sectionFilter, setSectionFilter] = useState("all");
 	const [copiedProfileUrl, setCopiedProfileUrl] = useState(false);
 	const [actionLinkId, setActionLinkId] = useState<string | null>(null);
+	const [selectionMode, setSelectionMode] = useState(false);
+	const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const [bulkMoveSectionId, setBulkMoveSectionId] = useState("unsectioned");
+	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const createSectionInputRef = useRef<HTMLInputElement | null>(null);
 	const copyResetTimerRef = useRef<number | null>(null);
 
@@ -147,9 +166,10 @@ function DashboardPage() {
 	}, []);
 
 	const linksQueryOptions = trpc.links.list.queryOptions();
-	const { data: layout = initialLayout, refetch: refetchLayout } = useQuery({
+	const { data: layout = initialLayout } = useQuery({
 		...linksQueryOptions,
 		initialData: initialLayout,
+		staleTime: 30_000,
 	});
 
 	const addLink = useMutation(trpc.links.add.mutationOptions());
@@ -159,6 +179,7 @@ function DashboardPage() {
 	const createSection = useMutation(trpc.links.createSection.mutationOptions());
 	const updateSection = useMutation(trpc.links.updateSection.mutationOptions());
 	const deleteSection = useMutation(trpc.links.deleteSection.mutationOptions());
+	const bulkAction = useMutation(trpc.links.bulkAction.mutationOptions());
 	const stats = useMemo(() => dashboardLinkStats(layout.links), [layout.links]);
 	const filteredLinks = useMemo(
 		() =>
@@ -178,6 +199,10 @@ function DashboardPage() {
 		linkQuery.trim().length > 0 ||
 		statusFilter !== "all" ||
 		sectionFilter !== "all";
+	const selectedCount = selectedLinkIds.size;
+	const allVisibleSelected =
+		filteredLinks.length > 0 &&
+		filteredLinks.every((link) => selectedLinkIds.has(link.id));
 
 	useEffect(() => {
 		setIsHydrated(true);
@@ -196,12 +221,21 @@ function DashboardPage() {
 		return () => window.cancelAnimationFrame(rafId);
 	}, [sectionCreateState, focusAndSelectCreateSectionInput]);
 
+	useEffect(() => {
+		const currentIds = new Set(layout.links.map((link) => link.id));
+		setSelectedLinkIds((previous) => {
+			const next = new Set(
+				[...previous].filter((linkId) => currentIds.has(linkId)),
+			);
+			return next.size === previous.size ? previous : next;
+		});
+	}, [layout.links]);
+
 	const refreshLayout = async () => {
 		await queryClient.invalidateQueries({
 			queryKey: linksQueryOptions.queryKey,
 			exact: true,
 		});
-		await refetchLayout();
 	};
 
 	const handleAddLink = async (data: LinkFormData) => {
@@ -237,7 +271,16 @@ function DashboardPage() {
 			const nextIsActive = link.isActive === false;
 			await updateLink.mutateAsync({ id: link.id, isActive: nextIsActive });
 			await refreshLayout();
-			toast.success(nextIsActive ? "Link published" : "Link paused");
+			const status = publishingStatus({ ...link, isActive: nextIsActive });
+			toast.success(
+				status === "Live"
+					? "Link published"
+					: status === "Scheduled"
+						? "Schedule enabled"
+						: status === "Expired"
+							? "Link enabled; end time has passed"
+							: "Link paused",
+			);
 		} catch (error) {
 			toast.error(errorMessage(error, "Could not update link visibility"));
 		} finally {
@@ -291,6 +334,75 @@ function DashboardPage() {
 		setLinkQuery("");
 		setStatusFilter("all");
 		setSectionFilter("all");
+	};
+
+	const toggleSelectionMode = () => {
+		setSelectionMode((value) => !value);
+		setSelectedLinkIds(new Set());
+	};
+
+	const toggleLinkSelection = (linkId: string) => {
+		setSelectedLinkIds((previous) => {
+			const next = new Set(previous);
+			if (next.has(linkId)) next.delete(linkId);
+			else next.add(linkId);
+			return next;
+		});
+	};
+
+	const toggleSelectAllVisible = () => {
+		setSelectedLinkIds((previous) => {
+			const next = new Set(previous);
+			if (allVisibleSelected) {
+				for (const link of filteredLinks) next.delete(link.id);
+			} else {
+				for (const link of filteredLinks) next.add(link.id);
+			}
+			return next;
+		});
+	};
+
+	const handleBulkAction = async (action: BulkLinkAction) => {
+		if (selectedLinkIds.size === 0) return;
+		try {
+			const result = await bulkAction.mutateAsync({
+				ids: [...selectedLinkIds],
+				action,
+				...(action === "move"
+					? {
+							sectionId:
+								bulkMoveSectionId === "unsectioned" ? null : bulkMoveSectionId,
+						}
+					: {}),
+			});
+			await refreshLayout();
+			setSelectedLinkIds(new Set());
+			setBulkDeleteOpen(false);
+			const messages: Record<BulkLinkAction, string> = {
+				publish: `${result.count} link${result.count === 1 ? "" : "s"} published`,
+				pause: `${result.count} link${result.count === 1 ? "" : "s"} paused`,
+				move: `${result.count} link${result.count === 1 ? "" : "s"} moved`,
+				delete: `${result.count} link${result.count === 1 ? "" : "s"} deleted`,
+			};
+			toast.success(messages[action]);
+		} catch (error) {
+			toast.error(errorMessage(error, "Could not update the selected links"));
+		}
+	};
+
+	const handleExportLinks = () => {
+		const csv = buildLinksCsv(layout.links, layout.sections);
+		const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+		const downloadUrl = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+		anchor.href = downloadUrl;
+		anchor.download = `llink-links-${new Date().toISOString().slice(0, 10)}.csv`;
+		anchor.style.display = "none";
+		document.body.append(anchor);
+		anchor.click();
+		anchor.remove();
+		window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+		toast.success("Link catalog exported");
 	};
 
 	const handleRequestDeleteLink = (id: string) => {
@@ -413,12 +525,15 @@ function DashboardPage() {
 	};
 
 	const isBusy =
+		!isHydrated ||
+		reorderLinks.isPending ||
 		addLink.isPending ||
 		updateLink.isPending ||
 		deleteLink.isPending ||
 		createSection.isPending ||
 		updateSection.isPending ||
 		deleteSection.isPending;
+	const isBulkBusy = bulkAction.isPending;
 
 	return (
 		<div className="max-w-3xl px-4 py-5 sm:px-6 md:p-8">
@@ -434,24 +549,48 @@ function DashboardPage() {
 						Organize links into sections and drag them where they belong
 					</p>
 				</div>
-				<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+				<div className="flex w-full flex-wrap gap-2 sm:w-auto">
+					<LinkImportDialog
+						existingUrls={layout.links.map((link) => link.url)}
+						onImported={refreshLayout}
+						disabled={isBusy || isBulkBusy}
+					/>
+					<Button
+						type="button"
+						size="sm"
+						variant={selectionMode ? "default" : "outline"}
+						onClick={toggleSelectionMode}
+						disabled={
+							(layout.links.length === 0 && !selectionMode) ||
+							isBusy ||
+							isBulkBusy
+						}
+					>
+						<ListChecks className="mr-1.5 h-4 w-4" />
+						{selectionMode ? "Done" : "Select"}
+					</Button>
 					<Button
 						type="button"
 						variant="outline"
+						size="sm"
 						onClick={handleOpenAddSection}
-						disabled={isBusy}
+						disabled={isBusy || isBulkBusy}
 					>
 						<FolderPlus className="mr-1.5 h-4 w-4" />
 						Add section
 					</Button>
-					<Button onClick={() => setShowAddLink(true)} disabled={isBusy}>
+					<Button
+						size="sm"
+						onClick={() => setShowAddLink(true)}
+						disabled={isBusy || isBulkBusy}
+					>
 						<Plus className="mr-1.5 h-4 w-4" />
 						Add link
 					</Button>
 				</div>
 			</div>
 
-			<div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+			<div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
 				{LINK_STAT_CARDS.map(({ id, label, Icon, color }) => (
 					<div
 						key={id}
@@ -498,6 +637,8 @@ function DashboardPage() {
 						<option value="all">All statuses</option>
 						<option value="live">Live only</option>
 						<option value="paused">Paused only</option>
+						<option value="scheduled">Scheduled only</option>
+						<option value="expired">Expired only</option>
 					</select>
 					<select
 						aria-label="Filter links by section"
@@ -521,7 +662,7 @@ function DashboardPage() {
 					>
 						Showing {filteredLinks.length} of {layout.links.length} links
 					</p>
-					<div className="flex gap-2">
+					<div className="flex flex-wrap gap-2">
 						{hasActiveFilters && (
 							<Button
 								type="button"
@@ -545,9 +686,101 @@ function DashboardPage() {
 							)}
 							{copiedProfileUrl ? "Copied" : "Copy page URL"}
 						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={handleExportLinks}
+							disabled={!isHydrated || layout.links.length === 0}
+						>
+							<Download className="mr-1 h-3.5 w-3.5" />
+							Export links
+						</Button>
 					</div>
 				</div>
 			</div>
+
+			{selectionMode && (
+				<fieldset
+					className="kinetic-panel mb-5 border-black bg-[#FFF7A8] p-3 sm:p-4"
+					aria-label="Bulk link actions"
+				>
+					<div className="flex flex-col gap-3">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<p
+								className="text-sm font-bold text-[#11110F]"
+								aria-live="polite"
+							>
+								{selectedCount} selected
+							</p>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={toggleSelectAllVisible}
+								disabled={filteredLinks.length === 0}
+							>
+								{allVisibleSelected
+									? "Clear visible"
+									: `Select visible (${filteredLinks.length})`}
+							</Button>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => void handleBulkAction("publish")}
+								disabled={selectedCount === 0 || isBulkBusy}
+							>
+								<Eye className="mr-1 h-3.5 w-3.5" /> Publish
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => void handleBulkAction("pause")}
+								disabled={selectedCount === 0 || isBulkBusy}
+							>
+								<EyeOff className="mr-1 h-3.5 w-3.5" /> Pause
+							</Button>
+							<div className="flex w-full min-w-0 gap-2 sm:w-auto sm:flex-initial">
+								<select
+									aria-label="Bulk move destination"
+									value={bulkMoveSectionId}
+									onChange={(event) => setBulkMoveSectionId(event.target.value)}
+									className="h-9 min-w-0 flex-1 rounded-xl border-2 border-black bg-white px-2 text-xs font-semibold text-[#11110F] sm:w-40"
+								>
+									<option value="unsectioned">Unsectioned</option>
+									{layout.sections.map((section) => (
+										<option key={section.id} value={section.id}>
+											{section.title}
+										</option>
+									))}
+								</select>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => void handleBulkAction("move")}
+									disabled={selectedCount === 0 || isBulkBusy}
+								>
+									<MoveRight className="mr-1 h-3.5 w-3.5" /> Move
+								</Button>
+							</div>
+							<Button
+								type="button"
+								size="sm"
+								className="bg-[#B42318] text-white hover:bg-[#8B1B13]"
+								onClick={() => setBulkDeleteOpen(true)}
+								disabled={selectedCount === 0 || isBulkBusy}
+							>
+								<Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+							</Button>
+						</div>
+					</div>
+				</fieldset>
+			)}
 
 			{layout.links.length === 0 && layout.sections.length === 0 ? (
 				<div className="kinetic-panel py-16 text-center">
@@ -591,7 +824,10 @@ function DashboardPage() {
 					onCreateSectionAt={openCreateSectionDialog}
 					onRenameSection={handleRenameSection}
 					onDeleteSection={handleRequestDeleteSection}
-					enableDrag={isHydrated && !hasActiveFilters}
+					enableDrag={isHydrated && !hasActiveFilters && !selectionMode}
+					selectionMode={selectionMode}
+					selectedLinkIds={selectedLinkIds}
+					onToggleLinkSelection={toggleLinkSelection}
 				/>
 			)}
 
@@ -625,6 +861,11 @@ function DashboardPage() {
 									editingLink.iconUrl && isLinkIconKey(editingLink.iconUrl)
 										? editingLink.iconUrl
 										: "",
+								featured: editingLink.featured,
+								featureImageUrl: editingLink.featureImageUrl ?? "",
+								ctaLabel: editingLink.ctaLabel ?? "",
+								publishAt: editingLink.publishAt ?? "",
+								expireAt: editingLink.expireAt ?? "",
 								iconBgColor: editingLink.iconBgColor ?? "#F5FF7B",
 								isActive: editingLink.isActive ?? true,
 							}}
@@ -633,6 +874,38 @@ function DashboardPage() {
 							onCancel={() => setEditingLink(null)}
 						/>
 					)}
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Delete selected links?</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-4">
+						<p className="text-sm text-[#4B4B45]">
+							{selectedCount} link{selectedCount === 1 ? "" : "s"} will be
+							permanently removed, including their click history.
+						</p>
+						<div className="flex flex-col-reverse gap-2 sm:flex-row">
+							<Button
+								type="button"
+								className="bg-[#B42318] text-white hover:bg-[#8B1B13]"
+								onClick={() => void handleBulkAction("delete")}
+								disabled={isBulkBusy}
+							>
+								{isBulkBusy ? "Deleting…" : "Delete selected"}
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setBulkDeleteOpen(false)}
+								disabled={isBulkBusy}
+							>
+								Cancel
+							</Button>
+						</div>
+					</div>
 				</DialogContent>
 			</Dialog>
 
@@ -701,6 +974,7 @@ function DashboardPage() {
 								ref={createSectionInputRef}
 								value={sectionTitleDraft}
 								onChange={(event) => setSectionTitleDraft(event.target.value)}
+								aria-label="Section title"
 								placeholder="Section title"
 								maxLength={60}
 							/>
@@ -742,6 +1016,7 @@ function DashboardPage() {
 								autoFocus
 								value={editingSectionTitle}
 								onChange={(event) => setEditingSectionTitle(event.target.value)}
+								aria-label="Section title"
 								placeholder="Section title"
 								maxLength={60}
 							/>
