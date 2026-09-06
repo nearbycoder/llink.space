@@ -20,3 +20,19 @@ export function fillDailyClicks(
 		return { day, count: counts.get(day) ?? 0 };
 	});
 }
+
+export function compareClicks(current: number, previous: number) {
+	const delta = current - previous;
+	return {
+		delta,
+		percent: previous === 0 ? null : Math.round((delta / previous) * 100),
+	};
+}
+export function comparisonLabel(current: number, previous: number) {
+	const { delta, percent } = compareClicks(current, previous);
+	return percent === null
+		? current > 0
+			? "New activity"
+			: "No change"
+		: `${delta > 0 ? "+" : ""}${percent}%`;
+}

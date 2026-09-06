@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { analyticsRangeStart, fillDailyClicks } from "./analytics-tools";
+import {
+	analyticsRangeStart,
+	compareClicks,
+	comparisonLabel,
+	fillDailyClicks,
+} from "./analytics-tools";
 
 describe("UTC analytics days", () => {
 	it("uses the same calendar boundary across browser offsets and year boundaries", () => {
@@ -21,5 +26,14 @@ describe("UTC analytics days", () => {
 			{ day: "2024-02-29", count: 3 },
 			{ day: "2024-03-01", count: 0 },
 		]);
+	});
+});
+
+describe("period comparisons", () => {
+	it("handles gains, losses, and a zero baseline without infinity", () => {
+		expect(compareClicks(15, 10)).toEqual({ delta: 5, percent: 50 });
+		expect(compareClicks(0, 10)).toEqual({ delta: -10, percent: -100 });
+		expect(compareClicks(5, 0)).toEqual({ delta: 5, percent: null });
+		expect(comparisonLabel(0, 0)).toBe("No change");
 	});
 });

@@ -26,6 +26,7 @@ import {
 import { AnalyticsLoadingState } from "#/components/dashboard/DashboardLoading";
 import { Button } from "#/components/ui/button";
 import { useTRPC } from "#/integrations/trpc/react";
+import { comparisonLabel } from "#/lib/analytics-tools";
 import { getDashboardAnalytics } from "#/lib/auth-server";
 import { buildAnalyticsCsv } from "#/lib/dashboard-tools";
 
@@ -240,6 +241,14 @@ function AnalyticsPage() {
 							</span>
 						</div>
 						<p className="text-3xl font-bold text-[#11110F]">{periodClicks}</p>
+						<p className="mt-2 text-xs font-semibold">
+							{comparisonLabel(
+								periodClicks,
+								summary?.previousPeriodClicks ?? 0,
+							)}{" "}
+							vs previous {displayRangeDays} days (
+							{summary?.previousPeriodClicks ?? 0} clicks)
+						</p>
 					</div>
 
 					<div className="kinetic-panel p-5 bg-[#FFFCEF]">
@@ -505,6 +514,40 @@ function AnalyticsPage() {
 					</div>
 				)}
 
+				<section className="kinetic-panel mt-6 overflow-hidden bg-[#FFFCEF] p-5">
+					<h2 className="text-lg font-bold">What changed</h2>
+					<p className="mt-1 text-xs">
+						Compared with {summary?.previousRangeStart} –{" "}
+						{summary?.previousRangeEnd}. Today is still in progress.
+					</p>
+					<div className="mt-4 overflow-x-auto">
+						<table className="w-full text-left text-sm">
+							<thead>
+								<tr>
+									<th className="py-2">Link</th>
+									<th>Now</th>
+									<th>Previous</th>
+									<th>Change</th>
+								</tr>
+							</thead>
+							<tbody>
+								{(summary?.clicksByLink ?? []).slice(0, 20).map((l) => (
+									<tr key={l.linkId} className="border-t border-black/15">
+										<th className="max-w-48 truncate py-3 font-medium">
+											{l.title || "Deleted link"}
+										</th>
+										<td>{l.count}</td>
+										<td>{l.previousCount}</td>
+										<td>{comparisonLabel(l.count, l.previousCount)}</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+					{!summary?.clicksByLink.length && (
+						<p className="mt-3 text-sm">Click comparisons will appear here.</p>
+					)}
+				</section>
 				{periodClicks === 0 && (
 					<div className="kinetic-panel py-16 text-center">
 						<Activity className="mx-auto mb-3 h-8 w-8 text-[#6A675C]" />

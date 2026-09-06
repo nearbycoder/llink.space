@@ -63,7 +63,8 @@ type DashboardPath =
 	| "/dashboard"
 	| "/dashboard/profile"
 	| "/dashboard/analytics"
-	| "/dashboard/design";
+	| "/dashboard/design"
+	| "/dashboard/health";
 
 const navItems: Array<{
 	to: DashboardPath;
@@ -83,6 +84,12 @@ const navItems: Array<{
 		to: "/dashboard/analytics",
 		label: "Analytics",
 		icon: BarChart3,
+		exact: false,
+	},
+	{
+		to: "/dashboard/health",
+		label: "Link health",
+		icon: ExternalLink,
 		exact: false,
 	},
 ];

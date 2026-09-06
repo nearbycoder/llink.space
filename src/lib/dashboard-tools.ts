@@ -66,6 +66,7 @@ export interface AnalyticsCsvSummary {
 	rangeStart?: string;
 	rangeEnd?: string;
 	periodClicks?: number;
+	previousPeriodClicks?: number;
 	clicksByDay?: Array<{ day: string; count: number }>;
 	totalClicks: number;
 	clicksLast24h: number;
@@ -88,6 +89,7 @@ export function buildAnalyticsCsv(summary: AnalyticsCsvSummary) {
 		["Start date (UTC)", summary.rangeStart ?? ""],
 		["End date (UTC)", summary.rangeEnd ?? ""],
 		["Selected period clicks", summary.periodClicks ?? ""],
+		["Previous period clicks", summary.previousPeriodClicks ?? ""],
 		["Total clicks", summary.totalClicks],
 		["Last 24 hours", summary.clicksLast24h],
 		["Last 7 days", summary.clicksLast7d],

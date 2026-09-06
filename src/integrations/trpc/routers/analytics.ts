@@ -98,6 +98,9 @@ export const analyticsRouter = createTRPCRouter({
 
 			const now = new Date();
 			const rangeStart = analyticsRangeStart(input.days, now);
+			const previousStart = new Date(
+				rangeStart.getTime() - input.days * 86400000,
+			);
 			const rangeWhere = and(
 				eq(clickEvents.profileId, profile.id),
 				gte(clickEvents.clickedAt, rangeStart),
@@ -115,6 +118,7 @@ export const analyticsRouter = createTRPCRouter({
 							totalClicks: sql<number>`count(*)::int`,
 							clicksLast24h: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 86400000)})::int`,
 							clicksLast7d: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 7 * 86400000)})::int`,
+							previousPeriodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${previousStart} and ${clickEvents.clickedAt} < ${rangeStart})::int`,
 							periodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
 							uniqueReferrers: sql<number>`count(distinct ${referrerSourceExpr}) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is not null)::int`,
 							directClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is null)::int`,
@@ -124,15 +128,25 @@ export const analyticsRouter = createTRPCRouter({
 					db
 						.select({
 							linkId: clickEvents.linkId,
-							count: sql<number>`count(*)::int`,
+							previousCount: sql<number>`count(*) filter (where ${clickEvents.clickedAt} < ${rangeStart})::int`,
+							count: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
 							title: links.title,
 							url: links.url,
 						})
 						.from(clickEvents)
 						.leftJoin(links, eq(clickEvents.linkId, links.id))
-						.where(rangeWhere)
+						.where(
+							and(
+								eq(clickEvents.profileId, profile.id),
+								gte(clickEvents.clickedAt, previousStart),
+							),
+						)
 						.groupBy(clickEvents.linkId, links.title, links.url)
-						.orderBy(desc(sql`count(*)`)),
+						.orderBy(
+							desc(
+								sql`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})`,
+							),
+						),
 
 					db
 						.select({
@@ -175,6 +189,11 @@ export const analyticsRouter = createTRPCRouter({
 
 			return {
 				rangeDays: input.days,
+				previousPeriodClicks: totals[0]?.previousPeriodClicks ?? 0,
+				previousRangeStart: previousStart.toISOString().slice(0, 10),
+				previousRangeEnd: new Date(rangeStart.getTime() - 1)
+					.toISOString()
+					.slice(0, 10),
 				periodClicks: totals[0]?.periodClicks ?? 0,
 				totalClicks: totals[0]?.totalClicks ?? 0,
 				clicksLast24h: totals[0]?.clicksLast24h ?? 0,

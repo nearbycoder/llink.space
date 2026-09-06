@@ -73,7 +73,7 @@ export const designRouter = createTRPCRouter({
 						sql`,`,
 					);
 					await tx.execute(
-						sql`update ${links} set title = edits.title, url = edits.url, updated_at = now() from (values ${values}) as edits(id,title,url) where ${links.id} = edits.id and ${links.profileId} = ${profile.id}`,
+						sql`update ${links} set title = edits.title, url = edits.url, health_state = case when ${links.url} <> edits.url then null else ${links.healthState} end, health_status_code = case when ${links.url} <> edits.url then null else ${links.healthStatusCode} end, health_final_url = case when ${links.url} <> edits.url then null else ${links.healthFinalUrl} end, health_checked_at = case when ${links.url} <> edits.url then null else ${links.healthCheckedAt} end, updated_at = now() from (values ${values}) as edits(id,title,url) where ${links.id} = edits.id and ${links.profileId} = ${profile.id}`,
 					);
 				}
 				const [updated] = await tx

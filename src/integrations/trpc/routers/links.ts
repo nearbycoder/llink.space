@@ -343,7 +343,18 @@ export const linksRouter = createTRPCRouter({
 				const { id, ...data } = input;
 				const [updated] = await tx
 					.update(links)
-					.set({ ...data, updatedAt: new Date() })
+					.set({
+						...data,
+						...(data.url && data.url !== existingLink.url
+							? {
+									healthState: null,
+									healthStatusCode: null,
+									healthFinalUrl: null,
+									healthCheckedAt: null,
+								}
+							: {}),
+						updatedAt: new Date(),
+					})
 					.where(and(eq(links.id, id), eq(links.profileId, profile.id)))
 					.returning();
 

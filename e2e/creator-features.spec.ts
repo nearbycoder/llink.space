@@ -65,3 +65,26 @@ test('design drafts preview, publish, persist and keep templates reversible',asy
  await expect(page.getByRole('heading',{name:'Behind the scenes'})).toBeVisible();
  await expect(page.getByRole('link',{name:'My portfolio'})).toBeVisible();
 });
+
+test('link checks persist blocked results and analytics compares the previous period',async({page})=>{
+ const profile=await creator(page.request);
+ const link=await write(page.request,'links.add',{title:'Local destination',url:'http://127.0.0.1/private'});
+ const checked=await write(page.request,'health.check',{ids:[link.id]});
+ expect(checked[0].healthState).toBe('blocked');
+ expect((await read(page.request,'links.list')).links[0].healthState).toBe('blocked');
+ expect((await page.request.post('/api/trpc/health.check',{data:{json:{ids:[link.id]}}})).status()).toBe(429);
+ const {Client}=await import('pg');
+ const client=new Client({connectionString:process.env.DATABASE_URL||'postgres://postgres:postgres@127.0.0.1:5432/llink_test'});
+ await client.connect();
+ try{
+ const start=new Date();start.setUTCHours(0,0,0,0);start.setUTCDate(start.getUTCDate()-6);
+ await client.query('insert into click_events(link_id,profile_id,clicked_at) values($1,$2,$3),($1,$2,$4),($1,$2,$4)',[link.id,profile.id,new Date(start.getTime()-86400000),new Date()]);
+ }finally{await client.end();}
+ const summary=await read(page.request,'analytics.getSummary',{days:7});
+ expect(summary.periodClicks).toBe(2);expect(summary.previousPeriodClicks).toBe(1);
+ expect(summary.clicksByLink[0]).toMatchObject({count:2,previousCount:1});
+ await page.goto('/dashboard/health');await expect(page.getByText(/blocked/)).toBeVisible();
+ await write(page.request,'links.update',{id:link.id,url:'https://example.com/repaired'});expect((await read(page.request,'links.list')).links[0].healthState).toBeNull();
+ await page.goto('/dashboard/analytics?days=7');await expect(page.getByRole('heading',{name:'What changed'})).toBeVisible();
+ await expect(page.getByText('+100% vs previous 7 days (1 clicks)')).toBeVisible();
+});
