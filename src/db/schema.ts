@@ -3,12 +3,14 @@ import {
 	boolean,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { ContentBlock } from "#/lib/page-design";
 
 export const profiles = pgTable("profiles", {
 	id: uuid().primaryKey().defaultRandom(),
@@ -28,6 +30,13 @@ export const profiles = pgTable("profiles", {
 		.default("kinetic-neon"),
 	pageBackgroundImageUrl: text("page_background_image_url"),
 	theme: text().default("default"),
+	fontFamily: text("font_family").notNull().default("work"),
+	buttonStyle: text("button_style").notNull().default("rounded"),
+	accentColor: text("accent_color"),
+	contentBlocks: jsonb("content_blocks")
+		.$type<ContentBlock[]>()
+		.notNull()
+		.default([]),
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
 });

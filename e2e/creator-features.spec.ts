@@ -32,3 +32,36 @@ test('publishing windows, featured uniqueness and ownership are enforced',async(
  published=await read(request,'links.getPublic',{username:profile.username});
  expect(published.links).toHaveLength(2);
 });
+
+test('design drafts preview, publish, persist and keep templates reversible',async({page})=>{
+ const profile=await creator(page.request);
+ await write(page.request,'links.add',{title:'My portfolio',url:'https://example.com/work'});
+ await page.goto('/dashboard/design');
+ await page.getByRole('heading',{name:'Design studio'}).waitFor();
+ await page.getByLabel('Display name',{exact:true}).fill('Studio Creator');
+ await page.getByLabel('Theme',{exact:true}).selectOption('dark');
+ await page.getByLabel('Typography',{exact:true}).selectOption('editorial');
+ await page.getByLabel('Button shape',{exact:true}).selectOption('pill');
+ await page.getByRole('button',{name:'Add content block',exact:true}).click();
+ await page.getByLabel('Title / image alt text').fill('Behind the scenes');
+ await page.getByLabel('Text',{exact:true}).fill('Stories from the studio.');
+ await expect(page.getByTestId('live-preview').getByText('Behind the scenes',{exact:true})).toBeVisible();
+ expect((await read(page.request,'links.getPublic',{username:profile.username})).profile.contentBlocks).toHaveLength(0);
+ await page.getByRole('button',{name:'Desktop',exact:true}).click();
+ await page.screenshot({path:'/tmp/creator-design-desktop.png',fullPage:true});
+ await page.getByRole('button',{name:'Publish design',exact:true}).click();
+ await expect(page.getByText('Page design published',{exact:true})).toBeVisible();
+ const published=await read(page.request,'links.getPublic',{username:profile.username});
+ expect(published.profile.theme).toBe('dark');expect(published.profile.contentBlocks[0].title).toBe('Behind the scenes');
+ await page.reload();await expect(page.getByLabel('Display name',{exact:true})).toHaveValue('Studio Creator');
+ page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Musicians On repeat'}).click();
+ await expect(page.getByTestId('live-preview').getByText('The latest',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Discard draft',exact:true}).click();
+ await expect(page.getByLabel('Title / image alt text')).toHaveValue('Behind the scenes');
+ await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Phone',exact:true}).click();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+ await page.screenshot({path:'/tmp/creator-design-mobile.png',fullPage:true});
+ await page.goto(`/u/${profile.username}`);
+ await expect(page.getByRole('heading',{name:'Behind the scenes'})).toBeVisible();
+ await expect(page.getByRole('link',{name:'My portfolio'})).toBeVisible();
+});

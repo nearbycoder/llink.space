@@ -3,6 +3,7 @@ import { LinkIcon } from "#/components/links/LinkIcon";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
 
 interface LinkCardProps {
+	buttonStyle?: string;
 	featured?: boolean;
 	featureImageUrl?: string | null;
 	ctaLabel?: string | null;
@@ -21,6 +22,7 @@ interface LinkCardProps {
 
 export function LinkCard({
 	id,
+	buttonStyle,
 	featured,
 	featureImageUrl,
 	ctaLabel,
@@ -60,6 +62,8 @@ export function LinkCard({
 			className="group block w-full rounded-xl border-2 px-5 py-4 transition-transform shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
 			style={{
 				backgroundColor: cardBg,
+				borderRadius:
+					buttonStyle === "pill" ? 32 : buttonStyle === "square" ? 0 : 12,
 				borderColor: cardBorder,
 			}}
 		>

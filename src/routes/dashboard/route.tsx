@@ -62,7 +62,8 @@ export const Route = createFileRoute("/dashboard")({
 type DashboardPath =
 	| "/dashboard"
 	| "/dashboard/profile"
-	| "/dashboard/analytics";
+	| "/dashboard/analytics"
+	| "/dashboard/design";
 
 const navItems: Array<{
 	to: DashboardPath;
@@ -72,6 +73,12 @@ const navItems: Array<{
 }> = [
 	{ to: "/dashboard", label: "Links", icon: LayoutDashboard, exact: true },
 	{ to: "/dashboard/profile", label: "Profile", icon: User, exact: false },
+	{
+		to: "/dashboard/design",
+		label: "Design studio",
+		icon: LayoutDashboard,
+		exact: false,
+	},
 	{
 		to: "/dashboard/analytics",
 		label: "Analytics",

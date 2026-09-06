@@ -36,6 +36,7 @@ import {
 } from "#/lib/security";
 
 const BACKGROUND_TYPE_LABELS: Record<ProfileBackgroundType, string> = {
+	theme: "Theme preset",
 	color: "Color",
 	gradient: "Gradient",
 	image: "Custom image",

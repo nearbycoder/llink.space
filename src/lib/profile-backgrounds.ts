@@ -1,4 +1,9 @@
-export const PROFILE_BACKGROUND_TYPES = ["color", "gradient", "image"] as const;
+export const PROFILE_BACKGROUND_TYPES = [
+	"color",
+	"gradient",
+	"image",
+	"theme",
+] as const;
 
 export type ProfileBackgroundType = (typeof PROFILE_BACKGROUND_TYPES)[number];
 

@@ -8,6 +8,8 @@ interface Profile {
 }
 
 interface ProfileHeaderProps {
+	fontFamily?: string;
+	accentColor?: string;
 	profile: Profile;
 	textColor?: string;
 	mutedTextColor?: string;
@@ -15,6 +17,8 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({
 	profile,
+	fontFamily,
+	accentColor,
 	textColor = "#11110F",
 	mutedTextColor = "#4B4B45",
 }: ProfileHeaderProps) {
@@ -30,7 +34,10 @@ export function ProfileHeader({
 				/>
 				<AvatarFallback
 					className="text-2xl font-semibold"
-					style={{ backgroundColor: "#F5FF7B", color: textColor }}
+					style={{
+						backgroundColor: accentColor ?? "#F5FF7B",
+						color: "#11110F",
+					}}
 				>
 					{profile.displayName?.charAt(0).toUpperCase() ??
 						profile.username.charAt(0).toUpperCase()}
@@ -39,7 +46,10 @@ export function ProfileHeader({
 
 			<h1
 				className="text-2xl font-bold tracking-tight"
-				style={{ color: textColor, fontFamily: "'Archivo Black', sans-serif" }}
+				style={{
+					color: textColor,
+					fontFamily: fontFamily ?? "'Archivo Black', sans-serif",
+				}}
 			>
 				{profile.displayName ?? profile.username}
 			</h1>

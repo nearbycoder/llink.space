@@ -75,7 +75,7 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await page.getByText("Test portfolio", { exact: true }).hover();
 	await page.getByRole("button", { name: "Pause Test portfolio" }).click();
 	await expect(page.getByText("Link paused")).toBeVisible();
-	await expect(page.getByText("Hidden", { exact: true })).toBeVisible();
+	await expect(page.locator('[data-slot="badge"]').getByText("Paused", { exact: true })).toBeVisible();
 	await page.getByLabel("Filter links by status").selectOption("paused");
 	await expect(page.getByText("Showing 1 of 1 links")).toBeVisible();
 	await page.getByRole("button", { name: "Clear filters" }).click();
