@@ -15,7 +15,13 @@ test("uploaded images stream with validators and previews cannot fetch arbitrary
 	const first = await request.get(asset, { headers: { accept: "image/avif,image/webp,image/*,*/*;q=0.8", "sec-fetch-dest": "image" } });
 	expect(first.status(), first.ok() ? "" : JSON.stringify({ url, key, body: await first.text() })).toBe(200);
 	expect(await first.body()).toEqual(png);
-	expect(first.headers()["content-length"]).toBe(String(png.length));
+	// Bun's streamed response uses chunked framing; Node can preserve the known
+	// length. Both are valid. Exact payload bytes are asserted above.
+	if (first.headers()["content-length"] !== undefined) {
+		expect(first.headers()["content-length"]).toBe(String(png.length));
+	} else {
+		expect(first.headers()["transfer-encoding"]).toBe("chunked");
+	}
 	const etag = first.headers().etag;
 	expect(etag).toBeTruthy();
 	const cached = await request.get(asset, { headers: { "if-none-match": `"old", ${etag}` } });
@@ -25,7 +31,12 @@ test("uploaded images stream with validators and previews cannot fetch arbitrary
 	expect((await request.get(asset, { headers: { "if-none-match": '"wrong"', "if-modified-since": first.headers()["last-modified"] } })).status()).toBe(200);
 	const head = await request.head(asset);
 	expect(head.status()).toBe(200);
-	expect(head.headers()["content-length"]).toBe(String(png.length));
+	// HEAD may omit representation length but must retain the media metadata.
+	if (head.headers()["content-length"] !== undefined) {
+		expect(head.headers()["content-length"]).toBe(String(png.length));
+	}
+	expect(head.headers()["content-type"]).toContain("image/png");
+	expect(head.headers().etag).toBe(etag);
 	expect(await head.body()).toHaveLength(0);
 	expect((await request.get("/api/storage/missing.png")).status()).toBe(404);
 	await request.post("/api/trpc/profile.update", { data: { json: { avatarUrl: url } } });

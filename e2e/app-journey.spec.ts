@@ -20,7 +20,8 @@ test("complete creator journey works end to end", async ({ page }) => {
 	const createAccountButton = page.getByRole("button", {
 		name: "Create account",
 	});
-	await expect(createAccountButton).toBeEnabled();
+	// A cold CI dev server compiles this route on the first visit.
+	await expect(createAccountButton).toBeEnabled({ timeout: 15_000 });
 	await page.getByLabel("Name").fill("Journey Creator");
 	await page.getByLabel("Email").fill(email);
 	await page.getByLabel("Password").fill(initialPassword);
