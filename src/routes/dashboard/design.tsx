@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import {
@@ -8,6 +8,14 @@ import {
 	PublicProfilePage,
 } from "#/components/profile/PublicProfilePage";
 import { Button } from "#/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "#/components/ui/dialog";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
 import { isLinkPublished } from "#/lib/link-publishing";
@@ -41,6 +49,10 @@ function DesignStudio() {
 	const [saved, setSaved] = useState(
 		JSON.stringify({ profile: initial.profile, links: initial.layout.links }),
 	);
+	const [selectedTemplate, setSelectedTemplate] = useState<
+		(typeof pageTemplates)[number] | null
+	>(null);
+	const templateTrigger = useRef<HTMLButtonElement | null>(null);
 	const [device, setDevice] = useState<"phone" | "desktop">("phone");
 	const dirty = JSON.stringify({ profile: draft, links: draftLinks }) !== saved;
 	const save = useMutation(trpc.design.save.mutationOptions());
@@ -64,6 +76,28 @@ function DesignStudio() {
 				links: published.filter((l) => l.sectionId === s.id),
 			}))
 			.filter((s) => s.links.length),
+	};
+	const applyTemplate = () => {
+		if (!selectedTemplate) return;
+		const t = selectedTemplate;
+		update({
+			theme: t.theme,
+			pageBackgroundType: "theme",
+			accentColor: null,
+			fontFamily:
+				t.id === "restaurant" || t.id === "freelancer" ? "editorial" : "work",
+			contentBlocks: [
+				{
+					id: crypto.randomUUID(),
+					type: "heading",
+					title: t.heading,
+					body: t.body,
+					url: "",
+					afterLinkId: null,
+				},
+			],
+		});
+		setSelectedTemplate(null);
 	};
 	const publish = async () => {
 		try {
@@ -107,6 +141,64 @@ function DesignStudio() {
 	return (
 		<div className="mx-auto max-w-7xl p-4 sm:p-8">
 			<UnsavedChangesGuard when={dirty || save.isPending} />
+			<Dialog
+				open={selectedTemplate !== null}
+				onOpenChange={(open) => {
+					if (!open) setSelectedTemplate(null);
+				}}
+			>
+				<DialogContent
+					className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+					onCloseAutoFocus={(event) => {
+						event.preventDefault();
+						templateTrigger.current?.focus();
+					}}
+				>
+					{selectedTemplate && (
+						<>
+							<DialogHeader className="pr-6 text-left">
+								<DialogTitle className="text-2xl font-black">
+									Use {selectedTemplate.name}?
+								</DialogTitle>
+								<DialogDescription className="leading-relaxed">
+									This replaces the theme and content blocks in your draft. Your
+									links and profile details stay in place.
+								</DialogDescription>
+							</DialogHeader>
+							<div
+								className="rounded-xl border-2 border-black p-5 shadow-[3px_3px_0_0_#11110F]"
+								style={{
+									background: themes[selectedTemplate.theme].background,
+									color: themes[selectedTemplate.theme].text,
+								}}
+							>
+								<p className="text-xs font-bold uppercase tracking-widest">
+									{selectedTemplate.audience}
+								</p>
+								<h3 className="mt-4 text-xl font-bold">
+									{selectedTemplate.heading}
+								</h3>
+								<p className="mt-2 text-sm leading-relaxed">
+									{selectedTemplate.body}
+								</p>
+							</div>
+							<p className="text-sm">
+								Preview the result before publishing. Your live page changes
+								only when you select Publish design.
+							</p>
+							<DialogFooter>
+								<Button
+									variant="outline"
+									onClick={() => setSelectedTemplate(null)}
+								>
+									Cancel
+								</Button>
+								<Button onClick={applyTemplate}>Use template</Button>
+							</DialogFooter>
+						</>
+					)}
+				</DialogContent>
+			</Dialog>
 			<header className="mb-7 flex flex-wrap items-end justify-between gap-4">
 				<div>
 					<p className="text-xs font-bold uppercase tracking-[.18em]">
@@ -142,33 +234,10 @@ function DesignStudio() {
 										background: themes[t.theme].background,
 										color: themes[t.theme].text,
 									}}
-									onClick={() => {
-										if (
-											draft.contentBlocks.length &&
-											!window.confirm(
-												"Replace the content blocks in this draft with the template?",
-											)
-										)
-											return;
-										update({
-											theme: t.theme,
-											pageBackgroundType: "theme",
-											accentColor: null,
-											fontFamily:
-												t.id === "restaurant" || t.id === "freelancer"
-													? "editorial"
-													: "work",
-											contentBlocks: [
-												{
-													id: crypto.randomUUID(),
-													type: "heading",
-													title: t.heading,
-													body: t.body,
-													url: "",
-													afterLinkId: null,
-												},
-											],
-										});
+									aria-haspopup="dialog"
+									onClick={(event) => {
+										templateTrigger.current = event.currentTarget;
+										setSelectedTemplate(t);
 									}}
 								>
 									<span className="block text-xs uppercase tracking-wider">

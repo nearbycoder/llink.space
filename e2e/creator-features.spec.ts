@@ -54,7 +54,30 @@ test('design drafts preview, publish, persist and keep templates reversible',asy
  const published=await read(page.request,'links.getPublic',{username:profile.username});
  expect(published.profile.theme).toBe('dark');expect(published.profile.contentBlocks[0].title).toBe('Behind the scenes');
  await page.reload();await expect(page.getByLabel('Display name',{exact:true})).toHaveValue('Studio Creator');
- page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Musicians On repeat'}).click();
+ const nativeDialogs: string[] = [];
+ page.on('dialog', async d => { nativeDialogs.push(d.type()); await d.dismiss(); });
+ for (const [button, title] of [['Musicians On repeat', 'On repeat'], ['Freelancers Selected work', 'Selected work'], ['Restaurants At the table', 'At the table'], ['Events Save the date', 'Save the date']]) {
+   const trigger=page.getByRole('button',{name:button});
+   await trigger.click();
+   const dialog=page.getByRole('dialog',{name:`Use ${title}?`});
+   await expect(dialog).toBeVisible();
+   await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+   await expect(dialog).not.toBeVisible();
+   await expect(trigger).toBeFocused();
+   await expect(page.getByLabel('Title / image alt text')).toHaveValue('Behind the scenes');
+ }
+ await page.setViewportSize({width:390,height:844});
+ await page.getByRole('button',{name:'Musicians On repeat'}).click();
+ await expect(page.getByRole('dialog')).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+ await page.screenshot({path:'/tmp/creator-template-dialog-mobile.png',animations:'disabled'});
+ await page.keyboard.press('Escape');
+ await expect(page.getByRole('dialog')).not.toBeVisible();
+ await page.getByRole('button',{name:'Musicians On repeat'}).click();
+ await page.getByRole('dialog').getByRole('button',{name:'Use template',exact:true}).click();
+ await expect(page.getByRole('dialog')).not.toBeVisible();
+ expect(nativeDialogs).toEqual([]);
+ expect((await read(page.request,'links.getPublic',{username:profile.username})).profile.contentBlocks[0].title).toBe('Behind the scenes');
  await expect(page.getByTestId('live-preview').getByText('The latest',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Discard draft',exact:true}).click();
  await expect(page.getByLabel('Title / image alt text')).toHaveValue('Behind the scenes');
