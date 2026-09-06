@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -15,6 +15,8 @@ export const Route = createFileRoute("/dashboard/health")({
 	component: HealthPage,
 });
 function HealthPage() {
+	const [ready, setReady] = useState(false);
+	useEffect(() => setReady(true), []);
 	const links = Route.useLoaderData();
 	const trpc = useTRPC(),
 		router = useRouter();
@@ -44,13 +46,17 @@ function HealthPage() {
 			</header>
 			<section className="kinetic-panel bg-[#FFFCEF] p-5">
 				<div className="mb-4 flex flex-wrap items-center gap-3">
-					<Button onClick={run} disabled={!selected.length || check.isPending}>
+					<Button
+						onClick={run}
+						disabled={!ready || !selected.length || check.isPending}
+					>
 						{check.isPending
 							? "Checking…"
 							: `Check selected (${selected.length}/10)`}
 					</Button>
 					<Button
 						variant="outline"
+						disabled={!ready}
 						onClick={() =>
 							setSelected(
 								links
@@ -79,6 +85,7 @@ function HealthPage() {
 								className="mt-1"
 								checked={selected.includes(l.id)}
 								disabled={
+									!ready ||
 									check.isPending ||
 									(!selected.includes(l.id) && selected.length >= 10)
 								}

@@ -29,6 +29,8 @@ export const profiles = pgTable("profiles", {
 		.notNull()
 		.default("kinetic-neon"),
 	pageBackgroundImageUrl: text("page_background_image_url"),
+	signupEnabled: boolean("signup_enabled").notNull().default(false),
+	signupTitle: text("signup_title").notNull().default("Stay in the loop"),
 	theme: text().default("default"),
 	fontFamily: text("font_family").notNull().default("work"),
 	buttonStyle: text("button_style").notNull().default("rounded"),
@@ -130,3 +132,39 @@ export const analyticsGuards = pgTable(
 	},
 	(table) => [index("analytics_guards_expiry_idx").on(table.expiresAt)],
 );
+
+export const subscribers = pgTable(
+	"subscribers",
+	{
+		id: uuid().primaryKey().defaultRandom(),
+		profileId: uuid("profile_id")
+			.notNull()
+			.references(() => profiles.id, { onDelete: "cascade" }),
+		email: text().notNull(),
+		name: text().notNull().default(""),
+		consentText: text("consent_text").notNull(),
+		consentAt: timestamp("consent_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		unsubscribeHash: text("unsubscribe_hash").notNull().unique(),
+		unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+		syncedAt: timestamp("synced_at", { withTimezone: true }),
+		providerRemovedAt: timestamp("provider_removed_at", { withTimezone: true }),
+	},
+	(t) => [
+		uniqueIndex("subscribers_profile_email_idx").on(t.profileId, t.email),
+		index("subscribers_profile_created_idx").on(t.profileId, t.consentAt),
+	],
+);
+export const emailConnections = pgTable("email_connections", {
+	profileId: uuid("profile_id")
+		.primaryKey()
+		.references(() => profiles.id, { onDelete: "cascade" }),
+	encryptedKey: text("encrypted_key").notNull(),
+	listId: integer("list_id").notNull(),
+	syncLease: uuid("sync_lease"),
+	leaseUntil: timestamp("lease_until", { withTimezone: true }),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});

@@ -118,3 +118,17 @@ export const getDashboardDesign = createServerFn().handler(async () => {
 	const layout = await caller.links.list();
 	return { status: "ok" as const, profile: access.profile, layout };
 });
+
+export const getDashboardAudience = createServerFn().handler(async () => {
+	const request = getRequest();
+	const access = await resolveDashboardAccess(request.headers);
+	if (access.status !== "ok") return access;
+	const caller = trpcRouter.createCaller({
+		request,
+		userId: access.profile.userId,
+	});
+	return {
+		status: "ok" as const,
+		audience: await caller.audience.list({ page: 0 }),
+	};
+});

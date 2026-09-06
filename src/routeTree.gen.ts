@@ -18,6 +18,7 @@ import { Route as UUsernameRouteImport } from './routes/u/$username'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard/profile'
 import { Route as DashboardHealthRouteImport } from './routes/dashboard/health'
 import { Route as DashboardDesignRouteImport } from './routes/dashboard/design'
+import { Route as DashboardAudienceRouteImport } from './routes/dashboard/audience'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
 import { Route as ApiOgRouteImport } from './routes/api.og'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
@@ -70,6 +71,11 @@ const DashboardHealthRoute = DashboardHealthRouteImport.update({
 const DashboardDesignRoute = DashboardDesignRouteImport.update({
   id: '/design',
   path: '/design',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardAudienceRoute = DashboardAudienceRouteImport.update({
+  id: '/audience',
+  path: '/audience',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof AuthSignUpRoute
   '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/audience': typeof DashboardAudienceRoute
   '/dashboard/design': typeof DashboardDesignRoute
   '/dashboard/health': typeof DashboardHealthRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/audience': typeof DashboardAudienceRoute
   '/dashboard/design': typeof DashboardDesignRoute
   '/dashboard/health': typeof DashboardHealthRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/audience': typeof DashboardAudienceRoute
   '/dashboard/design': typeof DashboardDesignRoute
   '/dashboard/health': typeof DashboardHealthRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/api/og'
     | '/dashboard/analytics'
+    | '/dashboard/audience'
     | '/dashboard/design'
     | '/dashboard/health'
     | '/dashboard/profile'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/api/og'
     | '/dashboard/analytics'
+    | '/dashboard/audience'
     | '/dashboard/design'
     | '/dashboard/health'
     | '/dashboard/profile'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/_auth/sign-up'
     | '/api/og'
     | '/dashboard/analytics'
+    | '/dashboard/audience'
     | '/dashboard/design'
     | '/dashboard/health'
     | '/dashboard/profile'
@@ -314,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDesignRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/audience': {
+      id: '/dashboard/audience'
+      path: '/audience'
+      fullPath: '/dashboard/audience'
+      preLoaderRoute: typeof DashboardAudienceRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/dashboard/analytics': {
       id: '/dashboard/analytics'
       path: '/analytics'
@@ -382,6 +401,7 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
+  DashboardAudienceRoute: typeof DashboardAudienceRoute
   DashboardDesignRoute: typeof DashboardDesignRoute
   DashboardHealthRoute: typeof DashboardHealthRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
@@ -390,6 +410,7 @@ interface DashboardRouteRouteChildren {
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
+  DashboardAudienceRoute: DashboardAudienceRoute,
   DashboardDesignRoute: DashboardDesignRoute,
   DashboardHealthRoute: DashboardHealthRoute,
   DashboardProfileRoute: DashboardProfileRoute,

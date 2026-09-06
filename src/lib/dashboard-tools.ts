@@ -48,7 +48,7 @@ export function dashboardLinkStats(links: FilterableDashboardLink[]) {
 	};
 }
 
-function csvCell(value: unknown) {
+export function csvCell(value: unknown) {
 	const raw = value == null ? "" : String(value);
 	// Prevent user-controlled cells from being interpreted as spreadsheet formulas.
 	const normalized =

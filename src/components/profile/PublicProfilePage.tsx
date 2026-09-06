@@ -13,6 +13,7 @@ import {
 import { isAllowedBackgroundImageUrl } from "#/lib/security";
 import { getTheme } from "#/lib/themes";
 import { ContentBlockView } from "./ContentBlockView";
+import { EmailSignup } from "./EmailSignup";
 import { LinkCard } from "./LinkCard";
 import { ProfileHeader } from "./ProfileHeader";
 import { PublicLinkCommandBar } from "./PublicLinkCommandBar";
@@ -285,6 +286,14 @@ export function PublicProfilePage({
 						</p>
 					)}
 
+					{profile.signupEnabled && (
+						<EmailSignup
+							profileId={profile.id}
+							title={profile.signupTitle}
+							creator={profile.displayName || profile.username}
+							preview={preview}
+						/>
+					)}
 					<div className="mt-12 text-center">
 						<a
 							href="https://llink.space/"

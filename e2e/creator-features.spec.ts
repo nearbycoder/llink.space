@@ -88,3 +88,29 @@ test('link checks persist blocked results and analytics compares the previous pe
  await page.goto('/dashboard/analytics?days=7');await expect(page.getByRole('heading',{name:'What changed'})).toBeVisible();
  await expect(page.getByText('+100% vs previous 7 days (1 clicks)')).toBeVisible();
 });
+
+test('audience signup requires consent, deduplicates, exports safely, and supports undo',async({page,playwright,baseURL})=>{
+ const profile=await creator(page.request);
+ await page.goto('/dashboard/audience');
+ await page.getByLabel('Show email signup on my page').check();
+ await page.getByLabel('Signup heading').fill('Letters from the studio');
+ await page.getByRole('button',{name:'Save signup settings'}).click();await expect(page.getByText('Signup settings saved',{exact:true})).toBeVisible();
+ await page.goto(`/u/${profile.username}`);await expect(page.getByRole('heading',{name:'Letters from the studio'})).toBeVisible();
+ await page.getByLabel('Your name (optional)').fill('=1+1');await page.getByLabel('Email address',{exact:true}).fill('reader@example.test');
+ await expect(page.getByRole('button',{name:'Join the list'})).toBeDisabled();
+ await page.getByRole('checkbox',{name:/I agree to receive/}).check();await page.getByRole('button',{name:'Join the list'}).click();
+ await expect(page.getByText('Thanks! Your signup request has been saved.')).toBeVisible();
+ const guest=await playwright.request.newContext({baseURL});try{
+ expect((await guest.post('/api/trpc/audience.subscribe',{data:{json:{profileId:profile.id,email:'reader@example.test',consent:false}}})).status()).toBe(400);
+ await write(guest,'audience.subscribe',{profileId:profile.id,email:'READER@example.test',consent:true});
+ await write(guest,'audience.subscribe',{profileId:profile.id,email:'trap@example.test',consent:true,website:'bot'});
+ expect((await guest.get('/api/trpc/audience.exportCsv')).status()).toBe(401);
+ }finally{await guest.dispose();}
+ let data=await read(page.request,'audience.list',{page:0});expect(data.total).toBe(1);expect(data.active).toBe(1);expect(JSON.stringify(data)).not.toContain('unsubscribeHash');expect(JSON.stringify(data)).not.toContain('encryptedKey');
+ const csv=await read(page.request,'audience.exportCsv');expect(csv).toContain("'=1+1");expect(csv).toContain('I agree to receive email updates');
+ await page.getByRole('button',{name:'Undo signup'}).click();await expect(page.getByRole('button',{name:'Join the list'})).toBeVisible();
+ data=await read(page.request,'audience.list',{page:0});expect(data.active).toBe(0);
+ await page.getByRole('checkbox',{name:/I agree to receive/}).check();await page.getByRole('button',{name:'Join the list'}).click();await expect(page.getByText('Thanks! Your signup request has been saved.')).toBeVisible();
+ expect((await read(page.request,'audience.list',{page:0})).active).toBe(1);
+ await page.goto('/dashboard/audience');page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remove subscriber reader@example.test'}).click();await expect(page.getByText('Subscriber removed',{exact:true})).toBeVisible();expect((await read(page.request,'audience.list',{page:0})).total).toBe(0);
+});

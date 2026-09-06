@@ -1,5 +1,6 @@
 import { createTRPCRouter } from "./init";
 import { analyticsRouter } from "./routers/analytics";
+import { audienceRouter } from "./routers/audience";
 import { designRouter } from "./routers/design";
 import { healthRouter } from "./routers/health";
 import { linksRouter } from "./routers/links";
@@ -9,6 +10,7 @@ export const trpcRouter = createTRPCRouter({
 	profile: profileRouter,
 	design: designRouter,
 	health: healthRouter,
+	audience: audienceRouter,
 	links: linksRouter,
 	analytics: analyticsRouter,
 });
