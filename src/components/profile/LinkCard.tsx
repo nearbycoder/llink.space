@@ -1,8 +1,11 @@
 import { ExternalLink } from "lucide-react";
 import { LinkIcon } from "#/components/links/LinkIcon";
-import { normalizeHttpUrl } from "#/lib/security";
+import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
 
 interface LinkCardProps {
+	featured?: boolean;
+	featureImageUrl?: string | null;
+	ctaLabel?: string | null;
 	id: string;
 	title: string;
 	url: string;
@@ -18,6 +21,9 @@ interface LinkCardProps {
 
 export function LinkCard({
 	id,
+	featured,
+	featureImageUrl,
+	ctaLabel,
 	title,
 	url,
 	description,
@@ -57,6 +63,24 @@ export function LinkCard({
 				borderColor: cardBorder,
 			}}
 		>
+			{featured && (
+				<div className="mb-4 space-y-3">
+					{featureImageUrl && isAllowedAvatarUrl(featureImageUrl) && (
+						<img
+							src={featureImageUrl}
+							alt=""
+							className="aspect-video w-full rounded-lg object-cover"
+							loading="lazy"
+						/>
+					)}
+					<span
+						className="text-[10px] font-bold uppercase tracking-[0.2em]"
+						style={{ color: mutedTextColor }}
+					>
+						In the spotlight
+					</span>
+				</div>
+			)}
 			<div className="flex items-center justify-between">
 				<div className="min-w-0 flex items-center gap-3">
 					<LinkIcon iconUrl={iconUrl} iconBgColor={iconBgColor} />
@@ -83,6 +107,11 @@ export function LinkCard({
 					style={{ color: mutedTextColor }}
 				/>
 			</div>
+			{featured && (
+				<p className="mt-4 text-sm font-bold" style={{ color: textColor }}>
+					{ctaLabel || "Explore more"} ↗
+				</p>
+			)}
 		</a>
 	);
 }

@@ -7,6 +7,7 @@ import { LINK_ICON_OPTIONS_BY_KEY } from "#/components/links/icon-options";
 import { db } from "#/db";
 import { linkSections, links, profiles } from "#/db/schema";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
+import { publishedLinkFilter } from "#/lib/link-publishing-server";
 import { storedPreviewImage } from "#/lib/og-image";
 
 const WIDTH = 1200;
@@ -262,7 +263,7 @@ async function handler({ params }: { params: { username: string } }) {
 			})
 			.from(links)
 			.leftJoin(linkSections, eq(links.sectionId, linkSections.id))
-			.where(and(eq(links.profileId, profile.id), eq(links.isActive, true)))
+			.where(and(eq(links.profileId, profile.id), publishedLinkFilter()))
 			.orderBy(
 				sql`coalesce(${linkSections.sortOrder}, -1)`,
 				asc(links.sortOrder),

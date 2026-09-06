@@ -43,6 +43,13 @@
       "when": 1788731632321,
       "tag": "0005_analytics_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788735018987,
+      "tag": "0006_link_publishing",
+      "breakpoints": true
     }
   ]
 }

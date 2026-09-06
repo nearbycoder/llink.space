@@ -10,7 +10,9 @@ import { Label } from "#/components/ui/label";
 import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
+import { localDateInput, validSchedule } from "#/lib/link-publishing";
 import {
+	isAllowedAvatarUrl,
 	isSafeHttpUrl,
 	normalizeHttpUrl,
 	prepareHttpUrl,
@@ -67,9 +69,26 @@ const schema = z
 			),
 		sectionId: z.union([z.string().uuid(), z.literal("")]).optional(),
 		isActive: z.boolean(),
+		featured: z.boolean().optional(),
+		featureImageUrl: z
+			.string()
+			.max(500)
+			.refine((v) => !v || isAllowedAvatarUrl(v), "Use a valid image URL")
+			.optional(),
+		ctaLabel: z.string().max(40).optional(),
+		publishAt: z.string().optional(),
+		expireAt: z.string().optional(),
+	})
+	.refine(validSchedule, {
+		message: "End time must be after publish time",
+		path: ["expireAt"],
 	})
 	.transform((value) => ({
 		...value,
+		publishAt: value.publishAt ? new Date(value.publishAt).toISOString() : null,
+		expireAt: value.expireAt ? new Date(value.expireAt).toISOString() : null,
+		featureImageUrl: value.featureImageUrl || null,
+		ctaLabel: value.ctaLabel || null,
 		iconUrl: value.iconUrl ? value.iconUrl : undefined,
 		sectionId:
 			value.sectionId === undefined
@@ -125,6 +144,11 @@ export function LinkForm({
 			sectionId: "",
 			isActive: true,
 			...defaultValues,
+			featured: defaultValues?.featured ?? false,
+			featureImageUrl: defaultValues?.featureImageUrl ?? "",
+			ctaLabel: defaultValues?.ctaLabel ?? "",
+			publishAt: localDateInput(defaultValues?.publishAt),
+			expireAt: localDateInput(defaultValues?.expireAt),
 			iconUrl: normalizedDefaultIcon,
 			iconBgColor: normalizedDefaultIconBgColor,
 		},
@@ -139,6 +163,7 @@ export function LinkForm({
 	const selectedIconTileBg = selectedIconBgColor ?? DEFAULT_ICON_BG_COLOR;
 	const selectedIconTileText = getReadableTextColor(selectedIconTileBg);
 	const titleId = useId();
+	const publishingId = useId();
 	const urlId = useId();
 	const sectionId = useId();
 	const descriptionId = useId();
@@ -446,6 +471,67 @@ export function LinkForm({
 				</Label>
 			</div>
 
+			<fieldset className="space-y-3 rounded-xl border-2 border-black/20 p-4">
+				<legend className="px-2 text-sm font-semibold">
+					Publishing & spotlight
+				</legend>
+				<label className="flex items-center gap-2 text-sm">
+					<input type="checkbox" {...register("featured")} />
+					Feature this link (replaces the current spotlight)
+				</label>
+				{watch("featured") && (
+					<>
+						<label
+							htmlFor={`${publishingId}-featureImageUrl`}
+							className="block text-sm"
+						>
+							Feature image URL
+							<Input
+								id={`${publishingId}-featureImageUrl`}
+								{...register("featureImageUrl")}
+								placeholder="https://…"
+							/>
+						</label>
+						{errors.featureImageUrl && (
+							<p role="alert">{errors.featureImageUrl.message}</p>
+						)}
+						<label
+							htmlFor={`${publishingId}-ctaLabel`}
+							className="block text-sm"
+						>
+							Call to action
+							<Input
+								id={`${publishingId}-ctaLabel`}
+								{...register("ctaLabel")}
+								placeholder="Explore more"
+							/>
+						</label>
+					</>
+				)}
+				<div className="grid gap-3 sm:grid-cols-2">
+					<label htmlFor={`${publishingId}-publishAt`} className="text-sm">
+						Publish at
+						<Input
+							type="datetime-local"
+							id={`${publishingId}-publishAt`}
+							{...register("publishAt")}
+						/>
+					</label>
+					<label htmlFor={`${publishingId}-expireAt`} className="text-sm">
+						Hide at
+						<Input
+							type="datetime-local"
+							id={`${publishingId}-expireAt`}
+							{...register("expireAt")}
+						/>
+					</label>
+				</div>
+				<p className="text-xs text-[#4B4B45]">
+					Times use your device’s timezone. Leave blank for no schedule. Paused
+					links stay hidden.
+				</p>
+				{errors.expireAt && <p role="alert">{errors.expireAt.message}</p>}
+			</fieldset>
 			<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
 				<Button
 					type="submit"

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
 	index,
@@ -5,6 +6,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
@@ -65,6 +67,11 @@ export const links = pgTable(
 		description: text(),
 		iconUrl: text("icon_url"),
 		iconBgColor: text("icon_bg_color").notNull().default("#F5FF7B"),
+		featured: boolean().notNull().default(false),
+		featureImageUrl: text("feature_image_url"),
+		ctaLabel: text("cta_label"),
+		publishAt: timestamp("publish_at", { withTimezone: true, mode: "string" }),
+		expireAt: timestamp("expire_at", { withTimezone: true, mode: "string" }),
 		isActive: boolean("is_active").default(true),
 		sortOrder: integer("sort_order").default(0),
 		createdAt: timestamp("created_at").defaultNow(),
@@ -73,6 +80,9 @@ export const links = pgTable(
 	(table) => [
 		index("links_profile_order_idx").on(table.profileId, table.sortOrder),
 		index("links_section_idx").on(table.sectionId),
+		uniqueIndex("links_one_featured_idx")
+			.on(table.profileId)
+			.where(sql`${table.featured} = true`),
 	],
 );
 

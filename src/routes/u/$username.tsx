@@ -66,6 +66,9 @@ function resolveProfileBackgroundStyle(
 }
 
 interface PublicProfileLink {
+	featured?: boolean;
+	featureImageUrl?: string | null;
+	ctaLabel?: string | null;
 	id: string;
 	title: string;
 	url: string;
@@ -98,6 +101,9 @@ function PublicLinkGroup({
 	const renderLink = (link: PublicProfileLink) => (
 		<LinkCard
 			key={link.id}
+			featured={link.featured}
+			featureImageUrl={link.featureImageUrl}
+			ctaLabel={link.ctaLabel}
 			id={link.id}
 			title={link.title}
 			url={link.url}

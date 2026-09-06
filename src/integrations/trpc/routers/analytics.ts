@@ -14,6 +14,7 @@ import {
 	clickGuardKeys,
 	consumeClickBudget,
 } from "#/lib/click-protection-server";
+import { publishedLinkFilter } from "#/lib/link-publishing-server";
 import { normalizeHttpUrl } from "#/lib/security";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
@@ -34,7 +35,7 @@ export const analyticsRouter = createTRPCRouter({
 				where: and(
 					eq(links.id, input.linkId),
 					eq(links.profileId, input.profileId),
-					eq(links.isActive, true),
+					publishedLinkFilter(),
 				),
 			});
 			if (!profileLink) {

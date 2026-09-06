@@ -5,13 +5,36 @@ import { db } from "#/db";
 import { linkSections, links, profiles } from "#/db/schema";
 import { LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import { MAX_IMPORT_LINKS, parseLinkImport } from "#/lib/link-import";
+import { validSchedule } from "#/lib/link-publishing";
+import { publishedLinkFilter } from "#/lib/link-publishing-server";
 import { normalizeObjectUrlForClient } from "#/lib/object-storage";
 import {
+	isAllowedAvatarUrl,
 	isSafeHttpUrl,
 	normalizeHttpUrl,
 	prepareHttpUrl,
 } from "#/lib/security";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
+
+const publishingFields = {
+	featured: z.boolean().optional(),
+	featureImageUrl: z
+		.string()
+		.max(500)
+		.refine(isAllowedAvatarUrl)
+		.nullable()
+		.optional(),
+	ctaLabel: z.string().trim().max(40).nullable().optional(),
+	publishAt: z.string().datetime().nullable().optional(),
+	expireAt: z.string().datetime().nullable().optional(),
+};
+function assertSchedule(link: Parameters<typeof validSchedule>[0]) {
+	if (!validSchedule(link))
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "End time must be after publish time",
+		});
+}
 
 const linkIconSchema = z.enum(LINK_ICON_KEYS);
 const iconBgColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
@@ -106,7 +129,7 @@ async function fetchProfileLayout(input: {
 	onlyActiveLinks: boolean;
 }) {
 	const linkWhere = input.onlyActiveLinks
-		? and(eq(links.profileId, input.profileId), eq(links.isActive, true))
+		? and(eq(links.profileId, input.profileId), publishedLinkFilter())
 		: eq(links.profileId, input.profileId);
 
 	const [profileLinks, profileSections] = await Promise.all([
@@ -190,6 +213,7 @@ export const linksRouter = createTRPCRouter({
 	add: protectedProcedure
 		.input(
 			z.object({
+				...publishingFields,
 				title: z.string().min(1).max(100),
 				url: linkUrlSchema,
 				description: z.string().max(200).optional(),
@@ -233,28 +257,43 @@ export const linksRouter = createTRPCRouter({
 				);
 			const nextSortOrder = order.max + 1;
 
-			const [link] = await db
-				.insert(links)
-				.values({
-					profileId: profile.id,
-					sectionId: targetSectionId,
-					title: input.title,
-					url: input.url,
-					description: input.description ?? null,
-					iconUrl: input.iconUrl ?? null,
-					iconBgColor: input.iconBgColor ?? "#F5FF7B",
-					isActive: input.isActive,
-					sortOrder: nextSortOrder,
-				})
-				.returning();
+			assertSchedule(input);
+			return db.transaction(async (tx) => {
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
+				if (input.featured)
+					await tx
+						.update(links)
+						.set({ featured: false })
+						.where(eq(links.profileId, profile.id));
+				const [link] = await tx
+					.insert(links)
+					.values({
+						...input,
+						profileId: profile.id,
+						sectionId: targetSectionId,
+						title: input.title,
+						url: input.url,
+						description: input.description ?? null,
+						iconUrl: input.iconUrl ?? null,
+						iconBgColor: input.iconBgColor ?? "#F5FF7B",
+						isActive: input.isActive,
+						sortOrder: nextSortOrder,
+					})
+					.returning();
 
-			return link;
+				return link;
+			});
 		}),
 
 	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
+				...publishingFields,
 				title: z.string().min(1).max(100).optional(),
 				url: linkUrlSchema.optional(),
 				description: z.string().max(200).optional().nullable(),
@@ -289,18 +328,31 @@ export const linksRouter = createTRPCRouter({
 				}
 			}
 
-			const { id, ...data } = input;
-			const [updated] = await db
-				.update(links)
-				.set({ ...data, updatedAt: new Date() })
-				.where(and(eq(links.id, id), eq(links.profileId, profile.id)))
-				.returning();
+			assertSchedule({ ...existingLink, ...input });
+			return db.transaction(async (tx) => {
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
+				if (input.featured)
+					await tx
+						.update(links)
+						.set({ featured: false })
+						.where(eq(links.profileId, profile.id));
+				const { id, ...data } = input;
+				const [updated] = await tx
+					.update(links)
+					.set({ ...data, updatedAt: new Date() })
+					.where(and(eq(links.id, id), eq(links.profileId, profile.id)))
+					.returning();
 
-			if (!updated) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
-			}
+				if (!updated) {
+					throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
+				}
 
-			return updated;
+				return updated;
+			});
 		}),
 
 	delete: protectedProcedure

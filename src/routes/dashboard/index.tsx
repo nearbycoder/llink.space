@@ -845,6 +845,11 @@ function DashboardPage() {
 									editingLink.iconUrl && isLinkIconKey(editingLink.iconUrl)
 										? editingLink.iconUrl
 										: "",
+								featured: editingLink.featured,
+								featureImageUrl: editingLink.featureImageUrl ?? "",
+								ctaLabel: editingLink.ctaLabel ?? "",
+								publishAt: editingLink.publishAt ?? "",
+								expireAt: editingLink.expireAt ?? "",
 								iconBgColor: editingLink.iconBgColor ?? "#F5FF7B",
 								isActive: editingLink.isActive ?? true,
 							}}

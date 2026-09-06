@@ -33,6 +33,7 @@ import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { LinkIcon } from "#/components/links/LinkIcon";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
+import { publishingStatus } from "#/lib/link-publishing";
 import { cn } from "#/lib/utils";
 
 const UNSECTIONED_CONTAINER_ID = "container:unsectioned";
@@ -50,6 +51,11 @@ export interface DashboardLink {
 	description: string | null;
 	iconUrl: string | null;
 	iconBgColor: string | null;
+	featured?: boolean;
+	featureImageUrl?: string | null;
+	ctaLabel?: string | null;
+	publishAt?: string | null;
+	expireAt?: string | null;
 	isActive: boolean | null;
 	sortOrder: number | null;
 }
@@ -321,9 +327,9 @@ function LinkRow({
 							<span className="truncate text-sm font-medium text-[#11110F]">
 								{link.title}
 							</span>
-							{!link.isActive && (
+							{publishingStatus(link) !== "Live" && (
 								<Badge variant="secondary" className="shrink-0 text-xs">
-									Hidden
+									{publishingStatus(link)}
 								</Badge>
 							)}
 						</div>
