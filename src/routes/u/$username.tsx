@@ -31,7 +31,9 @@ export const Route = createFileRoute("/u/$username")({
 	},
 	head: ({ params, loaderData }) => {
 		const encodedUsername = encodeURIComponent(params.username);
-		const pageUrl = toAbsoluteUrl(`/u/${encodedUsername}`);
+		const pageUrl = loaderData?.data?.customDomain
+			? `https://${loaderData.data.customDomain}/`
+			: toAbsoluteUrl(`/u/${encodedUsername}`);
 		const ogImageUrl = toAbsoluteUrl(`/api/og/u/${encodedUsername}`);
 
 		if (!loaderData?.data) {

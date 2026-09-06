@@ -114,3 +114,22 @@ test('audience signup requires consent, deduplicates, exports safely, and suppor
  expect((await read(page.request,'audience.list',{page:0})).active).toBe(1);
  await page.goto('/dashboard/audience');page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remove subscriber reader@example.test'}).click();await expect(page.getByText('Subscriber removed',{exact:true})).toBeVisible();expect((await read(page.request,'audience.list',{page:0})).total).toBe(0);
 });
+
+test('custom domains require ownership and serve only verified active mappings',async({page,request})=>{
+ const profile=await creator(page.request);const hostname=`${profile.username}.example.com`;
+ await write(page.request,'links.add',{title:'Domain portfolio',url:'https://example.com/work'});
+ expect((await page.request.post('/api/trpc/domains.add',{data:{json:{hostname:'https://creator.com'}}})).status()).toBe(400);
+ await page.goto('/dashboard/domains');await page.getByLabel('Domain name').fill(hostname);await page.getByRole('button',{name:'Add domain',exact:true}).click();await expect(page.getByText('TXT name',{exact:true})).toBeVisible();
+ const setup=await read(page.request,'domains.current');expect(setup.domain.status).toBe('pending');expect(setup.domain.proofHost).toBe(`_llink.${hostname}`);expect(setup.hostingConfigured).toBe(false);
+ expect((await request.get('/',{headers:{host:hostname}})).status()).toBe(200);
+ const pending=await request.get('/',{headers:{host:hostname}});expect(await pending.text()).not.toContain('Domain portfolio');
+ const checked=await write(page.request,'domains.verify',{});expect(checked.status).toBe('pending');
+ // Isolated database fixture represents successful DNS/TLS verification. The provider
+ // protocol is tested separately with mocked responses; no live domain is provisioned.
+ const {Client}=await import('pg');const client=new Client({connectionString:process.env.DATABASE_URL||'postgres://postgres:postgres@127.0.0.1:5432/llink_test'});await client.connect();
+ try{await client.query("update custom_domains set status='active', verified_at=now() where id=$1 and profile_id=$2",[setup.domain.id,profile.id]);}finally{await client.end();}
+ const live=await request.get('/',{headers:{host:hostname}});expect(live.status()).toBe(200);const html=await live.text();expect(html).toContain('Domain portfolio');expect(html).toContain(`https://${hostname}/`);
+ expect((await read(page.request,'links.getPublic',{username:profile.username})).customDomain).toBe(hostname);
+ await page.reload();page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remove domain',exact:true}).click();await expect(page.getByLabel('Domain name')).toBeVisible();expect((await read(page.request,'domains.current')).domain).toBeNull();
+ const removed=await request.get('/',{headers:{host:hostname}});expect(await removed.text()).not.toContain('Domain portfolio');
+});

@@ -65,7 +65,8 @@ type DashboardPath =
 	| "/dashboard/analytics"
 	| "/dashboard/design"
 	| "/dashboard/health"
-	| "/dashboard/audience";
+	| "/dashboard/audience"
+	| "/dashboard/domains";
 
 const navItems: Array<{
 	to: DashboardPath;
@@ -94,6 +95,12 @@ const navItems: Array<{
 		exact: false,
 	},
 	{ to: "/dashboard/audience", label: "Audience", icon: User, exact: false },
+	{
+		to: "/dashboard/domains",
+		label: "Custom domain",
+		icon: ExternalLink,
+		exact: false,
+	},
 ];
 
 function DashboardLayout() {

@@ -10,6 +10,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { HostedDomain } from "#/lib/domain-provider";
 import type { ContentBlock } from "#/lib/page-design";
 
 export const profiles = pgTable("profiles", {
@@ -168,3 +169,31 @@ export const emailConnections = pgTable("email_connections", {
 		.notNull()
 		.defaultNow(),
 });
+
+export const customDomains = pgTable(
+	"custom_domains",
+	{
+		id: uuid().primaryKey().defaultRandom(),
+		profileId: uuid("profile_id")
+			.notNull()
+			.unique()
+			.references(() => profiles.id, { onDelete: "cascade" }),
+		hostname: text().notNull(),
+		token: text().notNull(),
+		status: text().notNull().default("pending"),
+		verifiedAt: timestamp("verified_at", { withTimezone: true }),
+		providerId: text("provider_id"),
+		providerManaged: boolean("provider_managed").notNull().default(false),
+		providerStatus: jsonb("provider_status").$type<HostedDomain["status"]>(),
+		leaseUntil: timestamp("lease_until", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("custom_domains_verified_host_idx")
+			.on(t.hostname)
+			.where(sql`${t.verifiedAt} is not null`),
+		index("custom_domains_host_idx").on(t.hostname),
+	],
+);

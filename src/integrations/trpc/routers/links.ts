@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "#/db";
-import { linkSections, links, profiles } from "#/db/schema";
+import { customDomains, linkSections, links, profiles } from "#/db/schema";
 import { LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import { MAX_IMPORT_LINKS, parseLinkImport } from "#/lib/link-import";
 import { validSchedule } from "#/lib/link-publishing";
@@ -870,7 +870,15 @@ export const linksRouter = createTRPCRouter({
 				(link) => link.sectionId === null,
 			);
 
+			const domain = await db.query.customDomains.findFirst({
+				where: and(
+					eq(customDomains.profileId, profile.id),
+					eq(customDomains.status, "active"),
+				),
+				columns: { hostname: true },
+			});
 			return {
+				customDomain: domain?.hostname ?? null,
 				profile: {
 					...profile,
 					avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),

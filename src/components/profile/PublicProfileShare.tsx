@@ -2,6 +2,7 @@ import { Check, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface PublicProfileShareProps {
+	customDomain?: string | null;
 	displayName: string;
 	username: string;
 }
@@ -30,6 +31,7 @@ async function copyUrl(value: string) {
 
 export function PublicProfileShare({
 	displayName,
+	customDomain,
 	username,
 }: PublicProfileShareProps) {
 	const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
@@ -53,7 +55,9 @@ export function PublicProfileShare({
 	};
 
 	const handleShare = async () => {
-		const url = `${window.location.origin}/u/${encodeURIComponent(username)}`;
+		const url = customDomain
+			? `https://${customDomain}/`
+			: `${window.location.origin}/u/${encodeURIComponent(username)}`;
 		if (navigator.share) {
 			try {
 				await navigator.share({

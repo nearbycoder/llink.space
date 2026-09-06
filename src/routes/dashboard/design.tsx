@@ -54,6 +54,7 @@ function DesignStudio() {
 		});
 	const published = draftLinks.filter((l) => isLinkPublished(l));
 	const preview: PublicPageData = {
+		customDomain: null,
 		profile: draft,
 		links: published,
 		unsectionedLinks: published.filter((l) => !l.sectionId),

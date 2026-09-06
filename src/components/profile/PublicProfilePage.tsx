@@ -210,6 +210,7 @@ export function PublicProfilePage({
 				>
 					{!preview && (
 						<PublicProfileShare
+							customDomain={data.customDomain}
 							displayName={
 								profile.displayName?.trim() || `@${profile.username}`
 							}

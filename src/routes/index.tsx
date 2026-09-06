@@ -8,12 +8,38 @@ import {
 	Sparkles,
 	UserCircle2,
 } from "lucide-react";
+import { PublicProfilePage } from "#/components/profile/PublicProfilePage";
 import { SiteBrand } from "#/components/SiteBrand";
 import { authClient } from "#/lib/auth-client";
+import { getCustomDomainPage } from "#/lib/custom-domain-page";
 import { toAbsoluteUrl } from "#/lib/site-url";
 
 export const Route = createFileRoute("/")({
-	head: () => {
+	loader: async () => ({ customPage: await getCustomDomainPage() }),
+	head: ({ loaderData }) => {
+		if (loaderData?.customPage) {
+			const { profile, customDomain } = loaderData.customPage;
+			const title = profile.displayName || profile.username;
+			const url = `https://${customDomain}/`;
+			return {
+				meta: [
+					{ title: `${title} | llink.space` },
+					{
+						name: "description",
+						content: profile.bio || `${title} — links and updates`,
+					},
+					{ property: "og:title", content: title },
+					{ property: "og:url", content: url },
+					{
+						property: "og:image",
+						content: toAbsoluteUrl(`/api/og/u/${profile.username}`),
+					},
+					{ name: "twitter:card", content: "summary_large_image" },
+				],
+				links: [{ rel: "canonical", href: url }],
+			};
+		}
+
 		const title = "llink.space — Your Link-in-Bio Home Base";
 		const description =
 			"Create one branded link-in-bio page at /u/username, share it everywhere, and track clicks in one simple dashboard.";
@@ -67,8 +93,13 @@ export const Route = createFileRoute("/")({
 			links: [{ rel: "canonical", href: pageUrl }],
 		};
 	},
-	component: LandingPage,
+	component: SiteIndex,
 });
+
+function SiteIndex() {
+	const { customPage } = Route.useLoaderData();
+	return customPage ? <PublicProfilePage data={customPage} /> : <LandingPage />;
+}
 
 const featureItems = [
 	{
