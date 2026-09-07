@@ -79,3 +79,26 @@ it("validates quote attribution and optional source URLs", () => {
 			.success,
 	).toBe(true);
 });
+
+it("validates event times and details URLs", () => {
+	const block = {
+		id: crypto.randomUUID(),
+		type: "event",
+		title: "Studio evening",
+		body: "Join us",
+		url: "",
+		afterLinkId: null,
+		startsAt: "2027-01-10T18:00:00Z",
+		endsAt: "2027-01-10T20:00:00Z",
+	};
+	expect(blocksSchema.safeParse([block]).success).toBe(true);
+	for (const patch of [
+		{ startsAt: undefined },
+		{ startsAt: "bad" },
+		{ endsAt: "2027-01-10T17:00:00Z" },
+		{ url: "javascript:alert(1)" },
+	])
+		expect(blocksSchema.safeParse([{ ...block, ...patch }]).success).toBe(
+			false,
+		);
+});
