@@ -1,7 +1,12 @@
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 import type * as React from "react";
-import { Dialog, DialogContent } from "#/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogTitle,
+} from "#/components/ui/dialog";
 import { cn } from "#/lib/utils";
 
 function Command({
@@ -30,8 +35,12 @@ function CommandDialog({
 		<Dialog {...props}>
 			<DialogContent
 				showCloseButton={false}
-				className="overflow-hidden p-0 shadow-[8px_8px_0_0_#11110F]"
+				className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-0 shadow-[8px_8px_0_0_#11110F]"
 			>
+				<DialogTitle className="sr-only">Command menu</DialogTitle>
+				<DialogDescription className="sr-only">
+					Search and select an action.
+				</DialogDescription>
 				<Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-[#6A675C] [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:border-t-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:border-black/15 [&_[cmdk-group]]:px-1 [&_[cmdk-input-wrapper]_svg]:h-4 [&_[cmdk-input-wrapper]_svg]:w-4 [&_[cmdk-input]]:h-11 [&_[cmdk-item]]:mx-1 [&_[cmdk-item]]:my-1 [&_[cmdk-item]]:rounded-xl [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2 [&_[cmdk-item]]:text-sm [&_[cmdk-item]]:font-medium [&_[cmdk-item]]:outline-none [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:border-black [&_[cmdk-item][data-selected=true]]:bg-[#11110F] [&_[cmdk-item][data-selected=true]]:text-[#F5FF7B] [&_[cmdk-list]]:max-h-[340px] [&_[cmdk-list]]:overflow-y-auto [&_[cmdk-separator]]:mx-2 [&_[cmdk-separator]]:h-px [&_[cmdk-separator]]:bg-black/15">
 					{children}
 				</Command>

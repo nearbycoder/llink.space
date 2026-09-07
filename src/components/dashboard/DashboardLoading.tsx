@@ -78,23 +78,9 @@ export function DashboardPendingShellContent({
 
 			<div className="flex-1 md:ml-60">
 				<header className="border-b-2 border-black bg-[#FFFCEF]/95 md:hidden">
-					<div className="flex items-center justify-between px-4 py-3">
+					<div className="flex h-16 items-center justify-between px-4">
 						<SiteBrand size="sm" />
-						<Skeleton className="h-8 w-24 border-2 border-black" />
-					</div>
-					<div className="flex gap-2 px-3 pb-3">
-						{navItems.map(({ label, to }) => (
-							<div
-								key={label}
-								className={`rounded-xl border-2 px-3 py-2 text-xs font-semibold ${
-									isActive(to)
-										? "border-black bg-[#11110F] text-[#F5FF7B]"
-										: "border-black/30 bg-white text-[#4B4B45]"
-								}`}
-							>
-								{label}
-							</div>
-						))}
+						<Skeleton className="h-3 w-20" />
 					</div>
 				</header>
 				{activeRoute === "analytics" ? (

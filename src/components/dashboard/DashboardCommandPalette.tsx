@@ -6,6 +6,7 @@ import {
 	Link2,
 	LogOut,
 	PlusCircle,
+	X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { LinkForm, type LinkFormData } from "#/components/dashboard/LinkForm";
@@ -199,7 +200,7 @@ export function DashboardCommandPalette({
 							Jump between pages and add links quickly.
 						</p>
 					</div>
-					<kbd className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/35 bg-white px-2 text-xs font-semibold text-[#11110F]">
+					<kbd className="hidden sm:inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/35 bg-white px-2 text-xs font-semibold text-[#11110F]">
 						{isMac ? (
 							<>
 								<CommandIcon className="h-3.5 w-3.5" />
@@ -213,6 +214,14 @@ export function DashboardCommandPalette({
 							</span>
 						)}
 					</kbd>
+					<button
+						type="button"
+						onClick={() => onOpenChange(false)}
+						aria-label="Close search"
+						className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-black/25 hover:bg-black/10"
+					>
+						<X className="size-4" aria-hidden="true" />
+					</button>
 				</div>
 
 				<div className="mt-3 flex gap-2">

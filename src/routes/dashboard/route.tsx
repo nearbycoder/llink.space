@@ -22,6 +22,10 @@ import {
 	type DashboardCommandShortcut,
 } from "#/components/dashboard/DashboardCommandPalette";
 import { DashboardPendingShell } from "#/components/dashboard/DashboardLoading";
+import {
+	type DashboardNavItem,
+	MobileDashboardNav,
+} from "#/components/dashboard/MobileDashboardNav";
 import { NavigationGuardContext } from "#/components/dashboard/UnsavedChangesGuard";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -59,21 +63,7 @@ export const Route = createFileRoute("/dashboard")({
 	component: DashboardLayout,
 });
 
-type DashboardPath =
-	| "/dashboard"
-	| "/dashboard/profile"
-	| "/dashboard/analytics"
-	| "/dashboard/design"
-	| "/dashboard/health"
-	| "/dashboard/audience"
-	| "/dashboard/domains";
-
-const navItems: Array<{
-	to: DashboardPath;
-	label: string;
-	icon: typeof LayoutDashboard;
-	exact: boolean;
-}> = [
+const navItems: DashboardNavItem[] = [
 	{ to: "/dashboard", label: "Links", icon: LayoutDashboard, exact: true },
 	{ to: "/dashboard/profile", label: "Profile", icon: User, exact: false },
 	{
@@ -229,73 +219,34 @@ function DashboardLayout() {
 				</aside>
 
 				<div className="flex-1 md:ml-60">
-					<header className="md:hidden border-b-2 border-black bg-[#FFFCEF]/95 backdrop-blur-sm">
-						<div className="flex items-center justify-between px-4 py-3">
-							<a href="/">
-								<SiteBrand size="sm" />
-							</a>
-
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={openCommandPalette}
-									className="rounded-lg border-2 border-black bg-white px-2.5 py-1.5 text-xs font-semibold text-[#11110F] shadow-[2px_2px_0_0_#11110F]"
-								>
-									<Command className="h-3.5 w-3.5" />
-									<span className="sr-only">Open command menu</span>
-								</button>
-								{profile?.username && (
-									<a
-										href={`/u/${profile.username}`}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="rounded-lg border-2 border-black bg-[#F5FF7B] px-2.5 py-1.5 text-xs font-semibold text-[#11110F] shadow-[2px_2px_0_0_#11110F]"
-									>
-										View page
-									</a>
-								)}
-								<button
-									type="button"
-									onClick={handleSignOut}
-									className="rounded-lg border-2 border-black bg-[#FFD9CF] px-2.5 py-1.5 text-xs font-semibold text-[#11110F] shadow-[2px_2px_0_0_#11110F]"
-								>
-									Sign out
-								</button>
-							</div>
-						</div>
-
-						<nav className="px-3 pb-3">
-							<div className="flex gap-2 overflow-x-auto pb-1">
-								{navItems.map((item) => {
-									const active = item.exact
-										? location.pathname === item.to
-										: location.pathname.startsWith(item.to);
-									return (
-										<Link
-											key={`mobile-${item.to}`}
-											to={item.to}
-											className={cn(
-												"shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors border-2 border-transparent",
-												active
-													? "bg-[#11110F] text-[#F5FF7B] border-black shadow-[2px_2px_0_0_#11110F]"
-													: "bg-white text-[#4B4B45] hover:bg-[#FFF7A8] hover:text-[#11110F] hover:border-black",
-											)}
-										>
-											<item.icon className="w-3.5 h-3.5" />
-											{item.label}
-										</Link>
-									);
-								})}
-							</div>
-						</nav>
+					<header className="flex h-16 items-center justify-between gap-4 border-b-2 border-black bg-[#FFFCEF]/95 px-4 md:hidden">
+						<a href="/">
+							<SiteBrand size="sm" />
+						</a>
+						<span className="truncate text-xs font-semibold text-[#4B4B45]">
+							{
+								navItems.find((item) =>
+									item.exact
+										? location.pathname.replace(/\/$/, "") === item.to
+										: location.pathname.startsWith(item.to),
+								)?.label
+							}
+						</span>
 					</header>
 
 					{/* Main content */}
-					<main className="min-h-[calc(100vh-120px)] md:min-h-screen">
+					<main className="min-h-[calc(100dvh-4rem)] pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:min-h-screen md:pb-0">
 						<Outlet />
 					</main>
 				</div>
 
+				<MobileDashboardNav
+					items={navItems}
+					pathname={location.pathname}
+					username={profile?.username ?? null}
+					onSearch={openCommandPalette}
+					onSignOut={handleSignOut}
+				/>
 				<DashboardCommandPalette
 					open={isCommandPaletteOpen}
 					onOpenChange={setIsCommandPaletteOpen}
