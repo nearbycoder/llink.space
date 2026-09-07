@@ -42,7 +42,7 @@ export const Route = createFileRoute("/dashboard/design")({
 	component: DesignStudio,
 });
 const field =
-	"mt-1 w-full rounded-lg border border-black/30 bg-white px-3 py-2 text-sm text-[#11110F]";
+	"mt-1 w-full rounded-lg border border-black/30 bg-white px-3 py-2 text-base sm:text-sm text-[#11110F]";
 function DesignStudio() {
 	const [ready, setReady] = useState(false);
 	useEffect(() => setReady(true), []);
@@ -476,7 +476,7 @@ function DesignStudio() {
 									</select>
 								</label>
 								<label className="block text-sm">
-									Title / image alt text
+									{b.type === "faq" ? "Question" : "Title / image alt text"}
 									<input
 										className={field}
 										value={b.title}
@@ -487,7 +487,7 @@ function DesignStudio() {
 									/>
 								</label>
 								<label className="block text-sm">
-									Text
+									{b.type === "faq" ? "Answer" : "Text"}
 									<textarea
 										className={field}
 										value={b.body}

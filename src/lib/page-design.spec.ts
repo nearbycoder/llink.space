@@ -43,3 +43,19 @@ describe("page content", () => {
 		).toBe(true);
 	});
 });
+
+it("requires both parts of FAQ blocks", () => {
+	const block = {
+		id: crypto.randomUUID(),
+		type: "faq",
+		title: "Can I book?",
+		body: "Yes, use the booking link.",
+		url: "",
+		afterLinkId: null,
+	};
+	expect(blocksSchema.safeParse([block]).success).toBe(true);
+	expect(blocksSchema.safeParse([{ ...block, title: "" }]).success).toBe(false);
+	expect(blocksSchema.safeParse([{ ...block, body: "  " }]).success).toBe(
+		false,
+	);
+});

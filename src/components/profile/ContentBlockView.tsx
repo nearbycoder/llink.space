@@ -1,6 +1,26 @@
 import { type ContentBlock, videoEmbedUrl } from "#/lib/page-design";
 import { isAllowedAvatarUrl } from "#/lib/security";
-export function ContentBlockView({ block }: { block: ContentBlock }) {
+export function ContentBlockView({
+	block,
+	preview = false,
+}: {
+	block: ContentBlock;
+	preview?: boolean;
+}) {
+	if (block.type === "faq")
+		return (
+			<details
+				open={preview || undefined}
+				className="my-5 rounded-xl border border-current/25 px-4 py-3"
+			>
+				<summary className="cursor-pointer py-1 font-semibold">
+					{block.title}
+				</summary>
+				<p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">
+					{block.body}
+				</p>
+			</details>
+		);
 	const video = block.type === "video" ? videoEmbedUrl(block.url) : null;
 	return (
 		<section

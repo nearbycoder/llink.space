@@ -12,6 +12,7 @@ export const BLOCK_TYPES = [
 	"image",
 	"video",
 	"contact",
+	"faq",
 ] as const;
 export function videoEmbedUrl(value: string) {
 	const safe = normalizeHttpUrl(value);
@@ -43,6 +44,11 @@ export const contentBlockSchema = z
 		afterLinkId: z.string().uuid().nullable(),
 	})
 	.superRefine((b, c) => {
+		if (b.type === "faq" && (!b.title || !b.body.trim()))
+			c.addIssue({
+				code: "custom",
+				message: "FAQs need a question and an answer",
+			});
 		if (b.type === "image" && (!b.title || !isAllowedAvatarUrl(b.url)))
 			c.addIssue({
 				code: "custom",
