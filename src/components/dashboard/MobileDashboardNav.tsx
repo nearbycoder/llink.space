@@ -4,18 +4,10 @@ import {
 	ExternalLink,
 	LogOut,
 	type LucideIcon,
-	Menu,
 	Search,
-	X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogTitle,
-	DialogTrigger,
-} from "#/components/ui/dialog";
+import { Popover } from "radix-ui";
+import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "#/lib/utils";
 
 export interface DashboardNavItem {
@@ -56,6 +48,8 @@ export function MobileDashboardNav({
 	const [ready, setReady] = useState(false);
 	const [keyboardOpen, setKeyboardOpen] = useState(false);
 	const openingSearch = useRef(false);
+	const titleId = useId();
+	const descriptionId = useId();
 	useEffect(() => {
 		setReady(true);
 		const desktop = window.matchMedia("(min-width: 768px)");
@@ -92,58 +86,90 @@ export function MobileDashboardNav({
 		onSearch();
 	};
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<nav
-				aria-label="Mobile dashboard controls"
-				className={cn(
-					"fixed left-1/2 z-40 -translate-x-1/2 md:hidden",
-					(open || keyboardOpen) && "invisible",
-				)}
-				style={{ bottom }}
-			>
-				<div className={dockClass}>
-					<button
-						type="button"
-						onClick={search}
-						className={findClass}
-						disabled={!ready}
-						aria-label="Find pages and actions"
-					>
-						<Search className="size-4" aria-hidden="true" />
-						Find
-					</button>
-					<span className="mx-1 h-6 w-px bg-white/20" aria-hidden="true" />
-					<DialogTrigger asChild>
+		<Popover.Root open={open} onOpenChange={setOpen}>
+			<div
+				aria-hidden="true"
+				data-state={open ? "open" : "closed"}
+				className="mobile-nav-scrim fixed inset-0 z-30 touch-none bg-black/40 md:hidden"
+			/>
+			<Popover.Anchor asChild>
+				<nav
+					aria-label="Mobile dashboard controls"
+					className={cn(
+						"fixed left-1/2 z-40 -translate-x-1/2 md:hidden",
+						keyboardOpen && !open && "invisible",
+					)}
+					style={{ bottom }}
+				>
+					<div className={dockClass}>
 						<button
 							type="button"
-							className={toggleClass}
+							onClick={search}
+							className={findClass}
 							disabled={!ready}
-							aria-label="Open navigation menu"
+							aria-label="Find pages and actions"
 						>
-							<Menu className="size-5" aria-hidden="true" />
+							<Search className="size-4" aria-hidden="true" />
+							Find
 						</button>
-					</DialogTrigger>
-				</div>
-			</nav>
-			<DialogContent
-				showCloseButton={false}
-				className="top-auto flex max-h-[calc(100dvh-env(safe-area-inset-bottom,0px)-2rem)] translate-y-0 flex-col gap-3 border-0 bg-transparent p-0 shadow-none sm:max-w-sm"
-				style={{ bottom }}
-				onCloseAutoFocus={(event) => {
-					if (openingSearch.current) {
-						event.preventDefault();
-						openingSearch.current = false;
-					}
-				}}
-			>
-				<div className="min-h-0 overflow-y-auto overscroll-contain rounded-2xl border-2 border-black bg-[#FFFCEF] p-2 shadow-[4px_4px_0_0_#11110F]">
+						<span className="mx-1 h-6 w-px bg-white/20" aria-hidden="true" />
+						<Popover.Trigger asChild>
+							<button
+								type="button"
+								className={toggleClass}
+								disabled={!ready}
+								aria-label={
+									open ? "Close navigation menu" : "Open navigation menu"
+								}
+							>
+								<span className="mobile-menu-icon" aria-hidden="true">
+									<span />
+									<span />
+								</span>
+							</button>
+						</Popover.Trigger>
+					</div>
+				</nav>
+			</Popover.Anchor>
+			<Popover.Portal>
+				<Popover.Content
+					side="top"
+					align="center"
+					sideOffset={12}
+					collisionPadding={16}
+					aria-labelledby={titleId}
+					aria-describedby={descriptionId}
+					className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border-2 border-black bg-[#FFFCEF] p-2 text-[#11110F] shadow-[4px_4px_0_0_#11110F] outline-none md:hidden"
+					style={{
+						maxHeight: "var(--radix-popover-content-available-height)",
+						transformOrigin: "var(--radix-popover-content-transform-origin)",
+					}}
+					onInteractOutside={(event) => {
+						// Keep Find reachable without closing and reopening competing surfaces.
+						const target = event.target;
+						if (
+							target instanceof Element &&
+							target.closest('[aria-label="Mobile dashboard controls"]')
+						)
+							event.preventDefault();
+					}}
+					onCloseAutoFocus={(event) => {
+						if (openingSearch.current) {
+							event.preventDefault();
+							openingSearch.current = false;
+						}
+					}}
+				>
 					<div className="border-b border-black/15 px-3 pb-3 pt-2">
-						<DialogTitle className="text-base font-bold">
+						<h2 id={titleId} className="text-base font-bold">
 							Your dashboard
-						</DialogTitle>
-						<DialogDescription className="mt-1 truncate text-xs">
+						</h2>
+						<p
+							id={descriptionId}
+							className="mt-1 truncate text-xs text-[#6A675C]"
+						>
 							{username ? `@${username}` : "Pages and account"}
-						</DialogDescription>
+						</p>
 					</div>
 					<nav aria-label="Dashboard pages" className="space-y-1 py-2">
 						{items.map((item) => {
@@ -193,29 +219,8 @@ export function MobileDashboardNav({
 							Sign out
 						</button>
 					</div>
-				</div>
-				<div className={cn(dockClass, "shrink-0 self-center")}>
-					<button
-						type="button"
-						onClick={search}
-						className={findClass}
-						disabled={!ready}
-						aria-label="Find pages and actions"
-					>
-						<Search className="size-4" aria-hidden="true" />
-						Find
-					</button>
-					<span className="mx-1 h-6 w-px bg-white/20" aria-hidden="true" />
-					<button
-						type="button"
-						onClick={() => setOpen(false)}
-						className={toggleClass}
-						aria-label="Close navigation menu"
-					>
-						<X className="size-5" aria-hidden="true" />
-					</button>
-				</div>
-			</DialogContent>
-		</Dialog>
+				</Popover.Content>
+			</Popover.Portal>
+		</Popover.Root>
 	);
 }

@@ -311,3 +311,49 @@ code {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* The dock stays mounted; only the panel moves, so closing cannot reveal a second dock. */
+.mobile-nav-scrim {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+.mobile-nav-scrim[data-state='open'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mobile-nav-panel[data-state='open'] {
+  animation: mobile-nav-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mobile-nav-panel[data-state='closed'] {
+  animation: mobile-nav-exit 140ms ease-in both;
+  pointer-events: none;
+}
+@keyframes mobile-nav-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes mobile-nav-exit {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+.mobile-menu-icon {
+  position: relative;
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+.mobile-menu-icon span {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mobile-menu-icon span:first-child { transform: translateY(-3px); }
+.mobile-menu-icon span:last-child { transform: translateY(3px); }
+[data-state='open'] > .mobile-menu-icon span:first-child { transform: rotate(45deg); }
+[data-state='open'] > .mobile-menu-icon span:last-child { transform: rotate(-45deg); }

@@ -175,12 +175,31 @@ test('mobile floating navigation opens pages and search without crowding the hea
  await expect(menu.getByRole('link',{name:'Links',exact:true})).toHaveAttribute('aria-current','page');
  await expect(menu.getByRole('link',{name:'View public page'})).toHaveAttribute('href',`/u/${profile.username}`);
  await page.screenshot({path:'/tmp/mobile-dock-open.png',animations:'disabled'});
+ // Sample rendered frames while closing/reopening: the dock must stay in place
+ // and exactly one Find control must exist, including during exit animations.
+ const dockBox=await controls.boundingBox();
+ const sampleDock = () => page.evaluate(async () => {
+   const frames:Array<{count:number,x:number,y:number}>=[];
+   for(let i=0;i<16;i++) {
+     await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+     const rect=document.querySelector('[aria-label="Mobile dashboard controls"]')!.getBoundingClientRect();
+     frames.push({count:document.querySelectorAll('button[aria-label="Find pages and actions"]').length,x:rect.x,y:rect.y});
+   }
+   return frames;
+ });
+ await controls.getByRole('button',{name:'Close navigation menu'}).click();
+ for(const frame of await sampleDock()){expect(frame.count).toBe(1);expect(frame.x).toBeCloseTo(dockBox!.x,0);expect(frame.y).toBeCloseTo(dockBox!.y,0);}
+ await trigger.click();
+ for(const frame of await sampleDock()){expect(frame.count).toBe(1);expect(frame.x).toBeCloseTo(dockBox!.x,0);expect(frame.y).toBeCloseTo(dockBox!.y,0);}
+ await controls.getByRole('button',{name:'Close navigation menu'}).click();
+ await trigger.click();
+ await expect(menu).toBeVisible();
  await menu.getByRole('link',{name:'Design studio',exact:true}).click();
  await expect(page).toHaveURL(/\/dashboard\/design$/);
  await expect(menu).not.toBeVisible();
  await trigger.click();
  await expect(menu.getByRole('link',{name:'Design studio',exact:true})).toHaveAttribute('aria-current','page');
- await menu.getByRole('button',{name:'Find pages and actions'}).click();
+ await controls.getByRole('button',{name:'Find pages and actions'}).click();
  await expect(menu).not.toBeVisible();
  await page.getByPlaceholder('Search pages and actions').fill('Audience');
  await page.getByRole('option',{name:/Go to Audience/}).click();
@@ -198,9 +217,16 @@ test('mobile floating navigation opens pages and search without crowding the hea
  const box=await menu.boundingBox();expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.y+box!.height).toBeLessThanOrEqual(568);
  await menu.getByRole('button',{name:'Sign out',exact:true}).scrollIntoViewIfNeeded();
  await expect(menu.getByRole('button',{name:'Sign out',exact:true})).toBeVisible();
- await menu.getByRole('button',{name:'Close navigation menu'}).click();
+ await controls.getByRole('button',{name:'Close navigation menu'}).click();
  await page.setViewportSize({width:1280,height:900});
  await expect(controls).not.toBeVisible();
  await expect(page.locator('aside').getByRole('link',{name:'Design studio',exact:true})).toBeVisible();
+ await page.setViewportSize({width:390,height:844});
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await trigger.click();
+ await expect(menu).toBeVisible();
+ await page.mouse.click(8,80);
+ await expect(menu).not.toBeVisible();
+ await expect(controls.getByRole('button',{name:'Find pages and actions'})).toBeVisible();
  expect(errors).toEqual([]);
 });
