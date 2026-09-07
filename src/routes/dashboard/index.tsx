@@ -28,6 +28,7 @@ import { LinkForm } from "#/components/dashboard/LinkForm";
 import { LinkImportDialog } from "#/components/dashboard/LinkImportDialog";
 import { MarkdownExport } from "#/components/dashboard/MarkdownExport";
 import { PublishingCalendar } from "#/components/dashboard/PublishingCalendar";
+import { SavedLinkViews } from "#/components/dashboard/SavedLinkViews";
 import {
 	type DashboardLink,
 	type DashboardSection,
@@ -711,6 +712,20 @@ function DashboardPage() {
 				<div className="mt-3 flex flex-wrap gap-2">
 					<DuplicateReview links={layout.links} onEdit={setEditingLink} />
 					<PublishingCalendar links={layout.links} />
+					<SavedLinkViews
+						profileId={initialProfile.id}
+						current={{
+							query: linkQuery,
+							status: statusFilter,
+							sectionId: sectionFilter,
+						}}
+						sectionIds={layout.sections.map((s) => s.id)}
+						onApply={(v) => {
+							setLinkQuery(v.query);
+							setStatusFilter(v.status);
+							setSectionFilter(v.sectionId);
+						}}
+					/>
 					<BookmarkExport links={layout.links} sections={layout.sections} />
 					<MarkdownExport links={layout.links} sections={layout.sections} />
 				</div>
