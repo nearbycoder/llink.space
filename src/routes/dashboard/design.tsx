@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import type { SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { DesignBackup } from "#/components/dashboard/DesignBackup";
 import { PageReadiness } from "#/components/dashboard/PageReadiness";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import {
@@ -258,6 +259,20 @@ function DesignStudio() {
 						</p>
 					</div>
 					<PageReadiness profile={draft} links={draftLinks} />
+					<DesignBackup
+						draft={draft}
+						linkIds={draftLinks.map((l) => l.id)}
+						onRestore={(backup) =>
+							update({
+								theme: backup.theme,
+								fontFamily: backup.fontFamily,
+								buttonStyle: backup.buttonStyle,
+								accentColor: backup.accentColor,
+								contentBlocks: backup.contentBlocks,
+								pageBackgroundType: "theme",
+							})
+						}
+					/>
 					<section className="kinetic-panel space-y-4 bg-[#FFFCEF] p-5">
 						<h2 className="text-lg font-bold">Start with a template</h2>
 						<p className="text-xs">
