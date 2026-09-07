@@ -1,5 +1,6 @@
 import { Check, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { QrShare } from "./QrShare";
 
 interface PublicProfileShareProps {
 	customDomain?: string | null;
@@ -81,7 +82,8 @@ export function PublicProfileShare({
 	};
 
 	return (
-		<div className="mb-3 flex justify-end">
+		<div className="mb-3 flex flex-wrap justify-end gap-2">
+			<QrShare username={username} customDomain={customDomain} />
 			<button
 				type="button"
 				onClick={handleShare}
