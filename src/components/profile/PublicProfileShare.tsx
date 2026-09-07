@@ -82,7 +82,7 @@ export function PublicProfileShare({
 	};
 
 	return (
-		<div className="mb-3 flex flex-wrap justify-end gap-2">
+		<div data-print-hidden className="mb-3 flex flex-wrap justify-end gap-2">
 			<QrShare username={username} customDomain={customDomain} />
 			<button
 				type="button"
