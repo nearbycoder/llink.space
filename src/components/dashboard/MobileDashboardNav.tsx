@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Popover } from "radix-ui";
 import { useEffect, useId, useRef, useState } from "react";
+import { RemoveScroll } from "react-remove-scroll";
 import { cn } from "#/lib/utils";
 
 export interface DashboardNavItem {
@@ -132,94 +133,97 @@ export function MobileDashboardNav({
 				</nav>
 			</Popover.Anchor>
 			<Popover.Portal>
-				<Popover.Content
-					side="top"
-					align="center"
-					sideOffset={12}
-					collisionPadding={16}
-					aria-labelledby={titleId}
-					aria-describedby={descriptionId}
-					className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border-2 border-black bg-[#FFFCEF] p-2 text-[#11110F] shadow-[4px_4px_0_0_#11110F] outline-none md:hidden"
-					style={{
-						maxHeight: "var(--radix-popover-content-available-height)",
-						transformOrigin: "var(--radix-popover-content-transform-origin)",
-					}}
-					onInteractOutside={(event) => {
-						// Keep Find reachable without closing and reopening competing surfaces.
-						const target = event.target;
-						if (
-							target instanceof Element &&
-							target.closest('[aria-label="Mobile dashboard controls"]')
-						)
-							event.preventDefault();
-					}}
-					onCloseAutoFocus={(event) => {
-						if (openingSearch.current) {
-							event.preventDefault();
-							openingSearch.current = false;
-						}
-					}}
-				>
-					<div className="border-b border-black/15 px-3 pb-3 pt-2">
-						<h2 id={titleId} className="text-base font-bold">
-							Your dashboard
-						</h2>
-						<p
-							id={descriptionId}
-							className="mt-1 truncate text-xs text-[#6A675C]"
-						>
-							{username ? `@${username}` : "Pages and account"}
-						</p>
-					</div>
-					<nav aria-label="Dashboard pages" className="space-y-1 py-2">
-						{items.map((item) => {
-							const active = item.exact
-								? pathname.replace(/\/$/, "") === item.to
-								: pathname.startsWith(item.to);
-							return (
-								<Link
-									key={item.to}
-									to={item.to}
-									activeOptions={{ exact: item.exact }}
-									aria-current={active ? "page" : undefined}
-									onClick={() => setOpen(false)}
-									className={cn(
-										"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
-										active
-											? "bg-[#11110F] text-[#F5FF7B]"
-											: "text-[#4B4B45] hover:bg-[#FFF7A8]",
-									)}
-								>
-									<item.icon className="size-4 shrink-0" aria-hidden="true" />
-									<span className="flex-1">{item.label}</span>
-									{active && <Check className="size-4" aria-hidden="true" />}
-								</Link>
-							);
-						})}
-					</nav>
-					<div className="border-t border-black/15 pt-2">
-						{username && (
-							<a
-								href={`/u/${username}`}
-								target="_blank"
-								rel="noopener noreferrer"
-								onClick={() => setOpen(false)}
-								className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#FFF7A8]"
+				{/* Keep the dock interactive while locking gestures outside the menu. */}
+				<RemoveScroll enabled={open} forwardProps allowPinchZoom>
+					<Popover.Content
+						side="top"
+						align="center"
+						sideOffset={12}
+						collisionPadding={16}
+						aria-labelledby={titleId}
+						aria-describedby={descriptionId}
+						className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border-2 border-black bg-[#FFFCEF] p-2 text-[#11110F] shadow-[4px_4px_0_0_#11110F] outline-none md:hidden"
+						style={{
+							maxHeight: "var(--radix-popover-content-available-height)",
+							transformOrigin: "var(--radix-popover-content-transform-origin)",
+						}}
+						onInteractOutside={(event) => {
+							// Keep Find reachable without closing and reopening competing surfaces.
+							const target = event.target;
+							if (
+								target instanceof Element &&
+								target.closest('[aria-label="Mobile dashboard controls"]')
+							)
+								event.preventDefault();
+						}}
+						onCloseAutoFocus={(event) => {
+							if (openingSearch.current) {
+								event.preventDefault();
+								openingSearch.current = false;
+							}
+						}}
+					>
+						<div className="border-b border-black/15 px-3 pb-3 pt-2">
+							<h2 id={titleId} className="text-base font-bold">
+								Your dashboard
+							</h2>
+							<p
+								id={descriptionId}
+								className="mt-1 truncate text-xs text-[#6A675C]"
 							>
-								<ExternalLink className="size-4" aria-hidden="true" />
-								View public page
-							</a>
-						)}
-						<button
-							type="button"
-							onClick={() => void onSignOut()}
-							className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold hover:bg-[#FFD9CF]"
-						>
-							<LogOut className="size-4" aria-hidden="true" />
-							Sign out
-						</button>
-					</div>
-				</Popover.Content>
+								{username ? `@${username}` : "Pages and account"}
+							</p>
+						</div>
+						<nav aria-label="Dashboard pages" className="space-y-1 py-2">
+							{items.map((item) => {
+								const active = item.exact
+									? pathname.replace(/\/$/, "") === item.to
+									: pathname.startsWith(item.to);
+								return (
+									<Link
+										key={item.to}
+										to={item.to}
+										activeOptions={{ exact: item.exact }}
+										aria-current={active ? "page" : undefined}
+										onClick={() => setOpen(false)}
+										className={cn(
+											"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
+											active
+												? "bg-[#11110F] text-[#F5FF7B]"
+												: "text-[#4B4B45] hover:bg-[#FFF7A8]",
+										)}
+									>
+										<item.icon className="size-4 shrink-0" aria-hidden="true" />
+										<span className="flex-1">{item.label}</span>
+										{active && <Check className="size-4" aria-hidden="true" />}
+									</Link>
+								);
+							})}
+						</nav>
+						<div className="border-t border-black/15 pt-2">
+							{username && (
+								<a
+									href={`/u/${username}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									onClick={() => setOpen(false)}
+									className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#FFF7A8]"
+								>
+									<ExternalLink className="size-4" aria-hidden="true" />
+									View public page
+								</a>
+							)}
+							<button
+								type="button"
+								onClick={() => void onSignOut()}
+								className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold hover:bg-[#FFD9CF]"
+							>
+								<LogOut className="size-4" aria-hidden="true" />
+								Sign out
+							</button>
+						</div>
+					</Popover.Content>
+				</RemoveScroll>
 			</Popover.Portal>
 		</Popover.Root>
 	);

@@ -230,3 +230,46 @@ test('mobile floating navigation opens pages and search without crowding the hea
  await expect(controls.getByRole('button',{name:'Find pages and actions'})).toBeVisible();
  expect(errors).toEqual([]);
 });
+
+test('mobile menu locks background gestures and restores scrolling after closing',async({page,context})=>{
+ await page.setViewportSize({width:390,height:568});
+ await creator(page.request);
+ await page.goto('/dashboard');
+ const controls=page.getByRole('navigation',{name:'Mobile dashboard controls'});
+ const trigger=controls.getByRole('button',{name:'Open navigation menu'});
+ await expect(trigger).toBeEnabled();
+ await page.evaluate(()=>window.scrollTo({top:120,behavior:'instant'}));
+ const start=await page.evaluate(()=>scrollY);
+ expect(start).toBeGreaterThan(0);
+ await trigger.click();
+ const menu=page.getByRole('dialog',{name:'Your dashboard'});
+ await expect(menu).toBeVisible();
+ const settle=()=>page.evaluate(async()=>{for(let i=0;i<10;i++)await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));});
+ await page.mouse.move(5,200);await page.mouse.wheel(0,300);await settle();
+ expect(await page.evaluate(()=>scrollY)).toBe(start);
+ const touch=await context.newCDPSession(page);
+ await touch.send('Emulation.setTouchEmulationEnabled',{enabled:true});
+ await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:5,y:430}]});
+ for(const y of [390,350,310,270,230])await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:5,y}]});
+ await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await settle();
+ expect(await page.evaluate(()=>scrollY)).toBe(start);
+ const box=await menu.boundingBox();
+ await page.mouse.move(box!.x+box!.width/2,box!.y+box!.height/2);
+ await page.mouse.wheel(0,200);
+ await expect.poll(()=>menu.evaluate(node=>node.scrollTop)).toBeGreaterThan(0);
+ await page.mouse.wheel(0,1000);await settle();
+ expect(await page.evaluate(()=>scrollY)).toBe(start);
+ await controls.getByRole('button',{name:'Close navigation menu'}).click();
+ await expect(menu).not.toBeVisible();
+ expect(await page.evaluate(()=>scrollY)).toBe(start);
+ await page.mouse.move(5,200);await page.mouse.wheel(0,180);
+ await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(start);
+ // Handing off to Find must not leave an extra scroll lock behind.
+ await trigger.click();await controls.getByRole('button',{name:'Find pages and actions'}).click();
+ await page.getByRole('button',{name:'Close search'}).click();
+ await expect(page.getByPlaceholder('Search pages and actions')).not.toBeVisible();
+ const beforeUp=await page.evaluate(()=>scrollY);
+ await page.mouse.move(5,200);await page.mouse.wheel(0,-160);
+ await expect.poll(()=>page.evaluate(()=>scrollY)).toBeLessThan(beforeUp);
+ await touch.detach();
+});
