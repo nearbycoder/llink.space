@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { PageReadiness } from "#/components/dashboard/PageReadiness";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import {
 	type PublicPageData,
@@ -218,6 +219,7 @@ function DesignStudio() {
 					disabled={!ready || save.isPending}
 					className="min-w-0 space-y-5"
 				>
+					<PageReadiness profile={draft} links={draftLinks} />
 					<section className="kinetic-panel space-y-4 bg-[#FFFCEF] p-5">
 						<h2 className="text-lg font-bold">Start with a template</h2>
 						<p className="text-xs">
