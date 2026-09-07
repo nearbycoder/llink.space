@@ -42,3 +42,8 @@ test('Markdown export downloads a portable curated link list',async({page})=>{
  await setupCreator(page);await api(page.request,'links.add',{title:'Portfolio [2026]',url:'https://example.com/work',description:'Selected work'});await page.goto('/dashboard');await expect(page.getByRole('button',{name:'Find pages and actions',includeHidden:true})).toBeEnabled();await page.getByText('More link tools',{exact:true}).click();
  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Export Markdown',exact:true}).click();const file=await pending;expect(file.suggestedFilename()).toBe('llink-links.md');const text=await readFile((await file.path())!,'utf8');expect(text).toContain('(<https://example.com/work>)');expect(text).toContain('Selected work');
 });
+
+
+test('duplicate review finds tracking variants and opens the chosen link editor',async({page})=>{
+ await setupCreator(page);await api(page.request,'links.add',{title:'First destination',url:'https://example.com/?utm_source=one'});await api(page.request,'links.add',{title:'Second destination',url:'https://example.com/?utm_source=two'});await page.goto('/dashboard');await expect(page.getByRole('button',{name:'Find pages and actions',includeHidden:true})).toBeEnabled();await page.getByText('More link tools',{exact:true}).click();await page.getByRole('button',{name:'Review duplicates (1)',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Duplicate destinations'});await expect(dialog.getByText('First destination',{exact:true})).toBeVisible();await dialog.getByRole('button',{name:'Review Second destination'}).click();await expect(page.getByRole('dialog',{name:'Edit link'}).getByLabel('Title',{exact:true})).toHaveValue('Second destination');
+});

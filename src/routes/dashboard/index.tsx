@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BookmarkExport } from "#/components/dashboard/BookmarkExport";
 import { LinksLoadingState } from "#/components/dashboard/DashboardLoading";
+import { DuplicateReview } from "#/components/dashboard/DuplicateReview";
 import type { LinkFormData } from "#/components/dashboard/LinkForm";
 import { LinkForm } from "#/components/dashboard/LinkForm";
 import { LinkImportDialog } from "#/components/dashboard/LinkImportDialog";
@@ -707,6 +708,7 @@ function DashboardPage() {
 					More link tools
 				</summary>
 				<div className="mt-3 flex flex-wrap gap-2">
+					<DuplicateReview links={layout.links} onEdit={setEditingLink} />
 					<BookmarkExport links={layout.links} sections={layout.sections} />
 					<MarkdownExport links={layout.links} sections={layout.sections} />
 				</div>
