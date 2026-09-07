@@ -476,7 +476,11 @@ function DesignStudio() {
 									</select>
 								</label>
 								<label className="block text-sm">
-									{b.type === "faq" ? "Question" : "Title / image alt text"}
+									{b.type === "faq"
+										? "Question"
+										: b.type === "quote"
+											? "Attribution"
+											: "Title / image alt text"}
 									<input
 										className={field}
 										value={b.title}
@@ -487,7 +491,11 @@ function DesignStudio() {
 									/>
 								</label>
 								<label className="block text-sm">
-									{b.type === "faq" ? "Answer" : "Text"}
+									{b.type === "faq"
+										? "Answer"
+										: b.type === "quote"
+											? "Quote"
+											: "Text"}
 									<textarea
 										className={field}
 										value={b.body}
@@ -497,13 +505,15 @@ function DesignStudio() {
 										}
 									/>
 								</label>
-								{["image", "video", "contact"].includes(b.type) && (
+								{["image", "video", "contact", "quote"].includes(b.type) && (
 									<label className="block text-sm">
-										{b.type === "contact"
-											? "Contact email"
-											: b.type === "video"
-												? "YouTube or Vimeo URL"
-												: "Image URL"}
+										{b.type === "quote"
+											? "Source URL (optional)"
+											: b.type === "contact"
+												? "Contact email"
+												: b.type === "video"
+													? "YouTube or Vimeo URL"
+													: "Image URL"}
 										<input
 											className={field}
 											value={b.url}

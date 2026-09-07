@@ -59,3 +59,23 @@ it("requires both parts of FAQ blocks", () => {
 		false,
 	);
 });
+
+it("validates quote attribution and optional source URLs", () => {
+	const block = {
+		id: crypto.randomUUID(),
+		type: "quote",
+		title: "Alex, client",
+		body: "A thoughtful collaboration.",
+		url: "",
+		afterLinkId: null,
+	};
+	expect(blocksSchema.safeParse([block]).success).toBe(true);
+	expect(blocksSchema.safeParse([{ ...block, title: "" }]).success).toBe(false);
+	expect(
+		blocksSchema.safeParse([{ ...block, url: "javascript:alert(1)" }]).success,
+	).toBe(false);
+	expect(
+		blocksSchema.safeParse([{ ...block, url: "https://example.com/review" }])
+			.success,
+	).toBe(true);
+});

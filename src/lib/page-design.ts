@@ -13,6 +13,7 @@ export const BLOCK_TYPES = [
 	"video",
 	"contact",
 	"faq",
+	"quote",
 ] as const;
 export function videoEmbedUrl(value: string) {
 	const safe = normalizeHttpUrl(value);
@@ -44,6 +45,15 @@ export const contentBlockSchema = z
 		afterLinkId: z.string().uuid().nullable(),
 	})
 	.superRefine((b, c) => {
+		if (
+			b.type === "quote" &&
+			(!b.title || !b.body.trim() || (b.url && !normalizeHttpUrl(b.url)))
+		)
+			c.addIssue({
+				code: "custom",
+				message:
+					"Quotes need attribution, quote text, and a valid source URL if provided",
+			});
 		if (b.type === "faq" && (!b.title || !b.body.trim()))
 			c.addIssue({
 				code: "custom",

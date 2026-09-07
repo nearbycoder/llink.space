@@ -1,5 +1,5 @@
 import { type ContentBlock, videoEmbedUrl } from "#/lib/page-design";
-import { isAllowedAvatarUrl } from "#/lib/security";
+import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
 export function ContentBlockView({
 	block,
 	preview = false,
@@ -20,6 +20,30 @@ export function ContentBlockView({
 					{block.body}
 				</p>
 			</details>
+		);
+	if (block.type === "quote")
+		return (
+			<figure className="my-5 border-l-4 border-current/40 pl-4">
+				<blockquote className="whitespace-pre-wrap break-words text-base leading-relaxed">
+					{block.body}
+				</blockquote>
+				<figcaption className="mt-3 text-sm">
+					<cite className="not-italic font-semibold">
+						{block.url && normalizeHttpUrl(block.url) ? (
+							<a
+								href={normalizeHttpUrl(block.url) ?? undefined}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="underline underline-offset-4"
+							>
+								{block.title}
+							</a>
+						) : (
+							block.title
+						)}
+					</cite>
+				</figcaption>
+			</figure>
 		);
 	const video = block.type === "video" ? videoEmbedUrl(block.url) : null;
 	return (
