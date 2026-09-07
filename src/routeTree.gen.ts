@@ -22,6 +22,7 @@ import { Route as DashboardDesignRouteImport } from './routes/dashboard/design'
 import { Route as DashboardAudienceRouteImport } from './routes/dashboard/audience'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
 import { Route as ApiOgRouteImport } from './routes/api.og'
+import { Route as ApiDemoVideoRouteImport } from './routes/api.demo-video'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
 import { Route as ApiUploadAvatarRouteImport } from './routes/api.upload.avatar'
@@ -94,6 +95,11 @@ const ApiOgRoute = ApiOgRouteImport.update({
   path: '/api/og',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDemoVideoRoute = ApiDemoVideoRouteImport.update({
+  id: '/api/demo-video',
+  path: '/api/demo-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/api/demo-video': typeof ApiDemoVideoRoute
   '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/audience': typeof DashboardAudienceRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/api/demo-video': typeof ApiDemoVideoRoute
   '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/audience': typeof DashboardAudienceRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
+  '/api/demo-video': typeof ApiDemoVideoRoute
   '/api/og': typeof ApiOgRouteWithChildren
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/audience': typeof DashboardAudienceRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/sign-in'
     | '/sign-up'
+    | '/api/demo-video'
     | '/api/og'
     | '/dashboard/analytics'
     | '/dashboard/audience'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/sign-up'
+    | '/api/demo-video'
     | '/api/og'
     | '/dashboard/analytics'
     | '/dashboard/audience'
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
+    | '/api/demo-video'
     | '/api/og'
     | '/dashboard/analytics'
     | '/dashboard/audience'
@@ -264,6 +276,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  ApiDemoVideoRoute: typeof ApiDemoVideoRoute
   ApiOgRoute: typeof ApiOgRouteWithChildren
   UUsernameRoute: typeof UUsernameRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       path: '/api/og'
       fullPath: '/api/og'
       preLoaderRoute: typeof ApiOgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/demo-video': {
+      id: '/api/demo-video'
+      path: '/api/demo-video'
+      fullPath: '/api/demo-video'
+      preLoaderRoute: typeof ApiDemoVideoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth/sign-up': {
@@ -468,6 +488,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  ApiDemoVideoRoute: ApiDemoVideoRoute,
   ApiOgRoute: ApiOgRouteWithChildren,
   UUsernameRoute: UUsernameRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
