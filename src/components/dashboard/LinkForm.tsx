@@ -18,6 +18,7 @@ import {
 	prepareHttpUrl,
 } from "#/lib/security";
 import { cn } from "#/lib/utils";
+import { CampaignUrlBuilder } from "./CampaignUrlBuilder";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 const DEFAULT_ICON_BG_COLOR = "#F5FF7B";
@@ -233,6 +234,13 @@ export function LinkForm({
 					<p className="text-xs text-[#B42318]">{errors.url.message}</p>
 				)}
 			</div>
+
+			<CampaignUrlBuilder
+				url={watch("url") ?? ""}
+				onApply={(url) =>
+					setValue("url", url, { shouldDirty: true, shouldValidate: true })
+				}
+			/>
 
 			{sections.length > 0 && (
 				<div className="space-y-1.5">
