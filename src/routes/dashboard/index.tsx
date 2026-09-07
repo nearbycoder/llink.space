@@ -25,6 +25,7 @@ import { LinksLoadingState } from "#/components/dashboard/DashboardLoading";
 import type { LinkFormData } from "#/components/dashboard/LinkForm";
 import { LinkForm } from "#/components/dashboard/LinkForm";
 import { LinkImportDialog } from "#/components/dashboard/LinkImportDialog";
+import { MarkdownExport } from "#/components/dashboard/MarkdownExport";
 import {
 	type DashboardLink,
 	type DashboardSection,
@@ -707,6 +708,7 @@ function DashboardPage() {
 				</summary>
 				<div className="mt-3 flex flex-wrap gap-2">
 					<BookmarkExport links={layout.links} sections={layout.sections} />
+					<MarkdownExport links={layout.links} sections={layout.sections} />
 				</div>
 			</details>
 
