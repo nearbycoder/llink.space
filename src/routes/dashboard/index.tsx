@@ -53,6 +53,7 @@ import {
 } from "#/lib/dashboard-tools";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { publishingStatus } from "#/lib/link-publishing";
+import { LINK_SORTS, type LinkSort, sortDashboardView } from "#/lib/link-sort";
 
 export const Route = createFileRoute("/dashboard/")({
 	headers: () => ({
@@ -149,6 +150,7 @@ function DashboardPage() {
 		useState<SectionDeleteState | null>(null);
 	const [linkDeleteState, setLinkDeleteState] =
 		useState<LinkDeleteState | null>(null);
+	const [sortMode, setSortMode] = useState<LinkSort>("manual");
 	const [linkQuery, setLinkQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<LinkStatusFilter>("all");
 	const [sectionFilter, setSectionFilter] = useState("all");
@@ -194,6 +196,10 @@ function DashboardPage() {
 				sectionId: sectionFilter,
 			}),
 		[layout.links, linkQuery, sectionFilter, statusFilter],
+	);
+	const sortedLinks = useMemo(
+		() => sortDashboardView(filteredLinks, sortMode),
+		[filteredLinks, sortMode],
 	);
 	const visibleSections = useMemo(() => {
 		if (sectionFilter === "all") return layout.sections;
@@ -620,7 +626,7 @@ function DashboardPage() {
 			</div>
 
 			<div className="kinetic-panel mb-5 space-y-3 p-3 sm:p-4">
-				<div className="flex flex-col gap-2 sm:flex-row">
+				<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
 					<div className="relative min-w-0 flex-1">
 						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6A675C]" />
 						<Input
@@ -631,6 +637,18 @@ function DashboardPage() {
 							className="pl-9"
 						/>
 					</div>
+					<select
+						aria-label="Sort links"
+						value={sortMode}
+						onChange={(e) => setSortMode(e.target.value as LinkSort)}
+						className="h-10 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold"
+					>
+						{Object.entries(LINK_SORTS).map(([value, label]) => (
+							<option key={value} value={value}>
+								{label}
+							</option>
+						))}
+					</select>
 					<select
 						aria-label="Filter links by status"
 						value={statusFilter}
@@ -705,6 +723,12 @@ function DashboardPage() {
 				</div>
 			</div>
 
+			{sortMode !== "manual" && (
+				<p className="mb-4 text-sm">
+					Sorted within each section for this view. Public page order is
+					unchanged. Choose Page order to drag links.
+				</p>
+			)}
 			<details className="kinetic-panel mb-5 p-3 sm:p-4">
 				<summary className="cursor-pointer text-sm font-semibold">
 					More link tools
@@ -844,7 +868,7 @@ function DashboardPage() {
 				</div>
 			) : (
 				<SectionedLinkBoard
-					links={filteredLinks}
+					links={sortedLinks}
 					sections={visibleSections}
 					onLayoutChange={handleLayoutChange}
 					onEditLink={(link) => setEditingLink(link)}
@@ -855,7 +879,12 @@ function DashboardPage() {
 					onCreateSectionAt={openCreateSectionDialog}
 					onRenameSection={handleRenameSection}
 					onDeleteSection={handleRequestDeleteSection}
-					enableDrag={isHydrated && !hasActiveFilters && !selectionMode}
+					enableDrag={
+						isHydrated &&
+						!hasActiveFilters &&
+						!selectionMode &&
+						sortMode === "manual"
+					}
 					selectionMode={selectionMode}
 					selectedLinkIds={selectedLinkIds}
 					onToggleLinkSelection={toggleLinkSelection}
