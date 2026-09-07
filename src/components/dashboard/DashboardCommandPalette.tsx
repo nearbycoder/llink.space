@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Command as CommandIcon,
 	ExternalLink,
-	Globe,
 	Link2,
 	LogOut,
 	PlusCircle,
@@ -17,8 +16,6 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
-	CommandSeparator,
-	CommandShortcut,
 } from "#/components/ui/command";
 import { useTRPC } from "#/integrations/trpc/react";
 import { cn } from "#/lib/utils";
@@ -187,169 +184,162 @@ export function DashboardCommandPalette({
 
 	return (
 		<CommandDialog open={open} onOpenChange={onOpenChange}>
-			<div className="border-b-2 border-black bg-[#FFF7A8] px-4 py-3 sm:px-5">
-				<div className="flex items-start justify-between gap-3">
-					<div>
-						<p className="flex items-center gap-2 text-base font-semibold text-[#11110F]">
-							<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border-2 border-black bg-[#11110F] text-[#F5FF7B] shadow-[2px_2px_0_0_#11110F]">
-								<CommandIcon className="h-4 w-4" />
-							</span>
-							Command center
-						</p>
-						<p className="mt-1 text-xs text-[#4B4B45]">
-							Jump between pages and add links quickly.
-						</p>
-					</div>
-					<kbd className="hidden sm:inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/35 bg-white px-2 text-xs font-semibold text-[#11110F]">
-						{isMac ? (
-							<>
-								<CommandIcon className="h-3.5 w-3.5" />
-								<span className="leading-none text-xs font-semibold text-[#11110F]">
-									K
-								</span>
-							</>
-						) : (
-							<span className="leading-none text-xs font-semibold text-[#11110F]">
-								Ctrl K
-							</span>
-						)}
-					</kbd>
+			<div className="shrink-0 border-b border-black/15">
+				<div className="flex items-center gap-2 px-4 py-2">
+					{mode === "navigate" ? (
+						<CommandInput
+							autoFocus={open}
+							aria-label="Search pages and actions"
+							placeholder="Find a page or action"
+							autoComplete="off"
+							autoCorrect="off"
+							autoCapitalize="none"
+							spellCheck={false}
+						/>
+					) : (
+						<div className="flex h-12 flex-1 items-center gap-3 text-base font-semibold">
+							<PlusCircle className="size-5" aria-hidden="true" />
+							Create a link
+						</div>
+					)}
 					<button
 						type="button"
 						onClick={() => onOpenChange(false)}
 						aria-label="Close search"
-						className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-black/25 hover:bg-black/10"
+						className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 text-[#4B4B45] transition-colors hover:bg-black/10 focus-visible:outline-offset-0"
 					>
-						<X className="size-4" aria-hidden="true" />
+						<X className="size-5" aria-hidden="true" />
 					</button>
 				</div>
-
-				<div className="mt-3 flex gap-2">
+				<fieldset className="flex gap-1 px-3 pb-3" aria-label="Search mode">
 					<button
 						type="button"
+						aria-pressed={mode === "navigate"}
 						onClick={() => {
 							setMode("navigate");
 							setActionError(null);
 						}}
 						className={cn(
-							"inline-flex items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-xs font-semibold transition-all",
+							"min-h-11 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "navigate"
-								? "border-black bg-[#11110F] text-[#F5FF7B] shadow-[2px_2px_0_0_#11110F]"
-								: "border-black bg-[#FFFCEF] text-[#4B4B45] hover:bg-white",
+								? "bg-[#F5FF7B] text-[#11110F]"
+								: "text-[#6A675C] hover:bg-black/5",
 						)}
 					>
-						<Globe className="h-3.5 w-3.5" />
-						Navigate
+						Search
 					</button>
 					<button
 						type="button"
+						aria-pressed={mode === "create"}
 						onClick={() => {
 							setMode("create");
 							setActionError(null);
 						}}
 						className={cn(
-							"inline-flex items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-xs font-semibold transition-all",
+							"inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "create"
-								? "border-black bg-[#11110F] text-[#F5FF7B] shadow-[2px_2px_0_0_#11110F]"
-								: "border-black bg-[#FFFCEF] text-[#4B4B45] hover:bg-white",
+								? "bg-[#F5FF7B] text-[#11110F]"
+								: "text-[#6A675C] hover:bg-black/5",
 						)}
 					>
-						<Link2 className="h-3.5 w-3.5" />
+						<Link2 className="size-4" aria-hidden="true" />
 						Quick create
 					</button>
-				</div>
+				</fieldset>
 			</div>
-
-			<div className="p-4 sm:p-5">
-				{mode === "navigate" ? (
-					<>
-						<CommandInput
-							autoFocus={open && mode === "navigate"}
-							placeholder="Search pages and actions"
-						/>
-						<CommandList>
-							<CommandEmpty>No matching actions.</CommandEmpty>
-
-							<CommandGroup heading="Pages">
-								{pageActions.map((action) => (
+			{mode === "navigate" ? (
+				<>
+					<CommandList>
+						<CommandEmpty>
+							<p className="font-semibold text-[#11110F]">No matches found</p>
+							<p className="mt-1">Try a page name or “add link”.</p>
+						</CommandEmpty>
+						{[
+							{ heading: "Pages", actions: pageActions },
+							{ heading: "Actions", actions: utilityActions },
+						].map((group, index) => (
+							<CommandGroup
+								key={group.heading}
+								heading={group.heading}
+								className={index ? "border-t border-black/10" : undefined}
+							>
+								{group.actions.map((action) => (
 									<CommandItem
 										key={action.id}
 										className="group/item"
-										value={`${action.label} ${action.description} ${action.keywords ?? ""}`}
-										onSelect={() => {
-											void executeAction(action);
-										}}
-									>
-										<action.Icon className="h-4 w-4" />
-										<div className="min-w-0 flex-1">
-											<p className="truncate text-sm font-semibold">
-												{action.label}
-											</p>
-											<p className="truncate text-xs text-[#6A675C] group-data-[selected=true]/item:text-[#DDFBFD]">
-												{action.description}
-											</p>
-										</div>
-										<CommandShortcut>Enter</CommandShortcut>
-									</CommandItem>
-								))}
-							</CommandGroup>
-
-							<CommandSeparator />
-
-							<CommandGroup heading="Actions">
-								{utilityActions.map((action) => (
-									<CommandItem
-										key={action.id}
-										className="group/item"
+										aria-label={action.label}
 										value={`${action.label} ${action.description} ${action.keywords ?? ""}`}
 										disabled={action.disabled}
 										onSelect={() => {
 											void executeAction(action);
 										}}
 									>
-										<action.Icon className="h-4 w-4" />
+										<action.Icon className="size-[18px] shrink-0" />
 										<div className="min-w-0 flex-1">
 											<p className="truncate text-sm font-semibold">
-												{action.label}
+												{action.label.replace(/^Go to /, "")}
 											</p>
-											<p className="truncate text-xs text-[#6A675C] group-data-[selected=true]/item:text-[#DDFBFD]">
+											<p
+												data-slot="command-item-description"
+												className="hidden truncate text-xs text-[#6A675C] sm:block group-data-[selected=true]/item:text-[#DDFBFD]"
+											>
 												{action.description}
 											</p>
 										</div>
-										<CommandShortcut>Enter</CommandShortcut>
 									</CommandItem>
 								))}
 							</CommandGroup>
-						</CommandList>
-
-						{actionError && (
-							<p className="mt-3 rounded-lg border border-[#D94841]/40 bg-[#FFF1EE] px-3 py-2 text-xs text-[#B42318]">
-								{actionError}
-							</p>
-						)}
-					</>
-				) : (
-					<div className="space-y-3">
-						{createError && (
-							<p className="rounded-lg border border-[#D94841]/40 bg-[#FFF1EE] px-3 py-2 text-xs text-[#B42318]">
-								{createError}
-							</p>
-						)}
-						<div className="max-h-[65svh] overflow-y-auto pr-1">
-							<LinkForm
-								sections={layoutData?.sections ?? []}
-								onSubmit={handleQuickCreate}
-								onCancel={() => {
-									setMode("navigate");
-									setCreateError(null);
-								}}
-								submitLabel="Create link"
-								cancelLabel="Back to actions"
-							/>
-						</div>
+						))}
+					</CommandList>
+					{actionError && (
+						<p
+							role="alert"
+							className="mx-3 mb-3 rounded-lg border border-[#D94841]/40 bg-[#FFF1EE] px-3 py-2 text-xs text-[#B42318]"
+						>
+							{actionError}
+						</p>
+					)}
+					<div
+						data-slot="command-keyboard-help"
+						className="hidden shrink-0 items-center justify-between border-t border-black/15 bg-black/[0.025] px-4 py-3 text-xs text-[#6A675C] sm:flex"
+					>
+						<span>
+							↑ ↓ to browse <span className="mx-2 text-black/20">/</span> ↵ to
+							open
+						</span>
+						<kbd className="inline-flex items-center gap-1 font-medium">
+							{isMac ? (
+								<>
+									<CommandIcon className="size-3" aria-hidden="true" /> K
+								</>
+							) : (
+								"Ctrl K"
+							)}
+						</kbd>
 					</div>
-				)}
-			</div>
+				</>
+			) : (
+				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5">
+					{createError && (
+						<p
+							role="alert"
+							className="mb-3 rounded-lg border border-[#D94841]/40 bg-[#FFF1EE] px-3 py-2 text-xs text-[#B42318]"
+						>
+							{createError}
+						</p>
+					)}
+					<LinkForm
+						sections={layoutData?.sections ?? []}
+						onSubmit={handleQuickCreate}
+						onCancel={() => {
+							setMode("navigate");
+							setCreateError(null);
+						}}
+						submitLabel="Create link"
+						cancelLabel="Back to actions"
+					/>
+				</div>
+			)}
 		</CommandDialog>
 	);
 }

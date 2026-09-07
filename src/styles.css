@@ -27,6 +27,50 @@ html {
   outline-offset: 3px;
 }
 
+.dashboard-search-dialog [data-slot='command-input']:focus-visible {
+  outline: none;
+}
+
+.dashboard-search-dialog [data-slot='command-input-wrapper']:focus-within {
+  box-shadow: 0 2px 0 #11110f;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .dashboard-search-dialog[data-slot='dialog-content'] {
+    top: calc(var(--search-viewport-top, 0px) + 12px);
+    max-width: min(512px, calc(100% - 24px));
+    max-height: min(640px, calc(var(--search-viewport-height, 100dvh) - 24px));
+    translate: -50% 0;
+    animation: search-panel-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dashboard-search-dialog[data-state='closed'] {
+    animation: search-panel-out 120ms ease-in;
+  }
+
+  .dashboard-search-dialog [data-slot='command-item-description'],
+  .dashboard-search-dialog [data-slot='command-keyboard-help'] {
+    display: none;
+  }
+
+  /* All editable fields in Quick create must avoid iOS focus zoom too. */
+  .dashboard-search-dialog input,
+  .dashboard-search-dialog textarea,
+  .dashboard-search-dialog select {
+    font-size: 16px;
+  }
+}
+
+@keyframes search-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes search-panel-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(6px); }
+}
+
 .skip-link {
   position: fixed;
   top: 0.75rem;

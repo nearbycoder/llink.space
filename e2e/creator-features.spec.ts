@@ -201,7 +201,7 @@ test('mobile floating navigation opens pages and search without crowding the hea
  await expect(menu.getByRole('link',{name:'Design studio',exact:true})).toHaveAttribute('aria-current','page');
  await controls.getByRole('button',{name:'Find pages and actions'}).click();
  await expect(menu).not.toBeVisible();
- await page.getByPlaceholder('Search pages and actions').fill('Audience');
+ await page.getByRole('combobox',{name:'Search pages and actions'}).fill('Audience');
  await page.getByRole('option',{name:/Go to Audience/}).click();
  await expect(page).toHaveURL(/\/dashboard\/audience$/);
  await trigger.click();
@@ -209,7 +209,7 @@ test('mobile floating navigation opens pages and search without crowding the hea
  await expect(menu).not.toBeVisible();
  await expect(trigger).toBeFocused();
  await controls.getByRole('button',{name:'Find pages and actions'}).click();
- await expect(page.getByPlaceholder('Search pages and actions')).toBeVisible();
+ await expect(page.getByRole('combobox',{name:'Search pages and actions'})).toBeVisible();
  await page.getByRole('button',{name:'Close search'}).click();
  await page.setViewportSize({width:320,height:568});
  await trigger.click();
@@ -267,9 +267,103 @@ test('mobile menu locks background gestures and restores scrolling after closing
  // Handing off to Find must not leave an extra scroll lock behind.
  await trigger.click();await controls.getByRole('button',{name:'Find pages and actions'}).click();
  await page.getByRole('button',{name:'Close search'}).click();
- await expect(page.getByPlaceholder('Search pages and actions')).not.toBeVisible();
+ await expect(page.getByRole('combobox',{name:'Search pages and actions'})).not.toBeVisible();
  const beforeUp=await page.evaluate(()=>scrollY);
  await page.mouse.move(5,200);await page.mouse.wheel(0,-160);
  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeLessThan(beforeUp);
  await touch.detach();
+});
+
+test('mobile search fits the keyboard viewport, avoids focus zoom and keeps actions usable', async ({ page, context, browser, baseURL }) => {
+ await page.setViewportSize({ width: 390, height: 844 });
+ await creator(page.request);
+ await page.goto('/dashboard');
+ const find = page.getByRole('button', { name: 'Find pages and actions' });
+ await expect(find).toBeEnabled();
+ await find.click();
+ const dialog = page.getByRole('dialog', { name: 'Command menu' });
+ const search = page.getByRole('combobox', { name: 'Search pages and actions' });
+ await expect(search).toBeFocused();
+ expect(await search.evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(16);
+ expect(await search.evaluate(node => getComputedStyle(node).outlineStyle)).toBe('none');
+ expect(await page.locator('meta[name="viewport"]').getAttribute('content')).not.toMatch(/user-scalable=no|maximum-scale=1/);
+ await page.screenshot({ path: '/tmp/search-mobile.png', animations: 'disabled' });
+ // Model iOS: the keyboard shrinks/pans visualViewport while innerHeight stays tall.
+ const visibleViewport = async (height: number, top = 0) => {
+  await page.evaluate(({ height, top }) => {
+   Object.defineProperties(window.visualViewport!, {
+    height: { configurable: true, value: height },
+    offsetTop: { configurable: true, value: top },
+   });
+   window.visualViewport!.dispatchEvent(new Event('resize'));
+  }, { height, top });
+  await expect.poll(async () => {
+   const box = await dialog.boundingBox();
+   return !!box && box.y >= top + 11 && box.y + box.height <= top + height - 11;
+  }).toBe(true);
+ };
+ await visibleViewport(380);
+ await page.screenshot({ path: '/tmp/search-mobile-keyboard.png', clip: { x: 0, y: 0, width: 390, height: 380 }, animations: 'disabled' });
+ const initialTop = (await dialog.boundingBox())!.y;
+ const list = dialog.getByRole('listbox');
+ const listBox = (await list.boundingBox())!;
+ await page.mouse.move(listBox.x + listBox.width / 2, listBox.y + listBox.height / 2);
+ const background = await page.evaluate(() => scrollY);
+ await page.mouse.wheel(0, 400);
+ await expect.poll(() => list.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+ expect(await page.evaluate(() => scrollY)).toBe(background);
+ await search.fill('zzzznotapage');
+ await expect(dialog.getByText('No matches found')).toBeVisible();
+ expect((await dialog.boundingBox())!.y).toBeCloseTo(initialTop, 0);
+ await search.fill('Audience');
+ await expect(dialog.getByRole('option', { name: /Go to Audience/ })).toBeVisible();
+ await visibleViewport(320, 40);
+ await page.keyboard.press('Enter');
+ await expect(page).toHaveURL(/\/dashboard\/audience$/);
+ await expect(dialog).not.toBeVisible();
+ await find.click();
+ await dialog.getByRole('button', { name: 'Quick create', exact: true }).click();
+ const title = dialog.getByLabel('Title', { exact: true });
+ await title.fill('Mobile quick link');
+ expect(await title.evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(16);
+ await dialog.getByLabel('URL', { exact: true }).fill('https://example.com/mobile-search');
+ await dialog.getByRole('button', { name: 'Create link', exact: true }).click();
+ await expect(dialog).not.toBeVisible();
+ expect((await read(page.request, 'links.list')).links.some((link: { title: string }) => link.title === 'Mobile quick link')).toBe(true);
+ await find.click();
+ await page.setViewportSize({ width: 320, height: 568 });
+ await visibleViewport(280);
+ await page.screenshot({ path: '/tmp/search-mobile-small.png', clip: { x: 0, y: 0, width: 320, height: 280 }, animations: 'disabled' });
+ expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+ await dialog.getByRole('button', { name: 'Close search' }).click();
+ await expect(dialog).not.toBeVisible();
+ await page.evaluate(() => {
+  Reflect.deleteProperty(window.visualViewport!, 'height');
+  Reflect.deleteProperty(window.visualViewport!, 'offsetTop');
+ });
+ await page.setViewportSize({ width: 1280, height: 900 });
+ await page.keyboard.press('Control+k');
+ await expect(search).toBeFocused();
+ await page.screenshot({ path: '/tmp/search-desktop.png', animations: 'disabled' });
+ await search.fill('Profile');
+ await page.keyboard.press('Enter');
+ await expect(page).toHaveURL(/\/dashboard\/profile$/);
+ await expect(dialog).not.toBeVisible();
+ // A touch device in landscape must also follow its short visible viewport.
+ const phone = await browser.newContext({ baseURL, storageState: await context.storageState(), viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+ try {
+  const landscape = await phone.newPage();
+  await landscape.goto('/dashboard');
+  await expect(landscape.getByRole('button', { name: 'Find pages and actions', includeHidden: true })).toBeEnabled();
+  await landscape.getByRole('button', { name: 'Open command palette' }).click();
+  const panel = landscape.getByRole('dialog', { name: 'Command menu' });
+  await expect(panel).toBeVisible();
+  await expect(landscape.getByRole('combobox', { name: 'Search pages and actions' })).toBeFocused();
+  await landscape.screenshot({ path: '/tmp/search-mobile-landscape.png', animations: 'disabled' });
+  const bounds = (await panel.boundingBox())!;
+  expect(bounds.y).toBeGreaterThanOrEqual(11);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(379);
+  expect(await landscape.evaluate(() => visualViewport!.scale)).toBe(1);
+ } finally { await phone.close(); }
+
 });

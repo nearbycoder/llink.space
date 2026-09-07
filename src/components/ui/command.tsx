@@ -1,6 +1,7 @@
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 import type * as React from "react";
+import { useEffect, useState } from "react";
 import {
 	Dialog,
 	DialogContent,
@@ -27,21 +28,59 @@ function Command({
 
 function CommandDialog({
 	children,
+	open,
 	...props
 }: React.ComponentProps<typeof Dialog> & {
 	children: React.ReactNode;
 }) {
+	const [viewport, setViewport] = useState<{
+		height: number;
+		top: number;
+	} | null>(null);
+	useEffect(() => {
+		if (!open) return;
+		const visual = window.visualViewport;
+		// iOS keeps the layout viewport tall when the keyboard opens. Follow the
+		// visible viewport instead, without interfering with intentional pinch zoom.
+		const update = () => {
+			if (visual && visual.scale !== 1) return;
+			const height = visual?.height ?? window.innerHeight;
+			const top = visual?.offsetTop ?? 0;
+			setViewport((previous) =>
+				previous?.height === height && previous.top === top
+					? previous
+					: { height, top },
+			);
+		};
+		update();
+		visual?.addEventListener("resize", update);
+		visual?.addEventListener("scroll", update);
+		window.addEventListener("resize", update);
+		return () => {
+			visual?.removeEventListener("resize", update);
+			visual?.removeEventListener("scroll", update);
+			window.removeEventListener("resize", update);
+		};
+	}, [open]);
 	return (
-		<Dialog {...props}>
+		<Dialog open={open} {...props}>
 			<DialogContent
 				showCloseButton={false}
-				className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-0 shadow-[8px_8px_0_0_#11110F]"
+				className="dashboard-search-dialog flex max-h-[min(640px,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 shadow-[4px_4px_0_0_#11110F]"
+				style={
+					viewport
+						? ({
+								"--search-viewport-height": `${viewport.height}px`,
+								"--search-viewport-top": `${viewport.top}px`,
+							} as React.CSSProperties)
+						: undefined
+				}
 			>
 				<DialogTitle className="sr-only">Command menu</DialogTitle>
 				<DialogDescription className="sr-only">
-					Search and select an action.
+					Search pages and actions, or create a link.
 				</DialogDescription>
-				<Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-[#6A675C] [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:border-t-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:border-black/15 [&_[cmdk-group]]:px-1 [&_[cmdk-input-wrapper]_svg]:h-4 [&_[cmdk-input-wrapper]_svg]:w-4 [&_[cmdk-input]]:h-11 [&_[cmdk-item]]:mx-1 [&_[cmdk-item]]:my-1 [&_[cmdk-item]]:rounded-xl [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2 [&_[cmdk-item]]:text-sm [&_[cmdk-item]]:font-medium [&_[cmdk-item]]:outline-none [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:border-black [&_[cmdk-item][data-selected=true]]:bg-[#11110F] [&_[cmdk-item][data-selected=true]]:text-[#F5FF7B] [&_[cmdk-list]]:max-h-[340px] [&_[cmdk-list]]:overflow-y-auto [&_[cmdk-separator]]:mx-2 [&_[cmdk-separator]]:h-px [&_[cmdk-separator]]:bg-black/15">
+				<Command className="min-h-0 rounded-none border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-[#6A675C] [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:bg-[#11110F] [&_[cmdk-item][data-selected=true]]:text-[#F5FF7B]">
 					{children}
 				</Command>
 			</DialogContent>
@@ -56,13 +95,13 @@ function CommandInput({
 	return (
 		<div
 			data-slot="command-input-wrapper"
-			className="flex items-center gap-2 border-b-2 border-black/20 px-3"
+			className="flex min-w-0 flex-1 items-center gap-3"
 		>
-			<Search className="shrink-0 text-[#6A675C]" />
+			<Search className="size-5 shrink-0 text-[#6A675C]" aria-hidden="true" />
 			<CommandPrimitive.Input
 				data-slot="command-input"
 				className={cn(
-					"flex h-11 w-full rounded-lg bg-transparent text-sm outline-none placeholder:text-[#6A675C] disabled:cursor-not-allowed disabled:opacity-50",
+					"flex h-12 w-full min-w-0 rounded-none border-0 bg-transparent p-0 text-base shadow-none outline-none focus-visible:outline-none placeholder:text-[#6A675C] disabled:cursor-not-allowed disabled:opacity-50",
 					className,
 				)}
 				{...props}
@@ -79,7 +118,7 @@ function CommandList({
 		<CommandPrimitive.List
 			data-slot="command-list"
 			className={cn(
-				"max-h-[300px] overflow-y-auto overflow-x-hidden",
+				"min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-2",
 				className,
 			)}
 			{...props}
@@ -133,7 +172,7 @@ function CommandItem({
 		<CommandPrimitive.Item
 			data-slot="command-item"
 			className={cn(
-				"relative flex cursor-default items-center gap-2 rounded-xl border-2 border-transparent px-3 py-2 text-sm outline-none select-none data-[selected=true]:shadow-[2px_2px_0_0_#11110F]",
+				"relative flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm outline-none select-none",
 				className,
 			)}
 			{...props}
