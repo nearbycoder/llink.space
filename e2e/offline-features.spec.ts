@@ -36,3 +36,9 @@ test('bookmark export creates folders and preserves escaped link content',async(
  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Export bookmarks',exact:true}).click();const file=await pending;
  expect(file.suggestedFilename()).toBe('llink-bookmarks.html');const text=await readFile((await file.path())!,'utf8');expect(text).toContain('<H3>Work &amp; play</H3>');expect(text).toContain('My &lt;site&gt;');expect(text).toContain('<DD>A &amp; B');
 });
+
+
+test('Markdown export downloads a portable curated link list',async({page})=>{
+ await setupCreator(page);await api(page.request,'links.add',{title:'Portfolio [2026]',url:'https://example.com/work',description:'Selected work'});await page.goto('/dashboard');await expect(page.getByRole('button',{name:'Find pages and actions',includeHidden:true})).toBeEnabled();await page.getByText('More link tools',{exact:true}).click();
+ const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Export Markdown',exact:true}).click();const file=await pending;expect(file.suggestedFilename()).toBe('llink-links.md');const text=await readFile((await file.path())!,'utf8');expect(text).toContain('(<https://example.com/work>)');expect(text).toContain('Selected work');
+});
