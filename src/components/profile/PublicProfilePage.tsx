@@ -234,6 +234,28 @@ export function PublicProfilePage({
 						onVisitLink={handleLinkClick}
 					/>
 
+					{sections.length > 1 && (
+						<nav
+							aria-label="Jump to section"
+							data-print-hidden
+							className="mb-6 rounded-xl border border-current/20 p-3"
+						>
+							<p className="mb-2 text-xs font-semibold uppercase tracking-wider">
+								On this page
+							</p>
+							<div className="flex flex-wrap gap-2">
+								{sections.map((section) => (
+									<a
+										key={section.id}
+										href={`#section-${section.id}`}
+										className="inline-flex min-h-11 max-w-full items-center [overflow-wrap:anywhere] rounded-full border border-current/30 px-3 py-2 text-sm underline-offset-4 hover:underline"
+									>
+										{section.title}
+									</a>
+								))}
+							</div>
+						</nav>
+					)}
 					{blocks
 						.filter((b) => !b.afterLinkId || !visibleIds.has(b.afterLinkId))
 						.map((b) => (
@@ -256,18 +278,23 @@ export function PublicProfilePage({
 							)}
 
 							{sections.map((section) => (
-								<div key={section.id} className="space-y-3">
+								<section
+									key={section.id}
+									id={`section-${section.id}`}
+									aria-label={section.title}
+									className="scroll-mt-6 space-y-3"
+								>
 									<div className="relative py-1">
 										<div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t-2 border-black/20" />
-										<p
-											className="relative mx-auto w-fit rounded-full border-2 border-black/60  px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-[1px_1px_0_0_#11110F]"
+										<h2
+											className="relative mx-auto w-fit max-w-full break-words rounded-full border-2 border-black/60  px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-[1px_1px_0_0_#11110F]"
 											style={{
 												color: theme.mutedText,
 												backgroundColor: theme.cardBg,
 											}}
 										>
 											{section.title}
-										</p>
+										</h2>
 									</div>
 									<PublicLinkGroup
 										preview={preview}
@@ -280,7 +307,7 @@ export function PublicProfilePage({
 										mutedTextColor={theme.mutedText}
 										onVisit={handleLinkClick}
 									/>
-								</div>
+								</section>
 							))}
 						</div>
 					) : (
