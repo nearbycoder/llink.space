@@ -12,6 +12,7 @@ import {
 } from "#/lib/profile-backgrounds";
 import { isAllowedBackgroundImageUrl } from "#/lib/security";
 import { getTheme } from "#/lib/themes";
+import { ContactDownload } from "./ContactDownload";
 import { ContentBlockView } from "./ContentBlockView";
 import { EmailSignup } from "./EmailSignup";
 import { LinkCard } from "./LinkCard";
@@ -300,6 +301,19 @@ export function PublicProfilePage({
 						/>
 					)}
 					<div className="mt-12 text-center">
+						{!preview && (
+							<div
+								data-print-hidden
+								className="mb-5 flex flex-wrap justify-center gap-2"
+							>
+								<ContactDownload
+									name={profile.displayName || profile.username}
+									bio={profile.bio}
+									username={profile.username}
+									customDomain={data.customDomain}
+								/>
+							</div>
+						)}
 						<a
 							href="https://llink.space/"
 							className="inline-flex items-center gap-1.5 text-xs hover:underline"
