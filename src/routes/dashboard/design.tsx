@@ -21,6 +21,7 @@ import {
 } from "#/components/ui/dialog";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
+import { duplicateBlock } from "#/lib/duplicate-block";
 import { isLinkPublished } from "#/lib/link-publishing";
 import {
 	BLOCK_TYPES,
@@ -407,7 +408,7 @@ function DesignStudio() {
 								key={b.id}
 								className="space-y-3 rounded-xl border border-black/30 bg-white p-4"
 							>
-								<div className="flex items-center justify-between gap-2">
+								<div className="flex flex-wrap items-center justify-between gap-2">
 									<strong className="text-sm">Block {index + 1}</strong>
 									<div className="flex gap-2">
 										<button
@@ -424,6 +425,23 @@ function DesignStudio() {
 											}}
 										>
 											↑
+										</button>
+										<button
+											type="button"
+											className="min-h-10 px-2 text-sm font-semibold"
+											aria-label={`Duplicate block ${index + 1}`}
+											disabled={draft.contentBlocks.length >= 30}
+											onClick={() =>
+												update({
+													contentBlocks: duplicateBlock(
+														draft.contentBlocks,
+														b.id,
+														crypto.randomUUID(),
+													),
+												})
+											}
+										>
+											Duplicate
 										</button>
 										<button
 											type="button"
