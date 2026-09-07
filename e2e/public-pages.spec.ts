@@ -7,7 +7,7 @@ test("landing page renders primary content and nav actions", async ({ page }) =>
 
 	await expect(page).toHaveTitle(/llink\.space/i);
 	await expect(
-		page.getByRole("heading", { name: "YOUR LINK-IN-BIO HOME BASE." }),
+		page.getByRole("heading", { level: 1, name: /ONE LINK.*A WHOLE LOT.*OF YOU/ }),
 	).toBeVisible();
 	await expect(page.getByRole("link", { name: "Create your page" })).toBeVisible();
 	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible({

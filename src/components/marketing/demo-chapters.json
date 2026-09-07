@@ -1,0 +1,29 @@
+{
+	"durationLabel": "46 sec",
+	"chapters": [
+		{
+			"title": "Shape your page",
+			"description": "Choose a theme in Design studio and see it in the live preview. Undo and redo draft changes, then publish when you are ready.",
+			"time": 0,
+			"label": "00:00"
+		},
+		{
+			"title": "Organize your links",
+			"description": "Search and sort your dashboard without changing the public page order. Open More link tools to review upcoming publishing dates.",
+			"time": 12.8,
+			"label": "00:12"
+		},
+		{
+			"title": "Make it worth a visit",
+			"description": "Explore the published sample page. Save a link for later, open the browser-local reading list, and expand an FAQ answer.",
+			"time": 25.8,
+			"label": "00:25"
+		},
+		{
+			"title": "Share with a scan",
+			"description": "Open the profile\u2019s QR share kit. Download an SVG that you can reuse on a poster, business card, or packaging. PNG downloads are available too.",
+			"time": 37.2,
+			"label": "00:37"
+		}
+	]
+}
