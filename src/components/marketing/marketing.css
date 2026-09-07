@@ -185,8 +185,8 @@
 	background: #fcfaf3;
 	border: 2px solid var(--ink);
 	border-radius: 30px;
-	box-shadow: 12px 14px 0 #191a17;
-	transform: rotate(4deg);
+	/* Keep the screenshot on the pixel grid, including on software renderers. */
+	box-shadow: 12px 14px 1px #191a17;
 }
 .marketing-phone-bar {
 	display: flex;
@@ -233,8 +233,7 @@
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	transform: rotate(12deg);
-	box-shadow: 4px 4px 0 var(--ink);
+	box-shadow: 4px 4px 1px var(--ink);
 }
 .marketing-new-sticker span {
 	font-size: 9px;
@@ -255,7 +254,6 @@
 	background: #fff;
 	border: 1px solid #191a1730;
 	border-radius: 3px;
-	transform: rotate(-7deg);
 	box-shadow: 0 5px 16px #191a170d;
 	font-size: 13px;
 	line-height: 1.5;
