@@ -22,7 +22,7 @@ import {
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
 import { duplicateBlock } from "#/lib/duplicate-block";
-import { isLinkPublished } from "#/lib/link-publishing";
+import { isLinkPublished, localDateInput } from "#/lib/link-publishing";
 import {
 	BLOCK_TYPES,
 	BUTTON_STYLES,
@@ -522,6 +522,54 @@ function DesignStudio() {
 											}
 										/>
 									</label>
+								)}
+								{b.type === "event" && (
+									<div className="space-y-3">
+										<p className="text-xs">
+											Enter times in your local time zone. Visitors can download
+											a calendar event.
+										</p>
+										<label className="block text-sm">
+											Event start
+											<input
+												type="datetime-local"
+												className={field}
+												value={localDateInput(b.startsAt)}
+												onChange={(e) =>
+													updateBlock(b.id, {
+														startsAt: e.target.value
+															? new Date(e.target.value).toISOString()
+															: undefined,
+													})
+												}
+											/>
+										</label>
+										<label className="block text-sm">
+											Event end (optional)
+											<input
+												type="datetime-local"
+												className={field}
+												value={localDateInput(b.endsAt)}
+												onChange={(e) =>
+													updateBlock(b.id, {
+														endsAt: e.target.value
+															? new Date(e.target.value).toISOString()
+															: undefined,
+													})
+												}
+											/>
+										</label>
+										<label className="block text-sm">
+											Event details URL (optional)
+											<input
+												className={field}
+												value={b.url}
+												onChange={(e) =>
+													updateBlock(b.id, { url: e.target.value })
+												}
+											/>
+										</label>
+									</div>
 								)}
 								<label className="block text-sm">
 									Placement

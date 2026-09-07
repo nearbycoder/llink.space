@@ -14,6 +14,7 @@ export const BLOCK_TYPES = [
 	"contact",
 	"faq",
 	"quote",
+	"event",
 ] as const;
 export function videoEmbedUrl(value: string) {
 	const safe = normalizeHttpUrl(value);
@@ -43,8 +44,22 @@ export const contentBlockSchema = z
 		body: z.string().max(2000),
 		url: z.string().max(2048),
 		afterLinkId: z.string().uuid().nullable(),
+		startsAt: z.string().datetime().optional(),
+		endsAt: z.string().datetime().optional(),
 	})
 	.superRefine((b, c) => {
+		if (
+			b.type === "event" &&
+			(!b.title ||
+				!b.startsAt ||
+				(b.endsAt && Date.parse(b.endsAt) <= Date.parse(b.startsAt)) ||
+				(b.url && !normalizeHttpUrl(b.url)))
+		)
+			c.addIssue({
+				code: "custom",
+				message:
+					"Events need a title, start time, a later end time if provided, and a valid details URL",
+			});
 		if (
 			b.type === "quote" &&
 			(!b.title || !b.body.trim() || (b.url && !normalizeHttpUrl(b.url)))

@@ -1,5 +1,6 @@
 import { type ContentBlock, videoEmbedUrl } from "#/lib/page-design";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
+import { EventBlock } from "./EventBlock";
 export function ContentBlockView({
 	block,
 	preview = false,
@@ -45,6 +46,7 @@ export function ContentBlockView({
 				</figcaption>
 			</figure>
 		);
+	if (block.type === "event") return <EventBlock block={block} />;
 	const video = block.type === "video" ? videoEmbedUrl(block.url) : null;
 	return (
 		<section
