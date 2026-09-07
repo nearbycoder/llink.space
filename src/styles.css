@@ -401,3 +401,20 @@ code {
 .mobile-menu-icon span:last-child { transform: translateY(3px); }
 [data-state='open'] > .mobile-menu-icon span:first-child { transform: rotate(45deg); }
 [data-state='open'] > .mobile-menu-icon span:last-child { transform: rotate(-45deg); }
+
+/* Public page print layout, including destinations for offline use. */
+@media print {
+ [data-public-profile], [data-public-profile] * { color: #000 !important; background: #fff !important; box-shadow: none !important; text-shadow: none !important; }
+ [data-public-profile] { min-height: 0 !important; }
+ [data-public-profile] > div { max-width: none !important; padding: 0 !important; }
+ [data-public-profile] [data-print-hidden], [data-public-profile] button, [data-public-profile] iframe, [data-public-profile] form { display: none !important; }
+ [data-public-profile] details.group > summary { display: none !important; }
+ [data-public-profile] details::details-content { display: block !important; content-visibility: visible !important; }
+ [data-public-profile] details > :not(summary) { display: block !important; }
+ [data-public-profile] a[data-public-link] { break-inside: avoid; transform: none !important; margin-bottom: 0.4rem; }
+ [data-public-profile] a[data-public-link]::after { content: attr(href); display: block; overflow-wrap: anywhere; font-size: 10pt; margin-top: 0.5rem; }
+ [data-public-profile] .truncate { white-space: normal; overflow: visible; }
+ [data-public-profile] img { max-height: 180px; object-fit: contain; }
+ [data-public-profile] section, [data-public-profile] figure { break-inside: avoid; }
+ [data-public-profile] h2 { break-after: avoid; }
+}

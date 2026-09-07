@@ -19,6 +19,7 @@ import { EmailSignup } from "./EmailSignup";
 import { LinkCard } from "./LinkCard";
 import { ProfileHeader } from "./ProfileHeader";
 import { PublicLinkCommandBar } from "./PublicLinkCommandBar";
+import { PublicPrint } from "./PublicPrint";
 import { PublicProfileShare } from "./PublicProfileShare";
 import { ReadingList } from "./ReadingList";
 export type PublicPageData =
@@ -209,6 +210,7 @@ export function PublicProfilePage({
 
 	return (
 		<div
+			data-public-profile={!preview || undefined}
 			className={preview ? "min-h-full" : "min-h-screen"}
 			inert={preview}
 			style={{
@@ -254,10 +256,12 @@ export function PublicProfilePage({
 							error={reading.error}
 						/>
 					)}
-					<PublicLinkCommandBar
-						links={commandLinks}
-						onVisitLink={handleLinkClick}
-					/>
+					<div data-print-hidden>
+						<PublicLinkCommandBar
+							links={commandLinks}
+							onVisitLink={handleLinkClick}
+						/>
+					</div>
 
 					{sections.length > 1 && (
 						<nav
@@ -351,12 +355,14 @@ export function PublicProfilePage({
 					)}
 
 					{profile.signupEnabled && (
-						<EmailSignup
-							profileId={profile.id}
-							title={profile.signupTitle}
-							creator={profile.displayName || profile.username}
-							preview={preview}
-						/>
+						<div data-print-hidden>
+							<EmailSignup
+								profileId={profile.id}
+								title={profile.signupTitle}
+								creator={profile.displayName || profile.username}
+								preview={preview}
+							/>
+						</div>
 					)}
 					<div className="mt-12 text-center">
 						{!preview && (
@@ -364,6 +370,7 @@ export function PublicProfilePage({
 								data-print-hidden
 								className="mb-5 flex flex-wrap justify-center gap-2"
 							>
+								<PublicPrint />
 								<ContactDownload
 									name={profile.displayName || profile.username}
 									bio={profile.bio}

@@ -56,6 +56,7 @@ export function LinkCard({
 	return (
 		<div>
 			<a
+				data-public-link
 				href={safeUrl ?? "#"}
 				target="_blank"
 				rel="noopener noreferrer nofollow ugc"
