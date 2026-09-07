@@ -8,6 +8,7 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "#/components/ui/dialog";
+import { useFixedBodyScroll } from "#/lib/use-fixed-body-scroll";
 import { cn } from "#/lib/utils";
 
 function Command({
@@ -33,6 +34,7 @@ function CommandDialog({
 }: React.ComponentProps<typeof Dialog> & {
 	children: React.ReactNode;
 }) {
+	useFixedBodyScroll(Boolean(open));
 	const [viewport, setViewport] = useState<{
 		height: number;
 		top: number;

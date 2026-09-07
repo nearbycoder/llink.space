@@ -367,3 +367,72 @@ test('mobile search fits the keyboard viewport, avoids focus zoom and keeps acti
  } finally { await phone.close(); }
 
 });
+
+test('Find freezes the background through keyboard scrolling and restores it on close', async ({ page, context }) => {
+ await page.setViewportSize({ width: 390, height: 568 });
+ await creator(page.request);
+ await page.goto('/dashboard');
+ const controls = page.getByRole('navigation', { name: 'Mobile dashboard controls' });
+ const find = controls.getByRole('button', { name: 'Find pages and actions' });
+ await expect(find).toBeEnabled();
+ const heading = page.getByRole('heading', { name: 'Links', exact: true, includeHidden: true });
+ const dialog = page.getByRole('dialog', { name: 'Command menu' });
+ const settle = () => page.evaluate(async () => { for (let i = 0; i < 10; i++) await new Promise<void>(resolve => requestAnimationFrame(() => resolve())); });
+ const touch = await context.newCDPSession(page);
+ await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+ for (const viaMenu of [false, true]) {
+  await page.evaluate(() => window.scrollTo({ top: 120, behavior: 'instant' }));
+  const originalScroll = await page.evaluate(() => scrollY);
+  expect(originalScroll).toBeGreaterThan(0);
+  const originalHeading = (await heading.boundingBox())!;
+  if (viaMenu) await controls.getByRole('button', { name: 'Open navigation menu' }).click();
+  await find.click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('combobox')).toBeFocused();
+  expect((await heading.boundingBox())!.y).toBeCloseTo(originalHeading.y, 0);
+  // Browser-managed focus/keyboard scrolling bypasses wheel/touch cancellation.
+  await page.evaluate(() => window.scrollBy({ top: 180, behavior: 'instant' }));
+  expect((await heading.boundingBox())!.y).toBeCloseTo(originalHeading.y, 0);
+  await page.evaluate(() => {
+   Object.defineProperty(visualViewport!, 'height', { configurable: true, value: 380 });
+   visualViewport!.dispatchEvent(new Event('resize'));
+  });
+  await page.mouse.move(5, 200);
+  await page.mouse.wheel(0, 300);
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 5, y: 300 }] });
+  for (const y of [260, 220, 180, 140, 100]) await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 5, y }] });
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await settle();
+  expect((await heading.boundingBox())!.y).toBeCloseTo(originalHeading.y, 0);
+  const list = dialog.getByRole('listbox');
+  const box = (await list.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 1000);
+  await expect.poll(() => list.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+  await page.mouse.wheel(0, 1000);
+  await settle();
+  expect((await heading.boundingBox())!.y).toBeCloseTo(originalHeading.y, 0);
+  await dialog.getByRole('button', { name: 'Close search' }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.evaluate(() => {
+   Reflect.deleteProperty(visualViewport!, 'height');
+   visualViewport!.dispatchEvent(new Event('resize'));
+  });
+  expect(await page.evaluate(() => scrollY)).toBe(originalScroll);
+  expect((await heading.boundingBox())!.y).toBeCloseTo(originalHeading.y, 0);
+  await page.mouse.move(5, 200);
+  await page.mouse.wheel(0, 120);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(originalScroll);
+ }
+ await touch.detach();
+ // Navigation must release the lock without carrying the old page offset over.
+ await find.click();
+ await dialog.getByRole('combobox').fill('Profile');
+ await dialog.getByRole('option', { name: 'Go to Profile', exact: true }).click();
+ await expect(page).toHaveURL(/\/dashboard\/profile$/);
+ await expect(dialog).not.toBeVisible();
+ await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+ await page.mouse.move(5, 200);
+ await page.mouse.wheel(0, 120);
+ await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+});
