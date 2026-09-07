@@ -341,6 +341,22 @@ function DashboardPage() {
 		}
 	};
 
+	const copySelectedUrls = async () => {
+		try {
+			const urls = layout.links
+				.filter((link) => selectedLinkIds.has(link.id))
+				.map((link) => link.url);
+			if (!urls.length) return;
+			await copyTextToClipboard(urls.join("\n"));
+			toast.success(
+				`Copied ${urls.length} link${urls.length === 1 ? "" : "s"}`,
+			);
+		} catch {
+			toast.error(
+				"Could not copy links. Please allow clipboard access and try again.",
+			);
+		}
+	};
 	const clearFilters = () => {
 		setLinkQuery("");
 		setStatusFilter("all");
@@ -789,6 +805,16 @@ function DashboardPage() {
 								disabled={selectedCount === 0 || isBulkBusy}
 							>
 								<Eye className="mr-1 h-3.5 w-3.5" /> Publish
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => void copySelectedUrls()}
+								disabled={selectedCount === 0 || isBulkBusy}
+							>
+								<Copy className="mr-1 h-3.5 w-3.5" />
+								Copy selected URLs
 							</Button>
 							<Button
 								type="button"
