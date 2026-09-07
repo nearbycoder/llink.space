@@ -20,6 +20,7 @@ import {
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { BookmarkExport } from "#/components/dashboard/BookmarkExport";
 import { LinksLoadingState } from "#/components/dashboard/DashboardLoading";
 import type { LinkFormData } from "#/components/dashboard/LinkForm";
 import { LinkForm } from "#/components/dashboard/LinkForm";
@@ -699,6 +700,15 @@ function DashboardPage() {
 					</div>
 				</div>
 			</div>
+
+			<details className="kinetic-panel mb-5 p-3 sm:p-4">
+				<summary className="cursor-pointer text-sm font-semibold">
+					More link tools
+				</summary>
+				<div className="mt-3 flex flex-wrap gap-2">
+					<BookmarkExport links={layout.links} sections={layout.sections} />
+				</div>
+			</details>
 
 			{selectionMode && (
 				<fieldset

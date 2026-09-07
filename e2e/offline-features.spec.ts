@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from '@playwright/test';
-import { setupCreator } from './feature-helpers';
+import { api, setupCreator } from './feature-helpers';
 test('campaign builder applies a preview to the link draft and persists it', async({page})=>{
  await setupCreator(page);await page.goto('/dashboard');
  await expect(page.getByRole('button',{name:'Find pages and actions',includeHidden:true})).toBeEnabled();
@@ -26,4 +26,13 @@ test('public QR share kit generates downloadable PNG and SVG locally',async({pag
   if(format==='SVG') expect(bytes.toString()).toContain('<svg');else expect(bytes.subarray(1,4).toString()).toBe('PNG');
  }
  await dialog.getByRole('button',{name:'Close',exact:true}).click();await expect(dialog).not.toBeVisible();
+});
+
+
+test('bookmark export creates folders and preserves escaped link content',async({page})=>{
+ await setupCreator(page);const section=await api(page.request,'links.createSection',{title:'Work & play',splitIndex:0});
+ await api(page.request,'links.add',{title:'My <site>',url:'https://example.com/?a=1&b=2',sectionId:section.id,description:'A & B'});
+ await page.goto('/dashboard');await expect(page.getByRole('button',{name:'Find pages and actions',includeHidden:true})).toBeEnabled();await page.getByText('More link tools',{exact:true}).click();
+ const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Export bookmarks',exact:true}).click();const file=await pending;
+ expect(file.suggestedFilename()).toBe('llink-bookmarks.html');const text=await readFile((await file.path())!,'utf8');expect(text).toContain('<H3>Work &amp; play</H3>');expect(text).toContain('My &lt;site&gt;');expect(text).toContain('<DD>A &amp; B');
 });
