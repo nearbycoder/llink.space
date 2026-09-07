@@ -77,6 +77,7 @@ interface PublicProfileLink {
 }
 
 interface PublicLinkGroupProps {
+	preview?: boolean;
 	blocks: ContentBlock[];
 	buttonStyle?: string;
 	links: PublicProfileLink[];
@@ -90,6 +91,7 @@ interface PublicLinkGroupProps {
 const PUBLIC_LINK_PREVIEW_LIMIT = 5;
 
 function PublicLinkGroup({
+	preview,
 	blocks,
 	buttonStyle,
 	links,
@@ -123,7 +125,7 @@ function PublicLinkGroup({
 			{blocks
 				.filter((b) => b.afterLinkId === link.id)
 				.map((b) => (
-					<ContentBlockView key={b.id} block={b} />
+					<ContentBlockView key={b.id} block={b} preview={preview} />
 				))}
 		</Fragment>
 	);
@@ -234,12 +236,13 @@ export function PublicProfilePage({
 					{blocks
 						.filter((b) => !b.afterLinkId || !visibleIds.has(b.afterLinkId))
 						.map((b) => (
-							<ContentBlockView key={b.id} block={b} />
+							<ContentBlockView key={b.id} block={b} preview={preview} />
 						))}
 					{links.length > 0 ? (
 						<div className="space-y-6">
 							{unsectionedLinks.length > 0 && (
 								<PublicLinkGroup
+									preview={preview}
 									blocks={blocks}
 									buttonStyle={profile.buttonStyle}
 									links={unsectionedLinks}
@@ -266,6 +269,7 @@ export function PublicProfilePage({
 										</p>
 									</div>
 									<PublicLinkGroup
+										preview={preview}
 										blocks={blocks}
 										buttonStyle={profile.buttonStyle}
 										links={section.links}
