@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import type { SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageReadiness } from "#/components/dashboard/PageReadiness";
@@ -28,6 +29,7 @@ import {
 	pageTemplates,
 } from "#/lib/page-design";
 import { themes } from "#/lib/themes";
+import { useUndoState } from "#/lib/use-undo-state";
 export const Route = createFileRoute("/dashboard/design")({
 	loader: async () => {
 		const data = await getDashboardDesign();
@@ -45,8 +47,22 @@ function DesignStudio() {
 	const initial = Route.useLoaderData();
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const [draft, setDraft] = useState({ ...initial.profile });
-	const [draftLinks, setDraftLinks] = useState(initial.layout.links);
+	const history = useUndoState({
+		profile: { ...initial.profile },
+		links: initial.layout.links,
+	});
+	const draft = history.value.profile,
+		draftLinks = history.value.links;
+	const setDraft = (action: SetStateAction<typeof draft>) =>
+		history.set((v) => ({
+			...v,
+			profile: typeof action === "function" ? action(v.profile) : action,
+		}));
+	const setDraftLinks = (action: SetStateAction<typeof draftLinks>) =>
+		history.set((v) => ({
+			...v,
+			links: typeof action === "function" ? action(v.links) : action,
+		}));
 	const [saved, setSaved] = useState(
 		JSON.stringify({ profile: initial.profile, links: initial.layout.links }),
 	);
@@ -219,6 +235,28 @@ function DesignStudio() {
 					disabled={!ready || save.isPending}
 					className="min-w-0 space-y-5"
 				>
+					<div className="kinetic-panel bg-[#FFFCEF] p-4">
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								onClick={history.undo}
+								disabled={!history.canUndo}
+							>
+								Undo change
+							</Button>
+							<Button
+								variant="outline"
+								onClick={history.redo}
+								disabled={!history.canRedo}
+							>
+								Redo change
+							</Button>
+						</div>
+						<p className="mt-2 text-xs">
+							Undo up to 50 draft changes in this session, including templates,
+							blocks, and link edits. Publish to update your page.
+						</p>
+					</div>
 					<PageReadiness profile={draft} links={draftLinks} />
 					<section className="kinetic-panel space-y-4 bg-[#FFFCEF] p-5">
 						<h2 className="text-lg font-bold">Start with a template</h2>
@@ -530,8 +568,7 @@ function DesignStudio() {
 						disabled={!dirty}
 						onClick={() => {
 							const original = JSON.parse(saved);
-							setDraft(original.profile);
-							setDraftLinks(original.links);
+							history.set({ profile: original.profile, links: original.links });
 						}}
 					>
 						Discard draft
