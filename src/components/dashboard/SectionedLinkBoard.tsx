@@ -556,7 +556,9 @@ function SectionColumn({
 											isSelected={selectedLinkIds.has(link.id)}
 											onToggleSelection={onToggleLinkSelection}
 										/>
-										{!selectionMode && index < links.length - 1 ? (
+										{enableDrag &&
+										!selectionMode &&
+										index < links.length - 1 ? (
 											<InsertionRail
 												onClick={() => onCreateSectionAt(index + 1)}
 											/>
