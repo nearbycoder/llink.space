@@ -12,6 +12,7 @@ import {
 } from "#/lib/profile-backgrounds";
 import { isAllowedBackgroundImageUrl } from "#/lib/security";
 import { getTheme } from "#/lib/themes";
+import { useReadingList } from "#/lib/use-reading-list";
 import { ContactDownload } from "./ContactDownload";
 import { ContentBlockView } from "./ContentBlockView";
 import { EmailSignup } from "./EmailSignup";
@@ -19,6 +20,7 @@ import { LinkCard } from "./LinkCard";
 import { ProfileHeader } from "./ProfileHeader";
 import { PublicLinkCommandBar } from "./PublicLinkCommandBar";
 import { PublicProfileShare } from "./PublicProfileShare";
+import { ReadingList } from "./ReadingList";
 export type PublicPageData =
 	inferRouterOutputs<TRPCRouter>["links"]["getPublic"];
 function toCssBackgroundImageUrl(value: string) {
@@ -78,6 +80,9 @@ interface PublicProfileLink {
 }
 
 interface PublicLinkGroupProps {
+	savedIds?: string[];
+	saveReady?: boolean;
+	onToggleSave?: (id: string) => void;
 	preview?: boolean;
 	blocks: ContentBlock[];
 	buttonStyle?: string;
@@ -92,6 +97,9 @@ interface PublicLinkGroupProps {
 const PUBLIC_LINK_PREVIEW_LIMIT = 5;
 
 function PublicLinkGroup({
+	savedIds,
+	saveReady,
+	onToggleSave,
 	preview,
 	blocks,
 	buttonStyle,
@@ -107,6 +115,9 @@ function PublicLinkGroup({
 	const renderLink = (link: PublicProfileLink) => (
 		<Fragment key={link.id}>
 			<LinkCard
+				saved={savedIds?.includes(link.id)}
+				saveReady={saveReady}
+				onToggleSave={onToggleSave}
 				buttonStyle={buttonStyle}
 				featured={link.featured}
 				featureImageUrl={link.featureImageUrl}
@@ -160,6 +171,11 @@ export function PublicProfilePage({
 	const trpc = useTRPC();
 	const recordClick = useMutation(trpc.analytics.recordClick.mutationOptions());
 	const { profile, links, sections, unsectionedLinks } = data;
+	const reading = useReadingList(
+		profile.id,
+		links.map((l) => l.id),
+		!preview,
+	);
 	const theme = {
 		...getTheme(profile.theme ?? "default"),
 		...(profile.accentColor ? { accent: profile.accentColor } : {}),
@@ -229,6 +245,15 @@ export function PublicProfilePage({
 						textColor={theme.text}
 						mutedTextColor={theme.mutedText}
 					/>
+					{!preview && (
+						<ReadingList
+							links={links.filter((l) => reading.ids.includes(l.id))}
+							onRemove={reading.toggle}
+							onClear={reading.clear}
+							onVisit={handleLinkClick}
+							error={reading.error}
+						/>
+					)}
 					<PublicLinkCommandBar
 						links={commandLinks}
 						onVisitLink={handleLinkClick}
@@ -265,6 +290,9 @@ export function PublicProfilePage({
 						<div className="space-y-6">
 							{unsectionedLinks.length > 0 && (
 								<PublicLinkGroup
+									savedIds={reading.ids}
+									saveReady={reading.ready}
+									onToggleSave={preview ? undefined : reading.toggle}
 									preview={preview}
 									blocks={blocks}
 									buttonStyle={profile.buttonStyle}
@@ -297,6 +325,9 @@ export function PublicProfilePage({
 										</h2>
 									</div>
 									<PublicLinkGroup
+										savedIds={reading.ids}
+										saveReady={reading.ready}
+										onToggleSave={preview ? undefined : reading.toggle}
 										preview={preview}
 										blocks={blocks}
 										buttonStyle={profile.buttonStyle}
