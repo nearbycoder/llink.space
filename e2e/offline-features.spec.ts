@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from '@playwright/test';
 import { setupCreator } from './feature-helpers';
 test('campaign builder applies a preview to the link draft and persists it', async({page})=>{
@@ -11,4 +12,18 @@ test('campaign builder applies a preview to the link draft and persists it', asy
  await expect(dialog.getByLabel('Campaign URL preview')).toContainText('utm_source=newsletter');await dialog.getByRole('button',{name:'Apply campaign URL'}).click();await expect(dialog.getByLabel('URL',{exact:true})).toHaveValue(/utm_source=newsletter/);await dialog.getByRole('button',{name:'Add link',exact:true}).click();
  await expect(page.getByText('Link added',{exact:true})).toBeVisible();
  await page.getByText('Campaign',{exact:true}).hover();await page.getByRole('button',{name:'Edit Campaign',exact:true}).click();await expect(page.getByLabel('URL',{exact:true})).toHaveValue('https://example.com/?keep=1&utm_source=newsletter#hello');
+});
+
+test('public QR share kit generates downloadable PNG and SVG locally',async({page})=>{
+ const {username}=await setupCreator(page);await page.goto(`/u/${username}`);
+ await page.getByRole('button',{name:'QR code',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Share with a scan'});
+ await expect(dialog.getByRole('img',{name:`QR code for @${username}`})).toBeVisible();
+ for(const format of ['SVG','PNG']) {
+  const pending=page.waitForEvent('download');await dialog.getByRole('button',{name:`Download ${format}`}).click();const file=await pending;
+  expect(file.suggestedFilename()).toBe(`profile-${username}-qr.${format.toLowerCase()}`);
+  const path=await file.path();const bytes=await readFile(path!);expect(bytes.length).toBeGreaterThan(100);
+  if(format==='SVG') expect(bytes.toString()).toContain('<svg');else expect(bytes.subarray(1,4).toString()).toBe('PNG');
+ }
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();await expect(dialog).not.toBeVisible();
 });

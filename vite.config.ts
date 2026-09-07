@@ -22,6 +22,7 @@ const config = defineConfig({
 		tsconfigPaths: true,
 	},
 	optimizeDeps: {
+		include: ["qrcode"],
 		exclude: tanstackOptimizeDepsExcludes,
 	},
 	environments: {
