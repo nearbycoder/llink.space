@@ -1,0 +1,72 @@
+.public-link-card {
+	position: relative;
+}
+.public-link-save {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	cursor: pointer;
+	opacity: 0.65;
+}
+.public-link-card[data-featured] .public-link-save {
+	top: auto;
+	bottom: 6px;
+	transform: none;
+}
+.public-link-save:hover,
+.public-link-save[aria-pressed="true"] {
+	opacity: 1;
+	background: color-mix(in srgb, currentColor 8%, transparent);
+}
+.public-link-save:focus-visible,
+.public-link-card > a:focus-visible,
+.public-profile-tool:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 3px;
+}
+.public-profile-tool {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 8px 12px;
+	border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+.public-profile-tool:hover {
+	background: color-mix(in srgb, currentColor 5%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+	.public-link-save:not([aria-pressed="true"]) {
+		opacity: 0;
+	}
+	.public-link-card:hover .public-link-save,
+	.public-link-card:focus-within .public-link-save {
+		opacity: 1;
+	}
+}
+@media (prefers-reduced-motion: no-preference) {
+	.public-link-save {
+		transition:
+			opacity 0.15s,
+			background-color 0.15s;
+	}
+}
+
+@media print {
+	body:has([data-public-profile]) [data-slot="dialog-overlay"],
+	[data-public-profile-dialog] {
+		display: none;
+	}
+}
