@@ -1,6 +1,5 @@
 import { Command, CornerDownLeft, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "#/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -129,31 +128,22 @@ export function PublicLinkCommandBar({
 
 	return (
 		<>
-			<div className="mb-4 rounded-xl border-2 border-black bg-[#FFF7A8]/95 p-3 shadow-[3px_3px_0_0_#11110F]">
-				<div className="flex items-center justify-between gap-3">
-					<div className="min-w-0">
-						<p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#4F4A00]">
-							Quick jump
-						</p>
-						<p className="mt-0.5 truncate text-xs text-[#5B5648]">
-							Search across {links.length} links
-						</p>
-					</div>
-					<Button
-						type="button"
-						size="sm"
-						variant="outline"
-						onClick={() => setOpen(true)}
-						className="shrink-0 bg-[#FFFCEF]"
-					>
-						<Search className="h-3.5 w-3.5" />
-						<span>{isApplePlatform ? "Command + K" : "Ctrl + K"}</span>
-					</Button>
-				</div>
-			</div>
+			<button
+				type="button"
+				onClick={() => setOpen(true)}
+				className="public-profile-tool flex-1"
+				aria-label="Search links"
+			>
+				<Search size={16} aria-hidden="true" />
+				<span>Search links</span>
+				<kbd className="ml-auto hidden text-[10px] opacity-60 sm:inline">
+					{isApplePlatform ? "⌘ K" : "Ctrl K"}
+				</kbd>
+			</button>
 
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent
+					data-public-profile-dialog
 					className="max-w-xl overflow-hidden rounded-2xl p-0"
 					showCloseButton={false}
 				>
@@ -170,6 +160,7 @@ export function PublicLinkCommandBar({
 					<div className="space-y-3 p-4">
 						<Input
 							ref={inputRef}
+							className="text-base sm:text-sm"
 							value={query}
 							onChange={(event) => {
 								setQuery(event.target.value);

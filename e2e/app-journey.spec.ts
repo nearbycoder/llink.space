@@ -63,7 +63,7 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await expect(page.getByTestId("link-stat-total")).toContainText("1");
 	await expect(page.getByTestId("link-stat-live")).toContainText("1");
 
-	await page.getByLabel("Search links").fill("portfolio");
+	await page.getByRole("textbox", { name: "Search links" }).fill("portfolio");
 	await expect(page.getByText("Showing 1 of 1 links")).toBeVisible();
 	await page.getByLabel("Filter links by status").selectOption("live");
 	await page.getByLabel("Filter links by section").selectOption({ label: "Featured" });
@@ -200,8 +200,8 @@ test("complete creator journey works end to end", async ({ page }) => {
 		"Link copied",
 	);
 
-	await page.getByRole("button", { name: /Ctrl \+ K|Command \+ K/ }).click();
-	await page.getByLabel("Search links").fill("portfolio");
+	await page.getByRole("button", { name: "Search links", exact: true }).click();
+	await page.getByRole("textbox", { name: "Search links" }).fill("portfolio");
 	await expect(page.getByRole("button", { name: /Creator portfolio/ })).toBeVisible();
 	await page.keyboard.press("Escape");
 

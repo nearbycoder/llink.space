@@ -1,4 +1,5 @@
-import { ExternalLink } from "lucide-react";
+import { Bookmark, ExternalLink } from "lucide-react";
+import "./public-profile.css";
 import { LinkIcon } from "#/components/links/LinkIcon";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
 
@@ -54,7 +55,7 @@ export function LinkCard({
 	const safeUrl = normalizeHttpUrl(url);
 
 	return (
-		<div>
+		<div className="public-link-card" data-featured={featured || undefined}>
 			<a
 				data-public-link
 				href={safeUrl ?? "#"}
@@ -67,7 +68,7 @@ export function LinkCard({
 					}
 					handleClick();
 				}}
-				className="group block w-full rounded-xl border-2 px-5 py-4 transition-transform shadow-[3px_3px_0_0_#11110F] hover:-translate-y-0.5 active:translate-y-0"
+				className="group block w-full rounded-xl border-2 px-4 py-3.5 shadow-[2px_2px_0_0_#11110F]"
 				style={{
 					backgroundColor: cardBg,
 					borderRadius:
@@ -93,7 +94,9 @@ export function LinkCard({
 						</span>
 					</div>
 				)}
-				<div className="flex items-center justify-between">
+				<div
+					className={`flex items-center justify-between ${onToggleSave ? "pr-10" : ""}`}
+				>
 					<div className="min-w-0 flex items-center gap-3">
 						<LinkIcon iconUrl={iconUrl} iconBgColor={iconBgColor} />
 						<div className="min-w-0">
@@ -113,31 +116,43 @@ export function LinkCard({
 							)}
 						</div>
 					</div>
-					<ExternalLink
-						aria-hidden="true"
-						className="w-3.5 h-3.5 ml-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-						style={{ color: mutedTextColor }}
-					/>
+					{!onToggleSave && (
+						<ExternalLink
+							aria-hidden="true"
+							className="w-3.5 h-3.5 ml-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+							style={{ color: mutedTextColor }}
+						/>
+					)}
 				</div>
 				{featured && (
-					<p className="mt-4 text-sm font-bold" style={{ color: textColor }}>
+					<p
+						className="mt-4 pr-10 text-sm font-bold"
+						style={{ color: textColor }}
+					>
 						{ctaLabel || "Explore more"} ↗
 					</p>
 				)}
 			</a>
 			{onToggleSave && (
-				<div data-print-hidden className="mt-1 flex justify-end">
-					<button
-						type="button"
-						disabled={!saveReady}
-						aria-label={`Save ${title} for later`}
-						aria-pressed={!!saved}
-						onClick={() => onToggleSave(id)}
-						className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-xs font-semibold hover:underline"
-					>
-						{saved ? "✓ Saved" : "+ Save"}
-					</button>
-				</div>
+				<button
+					data-print-hidden
+					type="button"
+					disabled={!saveReady}
+					aria-label={`Save ${title} for later`}
+					title={
+						saved ? "Remove from saved links" : "Save to your reading list"
+					}
+					aria-pressed={!!saved}
+					onClick={() => onToggleSave(id)}
+					className="public-link-save"
+					style={{ color: textColor }}
+				>
+					<Bookmark
+						size={17}
+						fill={saved ? "currentColor" : "none"}
+						aria-hidden="true"
+					/>
+				</button>
 			)}
 		</div>
 	);
