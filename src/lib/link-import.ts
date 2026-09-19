@@ -2,15 +2,25 @@ import { normalizeHttpUrl, prepareHttpUrl } from "./security";
 
 export const MAX_IMPORT_LINKS = 50;
 
-/** One URL per line; an optional title follows a tab (spreadsheet paste). */
+/** URLs, spreadsheet rows, or Markdown link lists. */
 export function parseLinkImport(text: string, existingUrls: string[] = []) {
 	const seen = new Set(existingUrls.map((url) => normalizeHttpUrl(url) ?? url));
 	const links: Array<{ title: string; url: string }> = [];
 	const errors: Array<{ line: number; message: string }> = [];
 	let duplicates = 0;
 	text.split(/\r?\n/).forEach((line, index) => {
-		if (!line.trim()) return;
-		const [rawUrl, ...titleParts] = line.trim().split("\t");
+		if (!line.trim() || /^#{1,6}\s/.test(line.trim())) return;
+		const markdown = line
+			.trim()
+			.match(
+				/^(?:[-*+]\s+|\d+\.\s+)?\[((?:\\.|[^\]\\])*)\]\((?:<([^<>]+)>|([^\s]+))\)(?:\s+—.*)?$/,
+			);
+		const [rawUrl, ...titleParts] = markdown
+			? [
+					markdown[2] ?? markdown[3],
+					markdown[1].replace(/\\([\\`*_{}[\]()#+.!|>~-])/g, "$1"),
+				]
+			: line.trim().split("\t");
 		const url = normalizeHttpUrl(prepareHttpUrl(rawUrl));
 		const title = titleParts.join(" ").trim();
 		if (!url || url.length > 2048) {

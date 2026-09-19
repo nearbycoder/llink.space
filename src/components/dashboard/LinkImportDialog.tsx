@@ -72,7 +72,9 @@ export function LinkImportDialog({
 						<DialogTitle>Import links</DialogTitle>
 						<DialogDescription>
 							Paste up to 50 URLs, one per line. Add a title in the second
-							column when pasting from a spreadsheet.
+							column when pasting from a spreadsheet, or paste Markdown links
+							such as [My site](https://example.com). Headings are skipped;
+							imported titles and URLs appear below.
 						</DialogDescription>
 					</DialogHeader>
 					<form

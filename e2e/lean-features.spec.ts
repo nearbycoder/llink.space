@@ -9,3 +9,12 @@ test("CSV files preview and import titles as paused drafts", async ({page})=>{
  await expect(page.getByText('Portfolio, 2026',{exact:true})).toBeVisible();
  const data=await page.request.get('/api/trpc/links.list');expect((await data.json()).result.data.json.links.every((l:{isActive:boolean})=>!l.isActive)).toBe(true);
 });
+
+test("Markdown link lists preserve titles in the import preview", async ({page}) => {
+ await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Import links',exact:true}).click();
+ await page.getByLabel('Website URLs').fill('# Favorites\n- [My notes](https://example.com/notes)');
+ await expect(page.getByText('1 new links · 0 duplicates skipped')).toBeVisible();
+ await page.getByRole('button',{name:'Import as drafts'}).click();
+ await expect(page.getByText('My notes',{exact:true})).toBeVisible();
+});

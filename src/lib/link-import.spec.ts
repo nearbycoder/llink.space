@@ -34,3 +34,17 @@ describe("pasted link import", () => {
 		).toHaveLength(1);
 	});
 });
+
+it("imports Markdown exports and lists without accepting unsafe destinations", () => {
+	const result = parseLinkImport(
+		"# My links\n- [Hello\\[world\\]](<https://example.com/a_(b)>) — ignored description\n1. [Notes](https://example.org)",
+	);
+	expect(result.errors).toEqual([]);
+	expect(result.links.map((l) => l.title)).toEqual(["Hello[world]", "Notes"]);
+	expect(parseLinkImport("- [Bad](javascript:alert(1))").errors).toHaveLength(
+		1,
+	);
+	expect(parseLinkImport("- [Broken](https://example.com").errors).toHaveLength(
+		1,
+	);
+});
