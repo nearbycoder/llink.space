@@ -11,9 +11,13 @@ import {
 	BarChart3,
 	Command,
 	ExternalLink,
+	Globe,
+	HeartPulse,
 	LayoutDashboard,
 	LogOut,
+	Palette,
 	User,
+	Users,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -69,7 +73,7 @@ const navItems: DashboardNavItem[] = [
 	{
 		to: "/dashboard/design",
 		label: "Design studio",
-		icon: LayoutDashboard,
+		icon: Palette,
 		exact: false,
 	},
 	{
@@ -81,14 +85,14 @@ const navItems: DashboardNavItem[] = [
 	{
 		to: "/dashboard/health",
 		label: "Link health",
-		icon: ExternalLink,
+		icon: HeartPulse,
 		exact: false,
 	},
-	{ to: "/dashboard/audience", label: "Audience", icon: User, exact: false },
+	{ to: "/dashboard/audience", label: "Audience", icon: Users, exact: false },
 	{
 		to: "/dashboard/domains",
 		label: "Custom domain",
-		icon: ExternalLink,
+		icon: Globe,
 		exact: false,
 	},
 ];
@@ -150,10 +154,10 @@ function DashboardLayout() {
 
 	return (
 		<NavigationGuardContext value={navigationGuard}>
-			<div className="min-h-screen kinetic-gradient md:flex">
+			<div className="dashboard-workspace min-h-screen kinetic-gradient md:flex">
 				{/* Sidebar */}
-				<aside className="hidden md:flex w-60 bg-[#FFFCEF]/95 backdrop-blur-sm border-r-2 border-black flex-col fixed inset-y-0 left-0 z-10">
-					<div className="p-5 border-b-2 border-black">
+				<aside className="dashboard-sidebar hidden md:flex w-60 bg-card/95 backdrop-blur-sm border-r border-border flex-col fixed inset-y-0 left-0 z-10">
+					<div className="p-5 border-b border-border">
 						<div className="flex items-center justify-between gap-2">
 							<a href="/">
 								<SiteBrand size="md" />
@@ -161,7 +165,7 @@ function DashboardLayout() {
 							<button
 								type="button"
 								onClick={openCommandPalette}
-								className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/35 bg-white px-2 text-xs font-semibold text-[#11110F] transition-colors hover:bg-[#FFF7A8]"
+								className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/35 bg-white px-2 text-xs font-semibold text-[#11110F] transition-colors hover:bg-accent"
 							>
 								<Command className="h-4 w-4" />
 								<span className="leading-none text-xs font-semibold text-[#11110F]">
@@ -180,12 +184,13 @@ function DashboardLayout() {
 							return (
 								<Link
 									key={item.to}
+									aria-current={active ? "page" : undefined}
 									to={item.to}
 									className={cn(
-										"flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors border-2 border-transparent",
+										"dashboard-nav-link flex min-h-11 items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors border border-transparent",
 										active
-											? "bg-[#11110F] text-[#F5FF7B] border-black shadow-[2px_2px_0_0_#11110F]"
-											: "text-[#4B4B45] hover:bg-[#FFF7A8] hover:text-[#11110F] hover:border-black",
+											? "bg-accent text-[#273B1D]"
+											: "text-[#4B4B45] hover:bg-accent hover:text-[#11110F] hover:border-foreground/25",
 									)}
 								>
 									<item.icon className="w-4 h-4" />
@@ -195,13 +200,13 @@ function DashboardLayout() {
 						})}
 					</nav>
 
-					<div className="p-3 border-t-2 border-black space-y-1">
+					<div className="p-3 border-t border-border space-y-1">
 						{profile?.username && (
 							<a
 								href={`/u/${profile.username}`}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#4B4B45] border-2 border-transparent hover:bg-[#FFF7A8] hover:text-[#11110F] hover:border-black transition-colors"
+								className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#4B4B45] border-2 border-transparent hover:bg-accent hover:text-[#11110F] hover:border-foreground/25 transition-colors"
 							>
 								<ExternalLink className="w-4 h-4" />
 								View public page
@@ -210,7 +215,7 @@ function DashboardLayout() {
 						<button
 							type="button"
 							onClick={handleSignOut}
-							className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#4B4B45] border-2 border-transparent hover:bg-[#FFD9CF] hover:text-[#11110F] hover:border-black transition-colors w-full text-left"
+							className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#4B4B45] border-2 border-transparent hover:bg-[#FFD9CF] hover:text-[#11110F] hover:border-foreground/25 transition-colors w-full text-left"
 						>
 							<LogOut className="w-4 h-4" />
 							Sign out
@@ -219,7 +224,7 @@ function DashboardLayout() {
 				</aside>
 
 				<div className="flex-1 md:ml-60">
-					<header className="flex h-16 items-center justify-between gap-4 border-b-2 border-black bg-[#FFFCEF]/95 px-4 md:hidden">
+					<header className="flex h-16 items-center justify-between gap-4 border-b border-border bg-card/95 px-4 md:hidden">
 						<a href="/">
 							<SiteBrand size="sm" />
 						</a>

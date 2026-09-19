@@ -30,7 +30,7 @@ export function StaticLinkList({
 			{links.map((link) => (
 				<div
 					key={link.id}
-					className="group flex items-center gap-3 rounded-xl border-2 border-black bg-[#FFFCEF] p-4 shadow-[3px_3px_0_0_#11110F]"
+					className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm"
 				>
 					<span
 						aria-hidden="true"

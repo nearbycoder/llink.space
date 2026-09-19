@@ -88,7 +88,7 @@ test("marketing page remains readable on mobile and respects reduced motion", as
 		page.getByRole("link", { name: "Sign in", exact: true }),
 	).toBeVisible();
 	await expect(page.getByRole("heading", { level: 1 })).toContainText(
-		"ONE LINK.",
+		"One link.",
 	);
 	expect(
 		await page.evaluate(

@@ -452,7 +452,7 @@ function ProfilePage() {
 			<div className="mb-6">
 				<h1
 					className="text-2xl text-[#11110F]"
-					style={{ fontFamily: "'Archivo Black', sans-serif" }}
+					style={{ fontFamily: "'Work Sans', sans-serif" }}
 				>
 					Profile
 				</h1>
@@ -585,7 +585,7 @@ function ProfilePage() {
 						)}
 					</div>
 
-					<div className="space-y-3 rounded-xl border-2 border-black/80 bg-[#FFFCED] p-4">
+					<div className="space-y-3 rounded-xl border border-border/80 bg-[#F1F4ED] p-4">
 						<div>
 							<Label
 								htmlFor={backgroundUploadId}
@@ -641,7 +641,7 @@ function ProfilePage() {
 											}
 											className={`h-10 rounded-lg border-2 transition ${
 												isSelected
-													? "border-black shadow-[2px_2px_0_0_#11110F]"
+													? "border-black shadow-sm"
 													: "border-black/35"
 											}`}
 											style={{ background: option.value }}
@@ -670,7 +670,7 @@ function ProfilePage() {
 											}
 											className={`h-14 rounded-xl border-2 px-3 text-left text-xs font-semibold text-[#11110F] ${
 												isSelected
-													? "border-black shadow-[2px_2px_0_0_#11110F]"
+													? "border-black shadow-sm"
 													: "border-black/35"
 											}`}
 											style={{ background: option.value }}
@@ -727,7 +727,7 @@ function ProfilePage() {
 						)}
 
 						<div
-							className="relative h-32 overflow-hidden rounded-xl border-2 border-black"
+							className="relative h-32 overflow-hidden rounded-xl border border-border"
 							style={previewBackgroundStyle}
 						>
 							<div className="absolute left-2 top-2 rounded-md bg-white/85 px-2 py-1 text-[11px] font-semibold text-[#11110F]">
@@ -752,7 +752,7 @@ function ProfilePage() {
 					<div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex items-center gap-2">
 							{isDirty && (
-								<span className="rounded-full border border-black/25 bg-[#FFF7A8] px-2.5 py-1 text-xs font-semibold text-[#5B5648]">
+								<span className="rounded-full border border-black/25 bg-accent px-2.5 py-1 text-xs font-semibold text-[#5B5648]">
 									Unsaved changes
 								</span>
 							)}
@@ -790,12 +790,12 @@ function ProfilePage() {
 					inert={!isHydrated}
 				>
 					{passwordUpdateError && (
-						<p className="rounded-xl border-2 border-black bg-[#FFD9CF] px-3 py-2 text-sm text-[#7E1612]">
+						<p className="rounded-xl border border-border bg-[#FFD9CF] px-3 py-2 text-sm text-[#7E1612]">
 							{passwordUpdateError}
 						</p>
 					)}
 					{passwordUpdateSuccess && (
-						<p className="rounded-xl border-2 border-black bg-[#DBF9E6] px-3 py-2 text-sm text-[#0B7A42]">
+						<p className="rounded-xl border border-border bg-[#DBF9E6] px-3 py-2 text-sm text-[#0B7A42]">
 							{passwordUpdateSuccess}
 						</p>
 					)}

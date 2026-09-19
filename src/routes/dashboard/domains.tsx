@@ -49,7 +49,7 @@ function DomainPage() {
 					llink.space address keeps working.
 				</p>
 			</header>
-			<section className="kinetic-panel space-y-5 bg-[#FFFCEF] p-5 sm:p-7">
+			<section className="kinetic-panel space-y-5 bg-card p-5 sm:p-7">
 				{!domain ? (
 					<form
 						className="space-y-4"
@@ -165,7 +165,7 @@ function DomainPage() {
 									href={`https://${domain.hostname}/`}
 									target="_blank"
 									rel="noreferrer"
-									className="rounded-lg border-2 border-black px-4 py-2 text-sm font-bold"
+									className="rounded-lg border border-border px-4 py-2 text-sm font-bold"
 								>
 									Open custom domain ↗
 								</a>

@@ -47,10 +47,10 @@ export function LandingPage() {
 							Your corner of the internet
 						</p>
 						<h1 id="hero-title">
-							ONE LINK.
-							<br />A WHOLE LOT
+							One link.
+							<br />A whole lot
 							<br />
-							OF <span>YOU.</span>
+							of <span>you.</span>
 						</h1>
 						<p className="marketing-hero-description">
 							Your work. Your words. Your next big thing.
@@ -78,9 +78,9 @@ export function LandingPage() {
 					<div className="marketing-hero-art">
 						<div className="marketing-orbit" aria-hidden="true" />
 						<div className="marketing-new-sticker">
-							<span>JUST LANDED</span>
+							<span>THOUGHTFUL TOOLS</span>
 							<strong>{count}</strong>
-							<span>NEW FEATURES</span>
+							<span>BUILT RIGHT IN</span>
 						</div>
 						<figure className="marketing-phone">
 							<div className="marketing-phone-bar">

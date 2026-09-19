@@ -78,14 +78,14 @@ function SignUpPage() {
 	};
 
 	return (
-		<Card className="border-2 border-black bg-[#FFFCEF] shadow-[6px_6px_0_0_#11110F]">
-			<CardHeader className="space-y-1">
+		<Card className="border-0 bg-transparent py-0 shadow-none">
+			<CardHeader className="space-y-1 px-0">
 				<CardTitle className="text-xl font-semibold">Create account</CardTitle>
 				<CardDescription className="text-[#4B4B45]">
 					Get your link in bio in seconds
 				</CardDescription>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="px-0">
 				<form
 					onSubmit={handleSubmit(onSubmit)}
 					className="space-y-4"
@@ -94,7 +94,7 @@ function SignUpPage() {
 					{error && (
 						<p
 							role="alert"
-							className="text-sm text-[#7E1612] bg-[#FFD9CF] border-2 border-black rounded-xl px-3 py-2"
+							className="text-sm text-[#7E1612] bg-[#FFD9CF] border border-border rounded-xl px-3 py-2"
 						>
 							{error}
 						</p>

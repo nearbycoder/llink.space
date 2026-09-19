@@ -1,7 +1,7 @@
 .marketing-page {
 	--ink: #191a17;
-	--paper: #fcfaf3;
-	--lime: #e9ff70;
+	--paper: #f8faf5;
+	--lime: #ddebaf;
 	color: var(--ink);
 	background: var(--paper);
 	font-family: "Work Sans", sans-serif;
@@ -29,7 +29,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	min-height: 112px;
+	min-height: 88px;
 	gap: 24px;
 	border-bottom: 1px solid #191a1724;
 }
@@ -81,10 +81,11 @@
 	box-shadow: 0 0 0 4px #52735315;
 }
 .marketing-hero h1 {
-	font-family: "Archivo Black", sans-serif;
+	font-family: "Work Sans", sans-serif;
+	font-weight: 650;
 	font-size: clamp(56px, 5.7vw, 80px);
-	letter-spacing: -0.065em;
-	line-height: 0.98;
+	letter-spacing: -0.06em;
+	line-height: 1.04;
 	margin: 0;
 	position: relative;
 }
@@ -97,8 +98,8 @@
 	position: absolute;
 	z-index: -1;
 	background: var(--lime);
-	inset: 10% -12px -3%;
-	transform: rotate(-3deg);
+	inset: 65% -6px 0;
+	border-radius: 8px;
 }
 .marketing-hero-description {
 	font-size: 17px;
@@ -132,11 +133,11 @@
 .marketing-page .marketing-button-dark {
 	color: var(--paper);
 	background: var(--ink);
-	box-shadow: 3px 3px 0 var(--lime);
+	box-shadow: 0 4px 12px #191a1710;
 }
 .marketing-button:hover {
-	transform: translateY(-3px);
-	box-shadow: 5px 6px 0 var(--lime);
+	transform: translateY(-1px);
+	box-shadow: 0 8px 20px #191a1720;
 }
 .marketing-watch {
 	display: inline-flex;
@@ -164,7 +165,7 @@
 	width: 490px;
 	height: 490px;
 	border-radius: 50%;
-	background: radial-gradient(circle at 25% 25%, #f1f4d9, #dce8d4 65%, #cee0c6);
+	background: #e7eddf;
 	position: absolute;
 	top: 70px;
 	left: 50%;
@@ -173,7 +174,7 @@
 .marketing-orbit:after {
 	content: "";
 	position: absolute;
-	border: 1px solid #91a682;
+	border: 1px solid #d5dfcb;
 	border-radius: 50%;
 	inset: -20px;
 }
@@ -183,10 +184,12 @@
 	margin: 0;
 	padding: 7px;
 	background: #fcfaf3;
-	border: 2px solid var(--ink);
+	border: 1px solid #ccd5c4;
 	border-radius: 30px;
 	/* Keep the screenshot on the pixel grid, including on software renderers. */
-	box-shadow: 12px 14px 1px #191a17;
+	box-shadow:
+		0 24px 64px #23331d1a,
+		0 4px 12px #23331d0a;
 }
 .marketing-phone-bar {
 	display: flex;
@@ -228,12 +231,12 @@
 	height: 128px;
 	border-radius: 50%;
 	background: var(--lime);
-	border: 1px solid var(--ink);
+	border: 1px solid #cedda9;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	box-shadow: 4px 4px 1px var(--ink);
+	box-shadow: 0 8px 24px #23331d10;
 }
 .marketing-new-sticker span {
 	font-size: 9px;
@@ -241,7 +244,8 @@
 	letter-spacing: 0.05em;
 }
 .marketing-new-sticker strong {
-	font-family: "Archivo Black", sans-serif;
+	font-family: "Work Sans", sans-serif;
+	font-weight: 650;
 	font-size: 49px;
 	line-height: 1.12;
 	letter-spacing: -0.06em;
@@ -264,7 +268,7 @@
 }
 .marketing-ribbon {
 	background: var(--lime);
-	border-block: 1px solid var(--ink);
+	border-block: 1px solid #d2dec0;
 }
 .marketing-ribbon > div {
 	display: flex;
@@ -288,7 +292,8 @@
 }
 .marketing-section-heading h2,
 .marketing-start h2 {
-	font-family: "Archivo Black", sans-serif;
+	font-family: "Work Sans", sans-serif;
+	font-weight: 650;
 	font-size: clamp(32px, 4.2vw, 58px);
 	line-height: 1.09;
 	letter-spacing: -0.045em;
@@ -570,7 +575,7 @@
 .marketing-start {
 	padding: 50px 55px;
 	background: var(--lime);
-	border: 1px solid var(--ink);
+	border: 1px solid #cedda9;
 	border-radius: 18px;
 }
 .marketing-start-header {

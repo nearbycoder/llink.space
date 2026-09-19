@@ -55,7 +55,7 @@ export function QrShare({
 			<button
 				type="button"
 				disabled={!ready}
-				className="rounded-full border-2 border-black bg-white px-3 py-2 text-xs font-bold text-[#11110F]"
+				className="rounded-full border border-border bg-white px-3 py-2 text-xs font-bold text-[#11110F]"
 				onClick={() =>
 					setUrl(
 						customDomain

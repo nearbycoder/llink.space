@@ -289,9 +289,9 @@ function LinkRow({
 			ref={setNodeRef}
 			style={style}
 			className={cn(
-				"group grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 sm:flex sm:gap-3 rounded-xl border-2 border-black bg-[#FFFCEF] p-4 shadow-[3px_3px_0_0_#11110F]",
+				"group grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 sm:flex sm:gap-3 rounded-xl border border-border bg-card p-4 shadow-sm",
 				isDragging && "opacity-50",
-				isSelected && "bg-[#E6FAFC] shadow-[4px_4px_0_0_#11110F]",
+				isSelected && "bg-[#E6FAFC] shadow-sm",
 			)}
 		>
 			{selectionMode ? (
@@ -413,7 +413,7 @@ function InsertionRail({ onClick }: InsertionRailProps) {
 				type="button"
 				onClick={onClick}
 				aria-label="Create a section at this position"
-				className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-black bg-[#FFF7A8] px-2 py-0.5 text-[10px] font-semibold text-[#11110F] opacity-0 shadow-[2px_2px_0_0_#11110F] transition-all hover:-translate-y-[55%] group-hover/rail:opacity-100 focus-visible:opacity-100"
+				className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-black bg-accent px-2 py-0.5 text-[10px] font-semibold text-[#11110F] opacity-0 shadow-sm transition-all hover:-translate-y-[55%] group-hover/rail:opacity-100 focus-visible:opacity-100"
 			>
 				<Plus className="h-3 w-3" />
 				Create section here
@@ -469,8 +469,8 @@ function SectionColumn({
 		<section
 			ref={setNodeRef}
 			className={cn(
-				"rounded-2xl border-2 border-black bg-[#FFFCED] p-4 shadow-[4px_4px_0_0_#11110F] transition-colors",
-				isOver && enableDrag && "bg-[#FFF7A8]",
+				"rounded-2xl border border-border bg-[#F1F4ED] p-4 shadow-sm transition-colors",
+				isOver && enableDrag && "bg-accent",
 			)}
 		>
 			<div
@@ -789,7 +789,7 @@ export function SectionedLinkBoard({
 			{content}
 			<DragOverlay>
 				{activeLink ? (
-					<div className="w-full max-w-[680px] rounded-xl border-2 border-black bg-[#FFFCEF] p-4 shadow-[6px_6px_0_0_#11110F]">
+					<div className="w-full max-w-[680px] rounded-xl border border-border bg-card p-4 shadow-sm">
 						<div className="flex items-center gap-3">
 							<span aria-hidden="true" className="touch-none text-[#6A675C]">
 								<GripVertical className="h-4 w-4" />

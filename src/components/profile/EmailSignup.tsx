@@ -124,7 +124,7 @@ export function EmailSignup({
 						<button
 							type="submit"
 							disabled={!consent}
-							className="w-full rounded-lg border-2 border-black bg-[#F5FF7B] px-3 py-2 font-bold text-[#11110F]"
+							className="w-full rounded-lg border border-border bg-[#F5FF7B] px-3 py-2 font-bold text-[#11110F]"
 						>
 							{subscribe.isPending ? "Joining…" : "Join the list"}
 						</button>

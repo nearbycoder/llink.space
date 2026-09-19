@@ -19,7 +19,7 @@ function Command({
 		<CommandPrimitive
 			data-slot="command"
 			className={cn(
-				"flex h-full w-full flex-col overflow-hidden rounded-xl border-2 border-black bg-[#FFFCEF] text-[#11110F]",
+				"flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-[#11110F]",
 				className,
 			)}
 			{...props}
@@ -68,7 +68,7 @@ function CommandDialog({
 		<Dialog open={open} {...props}>
 			<DialogContent
 				showCloseButton={false}
-				className="dashboard-search-dialog flex max-h-[min(640px,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 shadow-[4px_4px_0_0_#11110F]"
+				className="dashboard-search-dialog flex max-h-[min(640px,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 shadow-sm"
 				style={
 					viewport
 						? ({
@@ -82,7 +82,7 @@ function CommandDialog({
 				<DialogDescription className="sr-only">
 					Search pages and actions, or create a link.
 				</DialogDescription>
-				<Command className="min-h-0 rounded-none border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-[#6A675C] [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:bg-[#11110F] [&_[cmdk-item][data-selected=true]]:text-[#F5FF7B]">
+				<Command className="min-h-0 rounded-none border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-[#6A675C] [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:bg-accent [&_[cmdk-item][data-selected=true]]:text-[#273B1D]">
 					{children}
 				</Command>
 			</DialogContent>

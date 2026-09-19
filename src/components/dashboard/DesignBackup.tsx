@@ -51,7 +51,7 @@ export function DesignBackup({
 		);
 	};
 	return (
-		<details className="kinetic-panel bg-[#FFFCEF] p-5">
+		<details className="kinetic-panel bg-card p-5">
 			<summary className="cursor-pointer font-bold">Style backups</summary>
 			<p className="my-3 text-xs">
 				Back up your theme, typography, button style, accent, and content

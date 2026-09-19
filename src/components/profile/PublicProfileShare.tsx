@@ -87,7 +87,7 @@ export function PublicProfileShare({
 			<button
 				type="button"
 				onClick={handleShare}
-				className="inline-flex items-center gap-1.5 rounded-full border-2 border-black bg-white px-3 py-1.5 text-xs font-bold text-[#11110F] shadow-[2px_2px_0_0_#11110F] transition-transform hover:-translate-y-0.5"
+				className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-bold text-[#11110F] shadow-sm transition-transform hover:brightness-95"
 				aria-label="Share profile"
 				aria-live="polite"
 			>

@@ -147,7 +147,7 @@ export function PublicLinkCommandBar({
 					className="max-w-xl overflow-hidden rounded-2xl p-0"
 					showCloseButton={false}
 				>
-					<DialogHeader className="border-b-2 border-black bg-[#FFF7A8] px-5 py-4">
+					<DialogHeader className="border-b border-border bg-accent px-5 py-4">
 						<DialogTitle className="flex items-center gap-2 text-base">
 							<Command className="h-4 w-4" />
 							Quick jump
@@ -207,7 +207,7 @@ export function PublicLinkCommandBar({
 										className={`w-full rounded-xl border-2 px-3 py-2 text-left transition-colors ${
 											index === selectedIndex
 												? "border-black bg-[#11110F] text-[#F5FF7B]"
-												: "border-black/80 bg-[#FFFCEF] text-[#11110F] hover:bg-[#F8F8F4]"
+												: "border-black/80 bg-card text-[#11110F] hover:bg-[#F8F8F4]"
 										}`}
 									>
 										<div className="flex items-start justify-between gap-2">
