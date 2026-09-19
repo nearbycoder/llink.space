@@ -39,3 +39,10 @@ test("Link editor preview follows content without publishing", async ({page}) =>
  await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
  const response=await page.request.get('/api/trpc/links.list'); expect((await response.json()).result.data.json.links).toHaveLength(0);
 });
+
+test("URL cleanup is opt-in and preserves destination parameters", async ({page}) => {
+ await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled(); await page.getByRole('button',{name:'Add link',exact:true}).click();
+ const url=page.getByRole('dialog').getByLabel('URL',{exact:true}); await url.fill('https://example.com/?utm_source=mail&product=42#buy');
+ await page.getByText('Remove tracking parameters',{exact:true}).click(); await expect(url).toHaveValue('https://example.com/?utm_source=mail&product=42#buy');
+ await page.getByRole('button',{name:'Use clean URL'}).click(); await expect(url).toHaveValue('https://example.com/?product=42#buy');
+});
