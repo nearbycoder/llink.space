@@ -61,3 +61,10 @@ test("Publishing shortcuts fill editable dates and clear schedules", async ({pag
  await dialog.getByLabel('Schedule shortcut').selectOption('week'); await expect(dialog.getByLabel('Publish at',{exact:true})).toHaveValue(''); await expect(dialog.getByLabel('Hide at',{exact:true})).not.toHaveValue('');
  await dialog.getByLabel('Schedule shortcut').selectOption('none'); await expect(dialog.getByLabel('Hide at',{exact:true})).toHaveValue('');
 });
+
+test("Filtered CSV export includes only matching links", async ({page}) => {
+ await setupCreator(page); await api(page.request,'links.add',{title:'Keep me',url:'https://example.com/keep'}); await api(page.request,'links.add',{title:'Exclude me',url:'https://example.com/exclude'});
+ await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled(); await page.getByLabel('Search links',{exact:true}).fill('Keep me'); await page.getByText('More link tools',{exact:true}).click();
+ const downloadPromise=page.waitForEvent('download'); await page.getByRole('button',{name:'Export filtered links (1)',exact:true}).click(); const download=await downloadPromise;
+ expect(download.suggestedFilename()).toContain('filtered'); const stream=await download.createReadStream(); const chunks=[]; for await (const chunk of stream!) chunks.push(chunk); const csv=Buffer.concat(chunks).toString(); expect(csv).toContain('Keep me'); expect(csv).not.toContain('Exclude me');
+});
