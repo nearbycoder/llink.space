@@ -54,6 +54,7 @@ import {
 import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { publishingStatus } from "#/lib/link-publishing";
 import { LINK_SORTS, type LinkSort, sortDashboardView } from "#/lib/link-sort";
+import { buildLinkMarkdown } from "#/lib/markdown-export";
 
 export const Route = createFileRoute("/dashboard/")({
 	headers: () => ({
@@ -358,15 +359,22 @@ function DashboardPage() {
 		}
 	};
 
-	const copySelectedUrls = async () => {
+	const copySelectedUrls = async (markdown = false) => {
 		try {
 			const urls = layout.links
 				.filter((link) => selectedLinkIds.has(link.id))
 				.map((link) => link.url);
 			if (!urls.length) return;
-			await copyTextToClipboard(urls.join("\n"));
+			await copyTextToClipboard(
+				markdown
+					? buildLinkMarkdown(
+							layout.links.filter((link) => selectedLinkIds.has(link.id)),
+							layout.sections,
+						)
+					: urls.join("\n"),
+			);
 			toast.success(
-				`Copied ${urls.length} link${urls.length === 1 ? "" : "s"}`,
+				`Copied ${urls.length} link${urls.length === 1 ? "" : "s"}${markdown ? " as Markdown" : ""}`,
 			);
 		} catch {
 			toast.error(
@@ -917,6 +925,15 @@ function DashboardPage() {
 							>
 								<Copy className="mr-1 h-3.5 w-3.5" />
 								Copy selected URLs
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => void copySelectedUrls(true)}
+								disabled={selectedCount === 0 || isBulkBusy}
+							>
+								Copy selected Markdown
 							</Button>
 							<Button
 								type="button"
