@@ -162,6 +162,7 @@ function DashboardPage() {
 	);
 	const [bulkMoveSectionId, setBulkMoveSectionId] = useState("unsectioned");
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+	const searchInputRef = useRef<HTMLInputElement | null>(null);
 	const createSectionInputRef = useRef<HTMLInputElement | null>(null);
 	const copyResetTimerRef = useRef<number | null>(null);
 
@@ -211,6 +212,9 @@ function DashboardPage() {
 		statusFilter !== "all" ||
 		sectionFilter !== "all";
 	const selectedCount = selectedLinkIds.size;
+	const hiddenSelectedCount =
+		selectedCount -
+		filteredLinks.filter((link) => selectedLinkIds.has(link.id)).length;
 	const allVisibleSelected =
 		filteredLinks.length > 0 &&
 		filteredLinks.every((link) => selectedLinkIds.has(link.id));
@@ -302,7 +306,7 @@ function DashboardPage() {
 	const handleDuplicateLink = async (link: DashboardLink) => {
 		setActionLinkId(link.id);
 		try {
-			await addLink.mutateAsync({
+			const copy = await addLink.mutateAsync({
 				title: `${link.title} copy`.slice(0, 100),
 				url: link.url,
 				description: link.description ?? undefined,
@@ -311,11 +315,22 @@ function DashboardPage() {
 						? link.iconUrl
 						: undefined,
 				iconBgColor: link.iconBgColor ?? undefined,
-				isActive: link.isActive !== false,
+				isActive: false,
+				featured: false,
+				featureImageUrl: link.featureImageUrl ?? null,
+				ctaLabel: link.ctaLabel ?? null,
+				publishAt: link.publishAt
+					? new Date(link.publishAt).toISOString()
+					: null,
+				expireAt: link.expireAt ? new Date(link.expireAt).toISOString() : null,
 				sectionId: link.sectionId,
 			});
 			await refreshLayout();
-			toast.success("Link duplicated");
+			toast.success("Link duplicated", {
+				description:
+					"The copy is paused so you can review it before publishing.",
+				action: { label: "Edit copy", onClick: () => setEditingLink(copy) },
+			});
 		} catch (error) {
 			toast.error(errorMessage(error, "Could not duplicate the link"));
 		} finally {
@@ -369,6 +384,7 @@ function DashboardPage() {
 	};
 
 	const toggleLinkSelection = (linkId: string) => {
+		if (bulkAction.isPending) return;
 		setSelectedLinkIds((previous) => {
 			const next = new Set(previous);
 			if (next.has(linkId)) next.delete(linkId);
@@ -617,12 +633,19 @@ function DashboardPage() {
 				</div>
 			</div>
 
-			<div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
+			<div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
 				{LINK_STAT_CARDS.map(({ id, label, Icon, color }) => (
-					<div
+					<button
+						type="button"
+						aria-label={`Show ${label.toLowerCase()}`}
+						aria-pressed={statusFilter === (id === "total" ? "all" : id)}
+						onClick={() => {
+							clearFilters();
+							setStatusFilter(id === "total" ? "all" : id);
+						}}
 						key={id}
 						data-testid={`link-stat-${id}`}
-						className="kinetic-panel flex items-center gap-2 p-3 sm:p-4"
+						className="kinetic-panel flex items-center gap-2 p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 hover:bg-[#FFF7A8] aria-pressed:bg-[#FFF7A8] sm:p-4"
 					>
 						<span
 							className={`hidden rounded-lg border-2 border-black p-1.5 sm:inline-flex ${color}`}
@@ -637,27 +660,41 @@ function DashboardPage() {
 								{label}
 							</p>
 						</div>
-					</div>
+					</button>
 				))}
 			</div>
 
 			<div className="kinetic-panel mb-5 space-y-3 p-3 sm:p-4">
-				<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-					<div className="relative min-w-0 flex-1">
+				<div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+					<div className="relative col-span-2 min-w-0 flex-1">
 						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6A675C]" />
 						<Input
+							ref={searchInputRef}
 							value={linkQuery}
 							onChange={(event) => setLinkQuery(event.target.value)}
 							placeholder="Search title, URL, or description"
 							aria-label="Search links"
-							className="pl-9"
+							className="pl-9 pr-11"
 						/>
+						{linkQuery && (
+							<button
+								type="button"
+								aria-label="Clear search"
+								className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-xl"
+								onClick={() => {
+									setLinkQuery("");
+									searchInputRef.current?.focus();
+								}}
+							>
+								<X size={16} aria-hidden="true" />
+							</button>
+						)}
 					</div>
 					<select
 						aria-label="Sort links"
 						value={sortMode}
 						onChange={(e) => setSortMode(e.target.value as LinkSort)}
-						className="h-10 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold"
+						className="h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold"
 					>
 						{Object.entries(LINK_SORTS).map(([value, label]) => (
 							<option key={value} value={value}>
@@ -671,7 +708,7 @@ function DashboardPage() {
 						onChange={(event) =>
 							setStatusFilter(event.target.value as LinkStatusFilter)
 						}
-						className="h-10 rounded-xl border-2 border-black bg-white px-3 text-sm font-semibold text-[#11110F]"
+						className="h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
 					>
 						<option value="all">All statuses</option>
 						<option value="live">Live only</option>
@@ -683,7 +720,7 @@ function DashboardPage() {
 						aria-label="Filter links by section"
 						value={sectionFilter}
 						onChange={(event) => setSectionFilter(event.target.value)}
-						className="h-10 rounded-xl border-2 border-black bg-white px-3 text-sm font-semibold text-[#11110F]"
+						className="col-span-2 h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
 					>
 						<option value="all">All sections</option>
 						<option value="unsectioned">Unsectioned</option>
@@ -789,12 +826,52 @@ function DashboardPage() {
 								variant="ghost"
 								size="sm"
 								onClick={toggleSelectAllVisible}
-								disabled={filteredLinks.length === 0}
+								disabled={filteredLinks.length === 0 || isBulkBusy}
 							>
 								{allVisibleSelected
 									? "Clear visible"
 									: `Select visible (${filteredLinks.length})`}
 							</Button>
+						</div>
+						{hiddenSelectedCount > 0 && (
+							<p role="status" className="text-sm text-[#5B3B00]">
+								{hiddenSelectedCount} selected{" "}
+								{hiddenSelectedCount === 1 ? "link is" : "links are"} hidden by
+								your filters. Actions apply to all {selectedCount} selected
+								links.
+							</p>
+						)}
+						<div className="flex flex-wrap gap-2">
+							{hiddenSelectedCount > 0 && (
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									disabled={isBulkBusy}
+									onClick={() =>
+										setSelectedLinkIds(
+											new Set(
+												filteredLinks
+													.filter((link) => selectedLinkIds.has(link.id))
+													.map((link) => link.id),
+											),
+										)
+									}
+								>
+									Clear hidden selection
+								</Button>
+							)}
+							{selectedCount > 0 && (
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									disabled={isBulkBusy}
+									onClick={() => setSelectedLinkIds(new Set())}
+								>
+									Clear all selections
+								</Button>
+							)}
 						</div>
 						<div className="flex flex-wrap gap-2">
 							<Button
@@ -893,28 +970,36 @@ function DashboardPage() {
 					</Button>
 				</div>
 			) : (
-				<SectionedLinkBoard
-					links={sortedLinks}
-					sections={visibleSections}
-					onLayoutChange={handleLayoutChange}
-					onEditLink={(link) => setEditingLink(link)}
-					onDeleteLink={handleRequestDeleteLink}
-					onToggleLink={handleToggleLink}
-					onDuplicateLink={handleDuplicateLink}
-					busyLinkId={actionLinkId}
-					onCreateSectionAt={openCreateSectionDialog}
-					onRenameSection={handleRenameSection}
-					onDeleteSection={handleRequestDeleteSection}
-					enableDrag={
-						isHydrated &&
-						!hasActiveFilters &&
-						!selectionMode &&
-						sortMode === "manual"
-					}
-					selectionMode={selectionMode}
-					selectedLinkIds={selectedLinkIds}
-					onToggleLinkSelection={toggleLinkSelection}
-				/>
+				<fieldset
+					aria-label="Manage links"
+					disabled={isBusy || isBulkBusy}
+					className="min-w-0"
+				>
+					<SectionedLinkBoard
+						links={sortedLinks}
+						sections={visibleSections}
+						onLayoutChange={handleLayoutChange}
+						onEditLink={(link) => setEditingLink(link)}
+						onDeleteLink={handleRequestDeleteLink}
+						onToggleLink={handleToggleLink}
+						onDuplicateLink={handleDuplicateLink}
+						busyLinkId={actionLinkId}
+						onCreateSectionAt={openCreateSectionDialog}
+						onRenameSection={handleRenameSection}
+						onDeleteSection={handleRequestDeleteSection}
+						enableDrag={
+							isHydrated &&
+							!isBusy &&
+							!isBulkBusy &&
+							!hasActiveFilters &&
+							!selectionMode &&
+							sortMode === "manual"
+						}
+						selectionMode={selectionMode}
+						selectedLinkIds={selectedLinkIds}
+						onToggleLinkSelection={toggleLinkSelection}
+					/>
+				</fieldset>
 			)}
 
 			<Dialog open={showAddLink} onOpenChange={setShowAddLink}>
