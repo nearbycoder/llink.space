@@ -68,3 +68,10 @@ test("Filtered CSV export includes only matching links", async ({page}) => {
  const downloadPromise=page.waitForEvent('download'); await page.getByRole('button',{name:'Export filtered links (1)',exact:true}).click(); const download=await downloadPromise;
  expect(download.suggestedFilename()).toContain('filtered'); const stream=await download.createReadStream(); const chunks=[]; for await (const chunk of stream!) chunks.push(chunk); const csv=Buffer.concat(chunks).toString(); expect(csv).toContain('Keep me'); expect(csv).not.toContain('Exclude me');
 });
+
+test("Selected Markdown copy retains titles and descriptions without unselected links", async ({page,context}) => {
+ await context.grantPermissions(['clipboard-read','clipboard-write']); await setupCreator(page);
+ await api(page.request,'links.add',{title:'My [notes]',url:'https://example.com/notes',description:'Useful notes'}); await api(page.request,'links.add',{title:'Unselected',url:'https://example.com/private'});
+ await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Select',exact:true})).toBeEnabled(); await page.getByRole('button',{name:'Select',exact:true}).click(); await page.getByRole('checkbox',{name:'Select My [notes]',exact:true}).check(); await page.getByRole('button',{name:'Copy selected Markdown'}).click();
+ await expect(page.getByText('Copied 1 link as Markdown',{exact:true})).toBeVisible(); const text=await page.evaluate(()=>navigator.clipboard.readText()); expect(text).toContain('https://example.com/notes'); expect(text).toContain('Useful notes'); expect(text).not.toContain('Unselected');
+});
