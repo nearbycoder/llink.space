@@ -96,3 +96,10 @@ test("Visitors can download their saved links without an account", async ({page}
  await page.goto('/u/'+username); const save=page.getByRole('button',{name:'Save Saved essay for later',exact:true}); await expect(save).toBeEnabled(); await save.click(); await page.getByRole('button',{name:'Saved links · 1',exact:true}).click();
  const pending=page.waitForEvent('download'); await page.getByRole('button',{name:'Download saved links',exact:true}).click(); const download=await pending; expect(download.suggestedFilename()).toBe('saved-links.md'); const stream=await download.createReadStream(); const chunks=[]; for await(const chunk of stream!) chunks.push(chunk); const text=Buffer.concat(chunks).toString(); expect(text).toContain('[Saved essay](<https://example.com/essay>)'); expect(text).not.toContain('Not saved');
 });
+
+test("Reading list removal and clearing can be undone and persist", async ({page}) => {
+ const {username}=await setupCreator(page); await api(page.request,'links.add',{title:'Undo essay',url:'https://example.com/essay'}); await page.goto('/u/'+username);
+ const save=page.getByRole('button',{name:'Save Undo essay for later',exact:true}); await expect(save).toBeEnabled(); await save.click(); await page.getByRole('button',{name:'Saved links · 1',exact:true}).click();
+ await page.getByRole('button',{name:'Remove Undo essay from reading list'}).click(); await expect(page.getByText('No saved links yet.',{exact:true})).toBeVisible(); await page.getByRole('button',{name:'Undo removal',exact:true}).click(); await expect(page.getByRole('dialog').getByRole('link',{name:'Undo essay'})).toBeVisible();
+ await page.getByRole('button',{name:'Clear reading list',exact:true}).click(); await page.getByRole('button',{name:'Undo removal',exact:true}).click(); await page.reload(); await expect(page.getByRole('button',{name:'Saved links · 1',exact:true})).toBeVisible();
+});

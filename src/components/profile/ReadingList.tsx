@@ -14,12 +14,16 @@ export function ReadingList({
 	links,
 	onRemove,
 	onClear,
+	onUndo,
+	canUndo,
 	onVisit,
 	error,
 }: {
 	links: Array<{ id: string; title: string; url: string }>;
 	onRemove: (id: string) => void;
 	onClear: () => void;
+	onUndo: () => void;
+	canUndo: boolean;
 	onVisit: (id: string) => void;
 	error: string;
 }) {
@@ -55,6 +59,21 @@ export function ReadingList({
 							no longer public disappear from this list.
 						</DialogDescription>
 					</DialogHeader>
+					{canUndo && (
+						<div
+							role="status"
+							className="flex items-center justify-between gap-3 rounded-lg border border-current/20 p-2 text-sm"
+						>
+							<span>Reading list updated.</span>
+							<button
+								type="button"
+								onClick={onUndo}
+								className="min-h-11 px-3 font-semibold underline"
+							>
+								Undo removal
+							</button>
+						</div>
+					)}
 					{links.length ? (
 						<>
 							<button
