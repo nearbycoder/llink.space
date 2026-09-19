@@ -6,7 +6,12 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
-import { filterHealthLinks, HEALTH_STATES } from "#/lib/health-tools";
+import { downloadFile } from "#/lib/download-file";
+import {
+	buildHealthCsv,
+	filterHealthLinks,
+	HEALTH_STATES,
+} from "#/lib/health-tools";
 export const Route = createFileRoute("/dashboard/health")({
 	loader: async () => {
 		const data = await getDashboardDesign();
@@ -111,6 +116,19 @@ function HealthPage() {
 						}
 					>
 						Select unchecked
+					</Button>
+					<Button
+						variant="outline"
+						disabled={!ready || !filtered.length || check.isPending}
+						onClick={() =>
+							downloadFile(
+								buildHealthCsv(filtered),
+								"link-health.csv",
+								"text/csv;charset=utf-8",
+							)
+						}
+					>
+						Export health results ({filtered.length})
 					</Button>
 				</div>
 				<p className="mb-5 text-xs">
