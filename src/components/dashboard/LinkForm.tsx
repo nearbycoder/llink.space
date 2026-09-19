@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { LINK_ICON_OPTIONS } from "#/components/links/icon-options";
+import { LinkCard } from "#/components/profile/LinkCard";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
@@ -159,6 +160,7 @@ export function LinkForm({
 		},
 	});
 
+	const [previewOpen, setPreviewOpen] = useState(false);
 	const isActive = watch("isActive");
 	const titleValue = watch("title") ?? "";
 	const descriptionValue = watch("description") ?? "";
@@ -472,6 +474,36 @@ export function LinkForm({
 				)}
 			</div>
 
+			<details
+				className="rounded-xl border border-black/20 p-3"
+				onToggle={(event) => setPreviewOpen(event.currentTarget.open)}
+			>
+				<summary className="cursor-pointer text-sm font-semibold">
+					Preview link card
+				</summary>
+				<p className="my-2 text-xs text-[#4B4B45]">
+					Live content preview. Your page’s theme applies when published.
+				</p>
+				{previewOpen && (
+					<div inert data-card-preview="true">
+						<LinkCard
+							id="editor-preview"
+							title={titleValue || "Your link title"}
+							url={prepareHttpUrl(watch("url") || "")}
+							description={descriptionValue}
+							iconUrl={selectedIcon}
+							iconBgColor={
+								HEX_COLOR_REGEX.test(selectedIconBgColor ?? "")
+									? selectedIconBgColor
+									: DEFAULT_ICON_BG_COLOR
+							}
+							featured={watch("featured")}
+							featureImageUrl={watch("featureImageUrl")}
+							ctaLabel={watch("ctaLabel")}
+						/>
+					</div>
+				)}
+			</details>
 			<div className="flex items-center gap-3">
 				<Switch
 					id={isActiveId}
