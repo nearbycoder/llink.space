@@ -13,6 +13,7 @@ import {
 import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
 import { useTRPC } from "#/integrations/trpc/react";
+import { csvLinksToText } from "#/lib/csv-link-import";
 import { parseLinkImport } from "#/lib/link-import";
 
 export function LinkImportDialog({
@@ -86,6 +87,35 @@ export function LinkImportDialog({
 								void handleImport();
 						}}
 					>
+						<label className="block text-sm font-semibold">
+							CSV file
+							<input
+								type="file"
+								accept=".csv,text/csv"
+								disabled={mutation.isPending}
+								className="mt-2 block w-full text-sm"
+								onChange={async (event) => {
+									const file = event.target.files?.[0];
+									event.target.value = "";
+									if (!file) return;
+									try {
+										if (file.size > 256000)
+											throw new Error("Choose a CSV smaller than 256 KB.");
+										setText(csvLinksToText(await file.text()));
+									} catch (error) {
+										toast.error(
+											error instanceof Error
+												? error.message
+												: "Could not read this CSV",
+										);
+									}
+								}}
+							/>
+							<span className="mt-1 block text-xs font-normal">
+								Imports URL and Title columns only, as paused drafts. Preview
+								before saving.
+							</span>
+						</label>
 						<div className="space-y-2">
 							<Label htmlFor="import-links">Website URLs</Label>
 							<Textarea
