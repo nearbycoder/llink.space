@@ -3,8 +3,10 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
+import { filterHealthLinks, HEALTH_STATES } from "#/lib/health-tools";
 export const Route = createFileRoute("/dashboard/health")({
 	loader: async () => {
 		const data = await getDashboardDesign();
@@ -21,6 +23,9 @@ function HealthPage() {
 	const trpc = useTRPC(),
 		router = useRouter();
 	const [selected, setSelected] = useState<string[]>([]);
+	const [query, setQuery] = useState("");
+	const [state, setState] = useState("all");
+	const filtered = filterHealthLinks(links, query, state);
 	const check = useMutation(trpc.health.check.mutationOptions());
 	const run = async () => {
 		try {
@@ -45,6 +50,41 @@ function HealthPage() {
 				</p>
 			</header>
 			<section className="kinetic-panel bg-[#FFFCEF] p-5">
+				<div className="mb-4 grid gap-3 sm:grid-cols-2">
+					<Input
+						aria-label="Search link health"
+						placeholder="Search titles or destinations"
+						maxLength={500}
+						disabled={!ready || check.isPending}
+						value={query}
+						onChange={(event) => {
+							setQuery(event.target.value);
+							setSelected([]);
+						}}
+					/>
+					<select
+						aria-label="Filter health status"
+						disabled={!ready || check.isPending}
+						value={state}
+						onChange={(event) => {
+							setState(event.target.value);
+							setSelected([]);
+						}}
+						className="rounded-xl border-2 border-black bg-white p-2 text-base"
+					>
+						<option value="all">All health results</option>
+						{HEALTH_STATES.map((value) => (
+							<option key={value} value={value}>
+								{value.charAt(0).toUpperCase() +
+									value.slice(1).replaceAll("-", " ")}
+							</option>
+						))}
+					</select>
+				</div>
+				<p role="status" className="mb-3 text-xs">
+					Showing {filtered.length} of {links.length} links. Changing filters
+					clears the selection.
+				</p>
 				<div className="mb-4 flex flex-wrap items-center gap-3">
 					<Button
 						onClick={run}
@@ -56,10 +96,14 @@ function HealthPage() {
 					</Button>
 					<Button
 						variant="outline"
-						disabled={!ready}
+						disabled={
+							!ready ||
+							check.isPending ||
+							!filtered.some((link) => !link.healthCheckedAt)
+						}
 						onClick={() =>
 							setSelected(
-								links
+								filtered
 									.filter((l) => !l.healthCheckedAt)
 									.slice(0, 10)
 									.map((l) => l.id),
@@ -75,7 +119,7 @@ function HealthPage() {
 					seconds.
 				</p>
 				<div className="space-y-3">
-					{links.map((l) => (
+					{filtered.map((l) => (
 						<label
 							key={l.id}
 							className="flex items-start gap-3 rounded-xl border border-black/20 bg-white p-4"
@@ -115,6 +159,9 @@ function HealthPage() {
 						</label>
 					))}
 				</div>
+				{links.length > 0 && !filtered.length && (
+					<p>No links match these health filters.</p>
+				)}
 				{!links.length && (
 					<p>Add links to start checking their destinations.</p>
 				)}
