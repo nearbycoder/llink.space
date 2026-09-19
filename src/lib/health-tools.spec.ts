@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
-import { buildHealthCsv, filterHealthLinks } from "./health-tools";
+import {
+	buildHealthCsv,
+	filterHealthLinks,
+	staleHealthLinks,
+} from "./health-tools";
 
 it("combines health status with title, destination and redirect searches", () => {
 	const links = [
@@ -40,4 +44,31 @@ it("exports health details and protects spreadsheet cells", () => {
 	expect(csv).toContain(
 		"redirected,301,https://example.org,2026-09-19T12:00:00.000Z",
 	);
+});
+
+it("selects at most ten stale checks oldest first, excluding unchecked and invalid dates", () => {
+	const now = Date.parse("2026-09-19T12:00:00Z");
+	const links = Array.from({ length: 15 }, (_, i) => ({
+		id: String(i),
+		healthCheckedAt: new Date(now - (i + 1) * 86400000),
+	}));
+	expect(
+		staleHealthLinks(
+			[
+				...links,
+				{ id: "unchecked", healthCheckedAt: null },
+				{ id: "invalid", healthCheckedAt: new Date(NaN) },
+			],
+			now,
+		).map((l) => l.id),
+	).toEqual(["14", "13", "12", "11", "10", "9", "8", "7"]);
+	expect(
+		staleHealthLinks(
+			Array.from({ length: 15 }, (_, i) => ({
+				id: String(i),
+				healthCheckedAt: new Date(now - 20 * 86400000),
+			})),
+			now,
+		),
+	).toHaveLength(10);
 });

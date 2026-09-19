@@ -11,6 +11,7 @@ import {
 	buildHealthCsv,
 	filterHealthLinks,
 	HEALTH_STATES,
+	staleHealthLinks,
 } from "#/lib/health-tools";
 export const Route = createFileRoute("/dashboard/health")({
 	loader: async () => {
@@ -31,6 +32,7 @@ function HealthPage() {
 	const [query, setQuery] = useState("");
 	const [state, setState] = useState("all");
 	const filtered = filterHealthLinks(links, query, state);
+	const stale = staleHealthLinks(filtered);
 	const check = useMutation(trpc.health.check.mutationOptions());
 	const run = async () => {
 		try {
@@ -119,6 +121,14 @@ function HealthPage() {
 					</Button>
 					<Button
 						variant="outline"
+						title="Select up to 10 visible links checked more than 7 days ago, oldest first"
+						disabled={!ready || check.isPending || !stale.length}
+						onClick={() => setSelected(stale.map((link) => link.id))}
+					>
+						Select stale checks ({stale.length})
+					</Button>
+					<Button
+						variant="outline"
 						disabled={!ready || !filtered.length || check.isPending}
 						onClick={() =>
 							downloadFile(
@@ -134,7 +144,7 @@ function HealthPage() {
 				<p className="mb-5 text-xs">
 					Public HTTP(S) destinations only. A restricted or unreachable result
 					does not necessarily mean a link is broken. One batch every 30
-					seconds.
+					seconds. Stale checks are more than 7 days old.
 				</p>
 				<div className="space-y-3">
 					{filtered.map((l) => (
