@@ -155,3 +155,11 @@ test("Session management signs out other devices and preserves the current login
  await page.getByRole('button',{name:'Sign out other devices',exact:true}).click(); await page.getByRole('dialog').getByRole('button',{name:'Sign out other devices',exact:true}).click(); await expect(page.getByText('Other devices signed out',{exact:true})).toBeVisible(); await expect(page.getByText('1 active session',{exact:true})).toBeVisible();
  expect((await request.get('/api/trpc/links.list')).status()).toBe(401); expect((await page.request.get('/api/trpc/links.list')).status()).toBe(200);
 });
+
+test("New contextual tools fit mobile and reading-list search keeps background locked", async ({page}) => {
+ await page.setViewportSize({width:390,height:844}); const {username}=await setupCreator(page); await api(page.request,'links.add',{title:'Mobile essay',url:'https://example.com/essay'}); await page.goto('/u/'+username);
+ const save=page.getByRole('button',{name:'Save Mobile essay for later',exact:true}); await expect(save).toBeEnabled(); await save.click(); await page.getByRole('button',{name:'Saved links · 1',exact:true}).click(); const search=page.getByLabel('Search saved links'); await search.fill('Mobile'); expect(await search.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+ const scroll=await page.evaluate(()=>window.scrollY); await page.mouse.move(2,2); await page.mouse.wheel(0,600); await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))); expect(await page.evaluate(()=>window.scrollY)).toBe(scroll);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true); await page.screenshot({path:test.info().outputPath('reading-list-mobile.png')});
+ await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click(); await page.goto('/dashboard/health'); await expect(page.getByLabel('Search link health')).toBeEnabled(); expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true); await page.screenshot({path:test.info().outputPath('health-mobile.png')});
+});
