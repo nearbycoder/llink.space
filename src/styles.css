@@ -10,7 +10,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #11110f;
-  background-color: #fffcef;
+  background-color: #f6f7f4;
 }
 
 html {
@@ -98,7 +98,7 @@ code {
 }
 
 :root {
-  --background: oklch(1 0 0);
+  --background: #f6f7f4;
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -109,13 +109,13 @@ code {
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
+  --muted-foreground: #62695d;
+  --accent: #edf3df;
   --accent-foreground: oklch(0.21 0.006 285.885);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
+  --border: #dfe3da;
+  --input: #858f7e;
   --ring: oklch(0.871 0.006 286.286);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -287,28 +287,23 @@ code {
     transform: rotate(-10deg);
   }
 
+  /* Shared surfaces: keep these tokens consistent across forms, lists and dialogs. */
   .kinetic-gradient {
-    background: linear-gradient(
-      128deg,
-      #f5ff7b 0%,
-      #8ae1e7 34%,
-      #f2b7e2 68%,
-      #ff8a4c 100%
-    );
+    background: var(--background);
   }
 
   .kinetic-shell {
-    border: 2px solid #11110f;
-    border-radius: 2rem;
-    background: #fffcef;
-    box-shadow: 8px 8px 0 #11110f;
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    background: var(--card);
+    box-shadow: 0 16px 48px #1822110a, 0 2px 8px #18221105;
   }
 
   .kinetic-panel {
-    border: 2px solid #11110f;
+    border: 1px solid var(--border);
     border-radius: 1rem;
-    background: #ffffff;
-    box-shadow: 4px 4px 0 #11110f;
+    background: var(--card);
+    box-shadow: 0 1px 2px #18221104;
   }
 
   .kinetic-muted {
@@ -417,4 +412,29 @@ code {
  [data-public-profile] img { max-height: 180px; object-fit: contain; }
  [data-public-profile] section, [data-public-profile] figure { break-inside: avoid; }
  [data-public-profile] h2 { break-after: avoid; }
+}
+
+/* The management workspace uses a quiet canvas and one clear navigation accent. */
+.dashboard-workspace h1 {
+  letter-spacing: -0.045em;
+  font-weight: 650;
+}
+.dashboard-sidebar {
+  background: #fcfdfb;
+}
+.dashboard-sidebar nav {
+  padding-top: 24px;
+}
+.dashboard-nav-link[aria-current="page"] {
+  background: #eaf0df;
+  color: #273b1d;
+}
+.auth-workspace {
+  background: radial-gradient(ellipse at 50% 0%, #e8eedc, transparent 65%), #f6f7f4;
+}
+@media (min-width: 768px) {
+  .dashboard-page {
+    padding-top: 40px;
+    padding-bottom: 48px;
+  }
 }

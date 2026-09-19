@@ -185,7 +185,7 @@ function DesignStudio() {
 								</DialogDescription>
 							</DialogHeader>
 							<div
-								className="rounded-xl border-2 border-black p-5 shadow-[3px_3px_0_0_#11110F]"
+								className="rounded-xl border border-border p-5 shadow-sm"
 								style={{
 									background: themes[selectedTemplate.theme].background,
 									color: themes[selectedTemplate.theme].text,
@@ -237,7 +237,7 @@ function DesignStudio() {
 					disabled={!ready || save.isPending}
 					className="min-w-0 space-y-5"
 				>
-					<div className="kinetic-panel bg-[#FFFCEF] p-4">
+					<div className="kinetic-panel bg-card p-4">
 						<div className="flex gap-2">
 							<Button
 								variant="outline"
@@ -274,7 +274,7 @@ function DesignStudio() {
 							})
 						}
 					/>
-					<section className="kinetic-panel space-y-4 bg-[#FFFCEF] p-5">
+					<section className="kinetic-panel space-y-4 bg-card p-5">
 						<h2 className="text-lg font-bold">Start with a template</h2>
 						<p className="text-xs">
 							Templates replace the theme and content blocks in your draft. Your
@@ -285,7 +285,7 @@ function DesignStudio() {
 								<button
 									type="button"
 									key={t.id}
-									className="rounded-xl border-2 border-black p-3 text-left shadow-[2px_2px_0_0_#11110F]"
+									className="rounded-xl border border-border p-3 text-left shadow-sm"
 									style={{
 										background: themes[t.theme].background,
 										color: themes[t.theme].text,
@@ -304,7 +304,7 @@ function DesignStudio() {
 							))}
 						</div>
 					</section>
-					<section className="kinetic-panel space-y-4 bg-[#FFFCEF] p-5">
+					<section className="kinetic-panel space-y-4 bg-card p-5">
 						<h2 className="text-lg font-bold">Identity & style</h2>
 						<label className="block text-sm">
 							Display name
@@ -398,7 +398,7 @@ function DesignStudio() {
 							Custom photo backgrounds remain available in Profile settings.
 						</p>
 					</section>
-					<section className="kinetic-panel space-y-4 bg-[#FFFCEF] p-5">
+					<section className="kinetic-panel space-y-4 bg-card p-5">
 						<h2 className="text-lg font-bold">Content blocks</h2>
 						<p className="text-xs">
 							Add context before your links or between them. Up to 30 blocks.
@@ -613,7 +613,7 @@ function DesignStudio() {
 							Add content block
 						</Button>
 					</section>
-					<details className="kinetic-panel bg-[#FFFCEF] p-5">
+					<details className="kinetic-panel bg-card p-5">
 						<summary className="cursor-pointer font-bold">
 							Preview link edits
 						</summary>
@@ -685,7 +685,7 @@ function DesignStudio() {
 						</div>
 					</div>
 					<div
-						className="max-h-[80vh] overflow-auto rounded-[28px] border-4 border-black bg-white shadow-[8px_8px_0_0_#11110F]"
+						className="max-h-[80vh] overflow-auto rounded-[28px] border border-border bg-white shadow-sm"
 						data-testid="live-preview"
 					>
 						<div

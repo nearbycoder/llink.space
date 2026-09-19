@@ -68,12 +68,12 @@ export function LinkCard({
 					}
 					handleClick();
 				}}
-				className="group block w-full rounded-xl border-2 px-4 py-3.5 shadow-[2px_2px_0_0_#11110F]"
+				className="group block w-full rounded-xl border px-4 py-3.5 shadow-sm"
 				style={{
 					backgroundColor: cardBg,
 					borderRadius:
 						buttonStyle === "pill" ? 32 : buttonStyle === "square" ? 0 : 12,
-					borderColor: cardBorder,
+					borderColor: `color-mix(in srgb, ${cardBorder} 28%, transparent)`,
 				}}
 			>
 				{featured && (

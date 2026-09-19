@@ -109,7 +109,7 @@ function AudiencePage() {
 				</p>
 			</header>
 			<div className="grid gap-5 md:grid-cols-2">
-				<section className="kinetic-panel bg-[#FFFCEF] p-5">
+				<section className="kinetic-panel bg-card p-5">
 					<h2 className="text-lg font-bold">Signup block</h2>
 					<fieldset
 						disabled={!ready || settings.isPending}
@@ -149,7 +149,7 @@ function AudiencePage() {
 						to 10,000 records per page.
 					</p>
 				</section>
-				<section className="kinetic-panel bg-[#FFFCEF] p-5">
+				<section className="kinetic-panel bg-card p-5">
 					<h2 className="text-lg font-bold">Connect Brevo</h2>
 					<p className="mt-2 text-xs">
 						{data.connected
@@ -233,7 +233,7 @@ function AudiencePage() {
 					</p>
 				</section>
 			</div>
-			<section className="kinetic-panel mt-6 overflow-hidden bg-[#FFFCEF] p-5">
+			<section className="kinetic-panel mt-6 overflow-hidden bg-card p-5">
 				<div className="mb-5 flex flex-wrap items-center justify-between gap-3">
 					<h2 className="text-lg font-bold">
 						Subscribers · {data.active} active / {data.total} total
@@ -260,7 +260,7 @@ function AudiencePage() {
 							disabled={!ready}
 							onChange={(event) => setSearchInput(event.target.value)}
 							placeholder="Email or name, across all pages"
-							className="mt-1 block w-full rounded-xl border-2 border-black bg-white p-2 text-base"
+							className="mt-1 block w-full rounded-xl border border-border bg-white p-2 text-base"
 						/>
 					</label>
 					<Button
@@ -304,7 +304,7 @@ function AudiencePage() {
 							setStatus(event.target.value as typeof status);
 							setPage(0);
 						}}
-						className="ml-2 rounded-xl border-2 border-black bg-white p-2 text-base"
+						className="ml-2 rounded-xl border border-border bg-white p-2 text-base"
 					>
 						<option value="all">All subscribers</option>
 						<option value="active">Active only</option>

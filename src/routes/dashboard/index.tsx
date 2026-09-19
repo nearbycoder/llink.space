@@ -596,12 +596,12 @@ function DashboardPage() {
 	const isBulkBusy = bulkAction.isPending;
 
 	return (
-		<div className="max-w-3xl px-4 py-5 sm:px-6 md:p-8">
+		<div className="dashboard-page max-w-5xl px-4 py-5 sm:px-6 md:p-8">
 			<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1
 						className="text-2xl text-[#11110F]"
-						style={{ fontFamily: "'Archivo Black', sans-serif" }}
+						style={{ fontFamily: "'Work Sans', sans-serif" }}
 					>
 						Links
 					</h1>
@@ -663,10 +663,10 @@ function DashboardPage() {
 						}}
 						key={id}
 						data-testid={`link-stat-${id}`}
-						className="kinetic-panel flex items-center gap-2 p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 hover:bg-[#FFF7A8] aria-pressed:bg-[#FFF7A8] sm:p-4"
+						className="kinetic-panel flex items-center gap-2 p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 hover:bg-accent aria-pressed:bg-accent sm:p-4"
 					>
 						<span
-							className={`hidden rounded-lg border-2 border-black p-1.5 sm:inline-flex ${color}`}
+							className={`hidden rounded-lg border border-border p-1.5 sm:inline-flex ${color}`}
 						>
 							<Icon className="h-4 w-4" />
 						</span>
@@ -716,7 +716,7 @@ function DashboardPage() {
 						disabled={!isHydrated}
 						value={sortMode}
 						onChange={(e) => setSortMode(e.target.value as LinkSort)}
-						className="h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold"
+						className="h-10 min-w-0 rounded-xl border border-border bg-white px-3 text-base font-semibold"
 					>
 						{Object.entries(LINK_SORTS).map(([value, label]) => (
 							<option key={value} value={value}>
@@ -731,7 +731,7 @@ function DashboardPage() {
 						onChange={(event) =>
 							setStatusFilter(event.target.value as LinkStatusFilter)
 						}
-						className="h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
+						className="h-10 min-w-0 rounded-xl border border-border bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
 					>
 						<option value="all">All statuses</option>
 						<option value="live">Live only</option>
@@ -744,7 +744,7 @@ function DashboardPage() {
 						disabled={!isHydrated}
 						value={sectionFilter}
 						onChange={(event) => setSectionFilter(event.target.value)}
-						className="col-span-2 h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
+						className="col-span-2 h-10 min-w-0 rounded-xl border border-border bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
 					>
 						<option value="all">All sections</option>
 						<option value="unsectioned">Unsectioned</option>
@@ -845,7 +845,7 @@ function DashboardPage() {
 
 			{selectionMode && (
 				<fieldset
-					className="kinetic-panel mb-5 border-black bg-[#FFF7A8] p-3 sm:p-4"
+					className="kinetic-panel mb-5 border-black bg-accent p-3 sm:p-4"
 					aria-label="Bulk link actions"
 				>
 					<div className="flex flex-col gap-3">
@@ -951,7 +951,7 @@ function DashboardPage() {
 									aria-label="Bulk move destination"
 									value={bulkMoveSectionId}
 									onChange={(event) => setBulkMoveSectionId(event.target.value)}
-									className="h-9 min-w-0 flex-1 rounded-xl border-2 border-black bg-white px-2 text-xs font-semibold text-[#11110F] sm:w-40"
+									className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-white px-2 text-xs font-semibold text-[#11110F] sm:w-40"
 								>
 									<option value="unsectioned">Unsectioned</option>
 									{layout.sections.map((section) => (

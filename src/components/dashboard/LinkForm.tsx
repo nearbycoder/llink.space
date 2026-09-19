@@ -307,7 +307,7 @@ export function LinkForm({
 							}}
 							aria-expanded={isSectionDropdownOpen}
 							aria-haspopup="listbox"
-							className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border-2 border-black bg-[#FFFDF5] px-3 py-2 text-sm text-[#11110F] shadow-[2px_2px_0_0_#11110F] outline-none transition-[color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-black/25"
+							className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm text-[#11110F] shadow-sm outline-none transition-[color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-black/25"
 						>
 							<span className="truncate">{selectedSectionTitle}</span>
 							<ChevronDown
@@ -319,7 +319,7 @@ export function LinkForm({
 						</button>
 
 						{isSectionDropdownOpen && (
-							<div className="absolute z-50 mt-1 w-full rounded-xl border-2 border-black bg-[#FFFCEF] p-1 shadow-[3px_3px_0_0_#11110F]">
+							<div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card p-1 shadow-sm">
 								<button
 									type="button"
 									role="option"
@@ -397,8 +397,8 @@ export function LinkForm({
 								className={cn(
 									"flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-2 text-[10px] font-medium transition-all",
 									isSelected
-										? "border-black shadow-[2px_2px_0_0_#11110F]"
-										: "border-black/20 bg-white text-[#4B4B45] hover:border-black hover:bg-[#FFFCEF]",
+										? "border-black shadow-sm"
+										: "border-black/20 bg-white text-[#4B4B45] hover:border-foreground/25 hover:bg-card",
 								)}
 								style={
 									isSelected
@@ -449,7 +449,7 @@ export function LinkForm({
 								})
 							}
 							className={cn(
-								"h-7 w-7 rounded-full border-2 border-black shadow-[2px_2px_0_0_#11110F] transition-transform hover:-translate-y-0.5",
+								"h-7 w-7 rounded-full border border-border shadow-sm transition-transform hover:brightness-95",
 								selectedIconBgColor?.toUpperCase() === color.toUpperCase() &&
 									"ring-2 ring-black ring-offset-2 ring-offset-[#FFFCEF]",
 							)}
@@ -468,7 +468,7 @@ export function LinkForm({
 								shouldValidate: true,
 							})
 						}
-						className="h-10 w-12 cursor-pointer rounded-xl border-2 border-black bg-white p-1 shadow-[2px_2px_0_0_#11110F]"
+						className="h-10 w-12 cursor-pointer rounded-xl border border-border bg-white p-1 shadow-sm"
 					/>
 					<Input
 						value={selectedIconBgColor}
@@ -557,7 +557,7 @@ export function LinkForm({
 				</Label>
 			</div>
 
-			<fieldset className="space-y-3 rounded-xl border-2 border-black/20 p-4">
+			<fieldset className="space-y-3 rounded-xl border border-border/20 p-4">
 				<legend className="px-2 text-sm font-semibold">
 					Publishing & spotlight
 				</legend>
@@ -598,7 +598,7 @@ export function LinkForm({
 					Schedule shortcut
 					<select
 						value=""
-						className="mt-1 block w-full rounded-xl border-2 border-black bg-white p-2 text-base"
+						className="mt-1 block w-full rounded-xl border border-border bg-white p-2 text-base"
 						onChange={(event) => {
 							const next = publishingPreset(
 								event.target.value as PublishingPreset,
@@ -646,7 +646,7 @@ export function LinkForm({
 				</p>
 				{errors.expireAt && <p role="alert">{errors.expireAt.message}</p>}
 			</fieldset>
-			<div className="sticky -bottom-6 z-10 -mx-1 flex flex-col-reverse gap-2 border-t border-black/15 bg-[#FFFCEF] px-1 py-4 sm:flex-row">
+			<div className="sticky -bottom-6 z-10 -mx-1 flex flex-col-reverse gap-2 border-t border-black/15 bg-card px-1 py-4 sm:flex-row">
 				<Button
 					type="submit"
 					disabled={isSubmitting}

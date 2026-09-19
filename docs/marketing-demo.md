@@ -7,7 +7,7 @@ The homepage uses a real screen recording of llink.space, captured on September 
 - `public/demo/product-tour.mp4`: silent H.264 walkthrough, 1280 × 800, optimized for progressive playback.
 - `public/demo/product-tour.vtt`: English captions.
 - `public/demo/product-tour-poster.webp`: still from the recorded Design studio.
-- `public/demo/profile-preview.webp`: real mobile screenshot of the fictional profile, captured at 3× pixel density and encoded losslessly to keep borders and type clear.
+- `public/demo/profile-preview.webp`: refreshed September 19, 2026 for the styling update; real mobile screenshot of the fictional profile, captured at 3× pixel density and encoded losslessly to keep borders and type clear.
 - `src/components/marketing/demo-chapters.json`: chapter times and the written walkthrough.
 - `src/components/marketing/features.ts`: the 20-feature marketing inventory.
 

@@ -56,7 +56,7 @@ function HealthPage() {
 					destinations, and sites that restrict automated requests.
 				</p>
 			</header>
-			<section className="kinetic-panel bg-[#FFFCEF] p-5">
+			<section className="kinetic-panel bg-card p-5">
 				<div className="mb-4 grid gap-3 sm:grid-cols-2">
 					<Input
 						aria-label="Search link health"
@@ -77,7 +77,7 @@ function HealthPage() {
 							setState(event.target.value);
 							setSelected([]);
 						}}
-						className="rounded-xl border-2 border-black bg-white p-2 text-base"
+						className="rounded-xl border border-border bg-white p-2 text-base"
 					>
 						<option value="all">All health results</option>
 						{HEALTH_STATES.map((value) => (

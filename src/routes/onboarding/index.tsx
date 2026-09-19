@@ -98,7 +98,7 @@ function OnboardingPage() {
 				<div className="kinetic-panel p-6">
 					<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 						{createProfile.error && (
-							<p className="text-sm text-[#7E1612] bg-[#FFD9CF] border-2 border-black rounded-xl px-3 py-2">
+							<p className="text-sm text-[#7E1612] bg-[#FFD9CF] border border-border rounded-xl px-3 py-2">
 								{createProfile.error.message}
 							</p>
 						)}

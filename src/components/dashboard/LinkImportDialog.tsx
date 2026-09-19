@@ -137,7 +137,7 @@ export function LinkImportDialog({
 						</div>
 						<div
 							id="import-preview"
-							className="rounded-xl border-2 border-black bg-[#FFFCEF] p-3 text-sm"
+							className="rounded-xl border border-border bg-card p-3 text-sm"
 							aria-live="polite"
 						>
 							<p className="font-semibold">

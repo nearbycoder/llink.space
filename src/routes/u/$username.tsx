@@ -165,7 +165,7 @@ function ProfilePage() {
 					<div className="kinetic-shell overflow-hidden p-6 sm:p-10">
 						<div className="grid gap-6 sm:grid-cols-[1.2fr,0.8fr] sm:items-center">
 							<div>
-								<div className="mb-4 inline-flex items-center gap-2 rounded-full border-2 border-black bg-[#FFF7A8] px-3 py-1.5 text-xs font-semibold text-[#11110F] shadow-[2px_2px_0_0_#11110F]">
+								<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-accent px-3 py-1.5 text-xs font-semibold text-[#11110F] shadow-sm">
 									<SearchX className="h-3.5 w-3.5" />
 									Missing profile
 								</div>
@@ -185,7 +185,7 @@ function ProfilePage() {
 							</div>
 
 							<div className="kinetic-panel bg-[#FFFCED] p-5">
-								<div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full border-2 border-black bg-[#F5FF7B] text-2xl font-black text-[#11110F] shadow-[3px_3px_0_0_#11110F]">
+								<div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full border border-border bg-[#F5FF7B] text-2xl font-black text-[#11110F] shadow-sm">
 									404
 								</div>
 								<p className="text-center text-sm font-semibold text-[#11110F]">
@@ -197,14 +197,14 @@ function ProfilePage() {
 						<div className="mt-6 grid gap-3 sm:grid-cols-2">
 							<a
 								href="/"
-								className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-black bg-[#11110F] px-4 py-3 text-sm font-semibold text-[#F5FF7B] shadow-[3px_3px_0_0_#11110F] transition-transform hover:-translate-y-0.5"
+								className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-[#11110F] px-4 py-3 text-sm font-semibold text-[#F5FF7B] shadow-sm transition-transform hover:brightness-95"
 							>
 								<Home className="h-4 w-4" />
 								Back to home
 							</a>
 							<a
 								href="/sign-up"
-								className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-[#11110F] shadow-[3px_3px_0_0_#11110F] transition-transform hover:-translate-y-0.5"
+								className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 py-3 text-sm font-semibold text-[#11110F] shadow-sm transition-transform hover:brightness-95"
 							>
 								<UserPlus className="h-4 w-4" />
 								Create your profile

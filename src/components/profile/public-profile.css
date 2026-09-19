@@ -1,3 +1,19 @@
+.public-profile-surface {
+	box-shadow: 0 12px 48px #11110f0a;
+}
+.public-link-card > a {
+	min-height: 64px;
+}
+@media (prefers-reduced-motion: no-preference) {
+	.public-link-card > a {
+		transition:
+			box-shadow 160ms ease,
+			border-color 160ms ease;
+	}
+}
+.public-link-card > a:hover {
+	box-shadow: 0 4px 14px #11110f10;
+}
 .public-link-card {
 	position: relative;
 }

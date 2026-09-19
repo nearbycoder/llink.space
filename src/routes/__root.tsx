@@ -169,7 +169,7 @@ function RootNotFound() {
 				</p>
 				<a
 					href="/"
-					className="mt-5 inline-flex rounded-xl border-2 border-black bg-[#11110F] px-4 py-2 text-sm font-semibold text-[#F5FF7B] shadow-[3px_3px_0_0_#11110F] transition-transform hover:-translate-y-0.5"
+					className="mt-5 inline-flex rounded-xl border border-border bg-[#11110F] px-4 py-2 text-sm font-semibold text-[#F5FF7B] shadow-sm transition-transform hover:brightness-95"
 				>
 					Go home
 				</a>

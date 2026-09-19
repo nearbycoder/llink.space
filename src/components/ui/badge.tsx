@@ -12,7 +12,7 @@ const badgeVariants = cva(
 				default: "border-black bg-[#11110F] text-[#F5FF7B]",
 				secondary: "border-black bg-[#8AE1E7] text-[#11110F]",
 				destructive: "border-black bg-[#FF8A4C] text-black",
-				outline: "border-black bg-[#FFFCEF] text-[#11110F]",
+				outline: "border-black bg-card text-[#11110F]",
 				ghost: "border-transparent text-[#11110F]",
 				link: "border-transparent text-[#11110F] underline-offset-4 [a&]:hover:underline",
 			},

@@ -23,8 +23,8 @@ export function ProfileHeader({
 	mutedTextColor = "#4B4B45",
 }: ProfileHeaderProps) {
 	return (
-		<div className="flex flex-col items-center text-center mb-5">
-			<Avatar className="w-20 h-20 mb-4 border-2 border-black shadow-[3px_3px_0_0_#11110F]">
+		<div className="flex flex-col items-center text-center mb-6">
+			<Avatar className="w-20 h-20 mb-4 ring-4 ring-white/30">
 				<AvatarImage
 					src={profile.avatarUrl ?? undefined}
 					alt={`${profile.displayName ?? profile.username} avatar`}

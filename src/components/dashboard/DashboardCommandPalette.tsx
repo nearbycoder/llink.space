@@ -222,7 +222,7 @@ export function DashboardCommandPalette({
 						className={cn(
 							"min-h-11 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "navigate"
-								? "bg-[#F5FF7B] text-[#11110F]"
+								? "bg-accent text-[#273B1D]"
 								: "text-[#6A675C] hover:bg-black/5",
 						)}
 					>
@@ -238,7 +238,7 @@ export function DashboardCommandPalette({
 						className={cn(
 							"inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "create"
-								? "bg-[#F5FF7B] text-[#11110F]"
+								? "bg-accent text-[#273B1D]"
 								: "text-[#6A675C] hover:bg-black/5",
 						)}
 					>

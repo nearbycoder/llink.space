@@ -25,7 +25,7 @@ export interface DashboardNavItem {
 	exact: boolean;
 }
 const dockClass =
-	"flex h-14 items-center rounded-2xl border-2 border-black bg-[#11110F] p-1 text-[#FFFCEF] shadow-[4px_4px_0_0_rgba(17,17,15,0.25)]";
+	"flex h-14 items-center rounded-2xl border border-border bg-[#11110F] p-1 text-[#FFFCEF] shadow-[0_8px_32px_rgba(17,17,15,0.18)]";
 const findClass =
 	"inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold hover:bg-white/10 focus-visible:outline-[#F5FF7B]";
 const toggleClass =
@@ -142,7 +142,7 @@ export function MobileDashboardNav({
 						collisionPadding={16}
 						aria-labelledby={titleId}
 						aria-describedby={descriptionId}
-						className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border-2 border-black bg-[#FFFCEF] p-2 text-[#11110F] shadow-[4px_4px_0_0_#11110F] outline-none md:hidden"
+						className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-2 text-[#11110F] shadow-sm outline-none md:hidden"
 						style={{
 							maxHeight: "var(--radix-popover-content-available-height)",
 							transformOrigin: "var(--radix-popover-content-transform-origin)",
@@ -189,8 +189,8 @@ export function MobileDashboardNav({
 										className={cn(
 											"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
 											active
-												? "bg-[#11110F] text-[#F5FF7B]"
-												: "text-[#4B4B45] hover:bg-[#FFF7A8]",
+												? "bg-accent text-[#273B1D]"
+												: "text-[#4B4B45] hover:bg-accent",
 										)}
 									>
 										<item.icon className="size-4 shrink-0" aria-hidden="true" />
@@ -207,7 +207,7 @@ export function MobileDashboardNav({
 									target="_blank"
 									rel="noopener noreferrer"
 									onClick={() => setOpen(false)}
-									className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#FFF7A8]"
+									className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-accent"
 								>
 									<ExternalLink className="size-4" aria-hidden="true" />
 									View public page

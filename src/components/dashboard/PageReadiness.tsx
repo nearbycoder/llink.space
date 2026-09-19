@@ -9,7 +9,7 @@ export function PageReadiness({
 	const checks = pageReadiness(profile, links);
 	const passed = checks.filter((c) => c.ok).length;
 	return (
-		<details className="kinetic-panel bg-[#FFFCEF] p-5">
+		<details className="kinetic-panel bg-card p-5">
 			<summary className="cursor-pointer font-bold">
 				Page readiness · {passed}/{checks.length}
 			</summary>

@@ -43,7 +43,7 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 			ref={setNodeRef}
 			style={style}
 			className={cn(
-				"flex items-center gap-3 border-2 border-black bg-[#FFFCEF] rounded-xl p-4 group shadow-[3px_3px_0_0_#11110F]",
+				"flex items-center gap-3 border border-border bg-card rounded-xl p-4 group shadow-sm",
 				isDragging && "opacity-50",
 			)}
 		>

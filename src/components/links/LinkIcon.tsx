@@ -30,7 +30,7 @@ export function LinkIcon({
 	return (
 		<span
 			className={cn(
-				"inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-black",
+				"inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border",
 				className,
 			)}
 			style={{ backgroundColor: iconBgColor ?? "#F5FF7B" }}
