@@ -37,7 +37,7 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "test:providers": "bun scripts/verify-provider-workflows.ts",
-    "audit": "bun audit"
+    "audit": "bun scripts/audit-dependencies.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1136.0",
