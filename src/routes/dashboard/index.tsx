@@ -253,14 +253,16 @@ function DashboardPage() {
 		});
 	};
 
-	const handleAddLink = async (data: LinkFormData) => {
+	const handleAddLink = async (data: LinkFormData, keepOpen = false) => {
 		try {
 			await addLink.mutateAsync(data);
 			await refreshLayout();
-			setShowAddLink(false);
+			if (!keepOpen) setShowAddLink(false);
 			toast.success("Link added");
+			return true;
 		} catch (error) {
 			toast.error(errorMessage(error, "Could not add the link"));
+			return false;
 		}
 	};
 
@@ -1014,7 +1016,10 @@ function DashboardPage() {
 					</DialogHeader>
 					<LinkForm
 						sections={layout.sections}
-						onSubmit={handleAddLink}
+						onSubmit={async (data) => {
+							await handleAddLink(data);
+						}}
+						onAddAnother={(data) => handleAddLink(data, true)}
 						onCancel={() => setShowAddLink(false)}
 						submitLabel="Add link"
 					/>
