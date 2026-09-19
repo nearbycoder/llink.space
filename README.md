@@ -215,6 +215,7 @@ bun --bun run start
 # Tests
 bun --bun run test
 bun run typecheck
+bun run audit
 bun run check src
 bun run test:e2e
 # Requires an isolated local *_test or *_review database:
@@ -290,3 +291,5 @@ The active hostname serves the public profile at `/`, and becomes its share/cano
 CI runs unit tests, typechecking, source checks, a production build, fresh SQL migrations, isolated provider/database workflows and Playwright journeys. Provider tests replace HTTP and DNS, require a local test database, and cannot send email or provision real domains.
 
 Before releasing the expansion, apply migrations `0006`–`0011` with `bun run db:migrate`, then deploy the built app. Provider credentials and DNS configuration are separate setup steps. See [delivery record](FEATURE_DELIVERY.md) for the completed chunks and verification results.
+
+Security and dependency maintenance notes: [September 2026 security review](docs/SECURITY_REVIEW_2026-09.md). Authentication origins must be configured with `BETTER_AUTH_URL` (or `BETTER_AUTH_BASE_URL`) and, for additional trusted app origins, `BETTER_AUTH_TRUSTED_ORIGINS`; public custom domains are not automatically trusted for authentication.

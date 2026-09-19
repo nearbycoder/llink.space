@@ -37,3 +37,35 @@ export async function readStreamWithLimit(
 	}
 	return buffer;
 }
+
+/** Bound JSON endpoints before their framework parsers allocate the full payload. */
+export async function limitRequestBody(
+	request: Request,
+	limit: number,
+): Promise<Request> {
+	if (request.method === "GET" || request.method === "HEAD") return request;
+	const length = Number(request.headers.get("content-length"));
+	if (Number.isFinite(length) && length > limit) {
+		await request.body?.cancel().catch(() => {});
+		throw new PayloadTooLargeError();
+	}
+	const body = await readStreamWithLimit(request.body, limit);
+	// Nitro may supply a request proxy; copying the Request object itself trips
+	// Node's private-field checks. Copy the public request metadata instead.
+	return new Request(request.url, {
+		method: request.method,
+		headers: request.headers,
+		signal: request.signal,
+		body,
+	});
+}
+
+export function oversizedRequestResponse() {
+	return new Response(JSON.stringify({ error: "Request payload too large" }), {
+		status: 413,
+		headers: {
+			"content-type": "application/json",
+			"cache-control": "no-store",
+		},
+	});
+}

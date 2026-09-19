@@ -2,6 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { createContext } from "#/integrations/trpc/init";
 import { trpcRouter } from "#/integrations/trpc/router";
+import {
+	limitRequestBody,
+	oversizedRequestResponse,
+	PayloadTooLargeError,
+} from "#/lib/request-body";
 import { isTrustedRequestOrigin } from "#/lib/security";
 
 async function handler({ request }: { request: Request }) {
@@ -15,10 +20,19 @@ async function handler({ request }: { request: Request }) {
 		});
 	}
 
+	try {
+		request = await limitRequestBody(request, 1024 * 1024);
+	} catch (error) {
+		if (error instanceof PayloadTooLargeError)
+			return oversizedRequestResponse();
+		throw error;
+	}
+
 	const response = await fetchRequestHandler({
 		req: request,
 		router: trpcRouter,
 		endpoint: "/api/trpc",
+		maxBatchSize: 10,
 		createContext: ({ req }) => createContext({ req }),
 	});
 
