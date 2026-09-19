@@ -690,7 +690,9 @@ function DashboardPage() {
 							ref={searchInputRef}
 							value={linkQuery}
 							onChange={(event) => setLinkQuery(event.target.value)}
-							placeholder="Search title, URL, or description"
+							placeholder='Search words or "exact phrases"'
+							title="Matches all words across title, URL, and description. Use quotes for an exact phrase."
+							maxLength={500}
 							aria-label="Search links"
 							disabled={!isHydrated}
 							className="pl-9 pr-11"
