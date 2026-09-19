@@ -110,3 +110,10 @@ test("Search within saved links leaves the reading list intact", async ({page}) 
  await page.getByRole('button',{name:'Saved links · 2',exact:true}).click(); const dialog=page.getByRole('dialog'); await dialog.getByLabel('Search saved links').fill('Essay'); await expect(dialog.getByRole('link',{name:'Essay',exact:true})).toBeVisible(); await expect(dialog.getByRole('link',{name:'Guide',exact:true})).toHaveCount(0);
  await dialog.getByLabel('Search saved links').fill('missing'); await expect(dialog.getByText('No saved links match this search.')).toBeVisible(); await dialog.getByLabel('Search saved links').fill(''); await expect(dialog.getByRole('link')).toHaveCount(2);
 });
+
+test("Link health filters results and clears hidden selections", async ({page}) => {
+ await setupCreator(page); await api(page.request,'links.add',{title:'Health notes',url:'https://example.com/notes'}); await api(page.request,'links.add',{title:'Health shop',url:'https://example.com/shop'});
+ await page.goto('/dashboard/health'); const search=page.getByLabel('Search link health'); await expect(search).toBeEnabled(); await page.getByRole('button',{name:'Select unchecked',exact:true}).click(); await expect(page.getByRole('button',{name:'Check selected (2/10)',exact:true})).toBeEnabled();
+ await search.fill('notes'); await expect(page.getByRole('checkbox')).toHaveCount(1); await expect(page.getByRole('button',{name:'Check selected (0/10)',exact:true})).toBeDisabled();
+ await page.getByLabel('Filter health status').selectOption('healthy'); await expect(page.getByText('No links match these health filters.')).toBeVisible();
+});
