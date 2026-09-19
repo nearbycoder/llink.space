@@ -107,6 +107,7 @@ interface LinkFormProps {
 	sections?: Array<{ id: string; title: string }>;
 	onSubmit: (data: LinkFormData) => Promise<void>;
 	onCancel: () => void;
+	onAddAnother?: (data: LinkFormData) => Promise<boolean>;
 	submitLabel?: string;
 	cancelLabel?: string;
 }
@@ -116,6 +117,7 @@ export function LinkForm({
 	sections = [],
 	onSubmit,
 	onCancel,
+	onAddAnother,
 	submitLabel = "Save",
 	cancelLabel = "Cancel",
 }: LinkFormProps) {
@@ -135,6 +137,8 @@ export function LinkForm({
 		handleSubmit,
 		watch,
 		setValue,
+		reset,
+		setFocus,
 		formState: { errors, isSubmitting },
 	} = useForm<LinkFormInput, unknown, LinkFormData>({
 		resolver: zodResolver(schema),
@@ -548,6 +552,34 @@ export function LinkForm({
 				>
 					{isSubmitting ? "Saving…" : submitLabel}
 				</Button>
+				{onAddAnother && (
+					<Button
+						type="button"
+						variant="outline"
+						disabled={isSubmitting}
+						onClick={handleSubmit(async (data) => {
+							if (await onAddAnother(data)) {
+								reset({
+									title: "",
+									url: "",
+									description: "",
+									sectionId: selectedSectionId ?? "",
+									isActive: true,
+									iconUrl: "",
+									iconBgColor: DEFAULT_ICON_BG_COLOR,
+									featured: false,
+									featureImageUrl: "",
+									ctaLabel: "",
+									publishAt: "",
+									expireAt: "",
+								});
+								requestAnimationFrame(() => setFocus("title"));
+							}
+						})}
+					>
+						Save & add another
+					</Button>
+				)}
 				<Button
 					type="button"
 					variant="outline"

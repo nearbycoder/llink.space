@@ -18,3 +18,14 @@ test("Markdown link lists preserve titles in the import preview", async ({page})
  await page.getByRole('button',{name:'Import as drafts'}).click();
  await expect(page.getByText('My notes',{exact:true})).toBeVisible();
 });
+
+test("Save and add another keeps the form ready for the next link", async ({page}) => {
+ await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Add link',exact:true}).click();
+ const dialog=page.getByRole('dialog'); await dialog.getByLabel('Title',{exact:true}).fill('First'); await dialog.getByLabel('URL',{exact:true}).fill('example.com/first');
+ await dialog.getByRole('button',{name:'Save & add another'}).click();
+ await expect(dialog.getByLabel('Title',{exact:true})).toHaveValue(''); await expect(dialog.getByLabel('Title',{exact:true})).toBeFocused();
+ await dialog.getByLabel('Title',{exact:true}).fill('Second'); await dialog.getByLabel('URL',{exact:true}).fill('example.com/second');
+ await dialog.getByRole('button',{name:'Add link',exact:true}).click(); await expect(dialog).not.toBeVisible();
+ await expect(page.getByText('First',{exact:true})).toBeVisible(); await expect(page.getByText('Second',{exact:true})).toBeVisible();
+});
