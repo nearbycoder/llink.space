@@ -638,6 +638,7 @@ function DashboardPage() {
 					<button
 						type="button"
 						aria-label={`Show ${label.toLowerCase()}`}
+						disabled={!isHydrated}
 						aria-pressed={statusFilter === (id === "total" ? "all" : id)}
 						onClick={() => {
 							clearFilters();
@@ -674,6 +675,7 @@ function DashboardPage() {
 							onChange={(event) => setLinkQuery(event.target.value)}
 							placeholder="Search title, URL, or description"
 							aria-label="Search links"
+							disabled={!isHydrated}
 							className="pl-9 pr-11"
 						/>
 						{linkQuery && (
@@ -692,6 +694,7 @@ function DashboardPage() {
 					</div>
 					<select
 						aria-label="Sort links"
+						disabled={!isHydrated}
 						value={sortMode}
 						onChange={(e) => setSortMode(e.target.value as LinkSort)}
 						className="h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold"
@@ -704,6 +707,7 @@ function DashboardPage() {
 					</select>
 					<select
 						aria-label="Filter links by status"
+						disabled={!isHydrated}
 						value={statusFilter}
 						onChange={(event) =>
 							setStatusFilter(event.target.value as LinkStatusFilter)
@@ -718,6 +722,7 @@ function DashboardPage() {
 					</select>
 					<select
 						aria-label="Filter links by section"
+						disabled={!isHydrated}
 						value={sectionFilter}
 						onChange={(event) => setSectionFilter(event.target.value)}
 						className="col-span-2 h-10 min-w-0 rounded-xl border-2 border-black bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"

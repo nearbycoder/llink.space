@@ -3,7 +3,9 @@ import { api, setupCreator } from "./feature-helpers";
 
 async function ready(page: import("@playwright/test").Page) {
 	await page.goto("/dashboard");
-	await expect(page.getByRole("button", { name: "Add link", exact: true })).toBeEnabled();
+	await expect(
+		page.getByRole("button", { name: "Add link", exact: true }),
+	).toBeEnabled();
 }
 
 test("status totals filter the catalog and clearing search keeps focus", async ({
@@ -161,4 +163,51 @@ test("mobile link form uses readable inputs and keeps its save action accessible
 			() => document.documentElement.scrollWidth <= innerWidth,
 		),
 	).toBe(true);
+});
+
+test("filters wait for hydration before accepting the first interaction", async ({
+	page,
+}) => {
+	await setupCreator(page);
+	await api(page.request, "links.add", {
+		title: "Zulu first",
+		url: "https://example.com/z",
+	});
+	await api(page.request, "links.add", {
+		title: "Alpha second",
+		url: "https://example.com/a",
+	});
+	let releaseScripts!: () => void;
+	const scriptsReady = new Promise<void>((resolve) => {
+		releaseScripts = resolve;
+	});
+	await page.route("**/*", async (route) => {
+		if (route.request().resourceType() === "script") await scriptsReady;
+		await route.continue();
+	});
+	try {
+		await page.goto("/dashboard", { waitUntil: "commit" });
+		for (const label of [
+			"Search links",
+			"Sort links",
+			"Filter links by status",
+			"Filter links by section",
+		])
+			await expect(page.getByLabel(label, { exact: true })).toBeDisabled();
+		await expect(
+			page.getByRole("button", { name: "Show live", exact: true }),
+		).toBeDisabled();
+	} finally {
+		releaseScripts();
+	}
+	const sort = page.getByLabel("Sort links", { exact: true });
+	await expect(sort).toBeEnabled();
+	await sort.selectOption("az");
+	await expect(
+		page.locator("span").filter({ hasText: /^(Zulu first|Alpha second)$/ }),
+	).toHaveText(["Alpha second", "Zulu first"]);
+	await page.getByRole("button", { name: "Show paused", exact: true }).click();
+	await expect(
+		page.getByLabel("Filter links by status", { exact: true }),
+	).toHaveValue("paused");
 });
