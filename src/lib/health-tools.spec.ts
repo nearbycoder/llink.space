@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { filterHealthLinks } from "./health-tools";
+import { buildHealthCsv, filterHealthLinks } from "./health-tools";
 
 it("combines health status with title, destination and redirect searches", () => {
 	const links = [
@@ -23,4 +23,21 @@ it("combines health status with title, destination and redirect searches", () =>
 	]);
 	expect(filterHealthLinks(links, "", "unchecked")).toEqual([links[1]]);
 	expect(filterHealthLinks(links, "shop", "healthy")).toEqual([]);
+});
+
+it("exports health details and protects spreadsheet cells", () => {
+	const csv = buildHealthCsv([
+		{
+			title: "=FORMULA()",
+			url: "https://example.com",
+			healthState: "redirected",
+			healthStatusCode: 301,
+			healthFinalUrl: "https://example.org",
+			healthCheckedAt: "2026-09-19T12:00:00.000Z",
+		},
+	]);
+	expect(csv).toContain("'=FORMULA()");
+	expect(csv).toContain(
+		"redirected,301,https://example.org,2026-09-19T12:00:00.000Z",
+	);
 });

@@ -117,3 +117,8 @@ test("Link health filters results and clears hidden selections", async ({page}) 
  await search.fill('notes'); await expect(page.getByRole('checkbox')).toHaveCount(1); await expect(page.getByRole('button',{name:'Check selected (0/10)',exact:true})).toBeDisabled();
  await page.getByLabel('Filter health status').selectOption('healthy'); await expect(page.getByText('No links match these health filters.')).toBeVisible();
 });
+
+test("Health CSV exports the current filtered results", async ({page}) => {
+ await setupCreator(page); for(const title of ['Notes','Shop']) await api(page.request,'links.add',{title,url:'https://example.com/'+title}); await page.goto('/dashboard/health'); const search=page.getByLabel('Search link health'); await expect(search).toBeEnabled(); await search.fill('Notes');
+ const pending=page.waitForEvent('download'); await page.getByRole('button',{name:'Export health results (1)',exact:true}).click(); const stream=await (await pending).createReadStream(); const chunks=[]; for await(const chunk of stream!) chunks.push(chunk); const csv=Buffer.concat(chunks).toString(); expect(csv).toContain('Notes'); expect(csv).toContain('unchecked'); expect(csv).not.toContain('Shop');
+});
