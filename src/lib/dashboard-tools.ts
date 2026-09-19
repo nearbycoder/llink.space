@@ -1,4 +1,5 @@
 import { publishingStatus } from "./link-publishing";
+import { matchesSearch, searchTerms } from "./search-terms";
 
 export type LinkStatusFilter =
 	| "all"
@@ -25,14 +26,13 @@ export function filterDashboardLinks<T extends FilterableDashboardLink>(
 		sectionId: string;
 	},
 ) {
-	const query = filters.query.trim().toLocaleLowerCase();
+	const terms = searchTerms(filters.query);
 
 	return links.filter((link) => {
-		const matchesQuery =
-			!query ||
-			[link.title, link.url, link.description ?? ""].some((value) =>
-				value.toLocaleLowerCase().includes(query),
-			);
+		const matchesQuery = matchesSearch(
+			[link.title, link.url, link.description ?? ""],
+			terms,
+		);
 		const matchesStatus =
 			filters.status === "all" ||
 			publishingStatus(link).toLowerCase() === filters.status;

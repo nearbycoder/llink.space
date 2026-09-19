@@ -75,3 +75,10 @@ test("Selected Markdown copy retains titles and descriptions without unselected 
  await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Select',exact:true})).toBeEnabled(); await page.getByRole('button',{name:'Select',exact:true}).click(); await page.getByRole('checkbox',{name:'Select My [notes]',exact:true}).check(); await page.getByRole('button',{name:'Copy selected Markdown'}).click();
  await expect(page.getByText('Copied 1 link as Markdown',{exact:true})).toBeVisible(); const text=await page.evaluate(()=>navigator.clipboard.readText()); expect(text).toContain('https://example.com/notes'); expect(text).toContain('Useful notes'); expect(text).not.toContain('Unselected');
 });
+
+test("Catalog search combines words across fields and supports quoted phrases", async ({page}) => {
+ await setupCreator(page); await api(page.request,'links.add',{title:'Portfolio',url:'https://example.com/work',description:'Selected projects'});
+ await page.goto('/dashboard'); const search=page.getByLabel('Search links',{exact:true}); await expect(search).toBeEnabled(); await search.fill('portfolio projects'); await expect(page.getByText('Showing 1 of 1 links',{exact:true})).toBeVisible();
+ await search.fill('"portfolio projects"'); await expect(page.getByText('Showing 0 of 1 links',{exact:true})).toBeVisible();
+ await search.fill('portfolio "selected projects"'); await expect(page.getByText('Showing 1 of 1 links',{exact:true})).toBeVisible();
+});
