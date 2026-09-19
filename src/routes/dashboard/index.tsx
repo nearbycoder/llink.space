@@ -435,19 +435,26 @@ function DashboardPage() {
 		}
 	};
 
-	const handleExportLinks = () => {
-		const csv = buildLinksCsv(layout.links, layout.sections);
+	const handleExportLinks = (filtered = false) => {
+		const csv = buildLinksCsv(
+			filtered ? sortedLinks : layout.links,
+			layout.sections,
+		);
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
 		const downloadUrl = URL.createObjectURL(blob);
 		const anchor = document.createElement("a");
 		anchor.href = downloadUrl;
-		anchor.download = `llink-links-${new Date().toISOString().slice(0, 10)}.csv`;
+		anchor.download = `llink-links-${filtered ? "filtered-" : ""}${new Date().toISOString().slice(0, 10)}.csv`;
 		anchor.style.display = "none";
 		document.body.append(anchor);
 		anchor.click();
 		anchor.remove();
 		window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
-		toast.success("Link catalog exported");
+		toast.success(
+			filtered
+				? `${sortedLinks.length} filtered links exported`
+				: "Link catalog exported",
+		);
 	};
 
 	const handleRequestDeleteLink = (id: string) => {
@@ -773,7 +780,7 @@ function DashboardPage() {
 							type="button"
 							variant="outline"
 							size="sm"
-							onClick={handleExportLinks}
+							onClick={() => handleExportLinks()}
 							disabled={!isHydrated || layout.links.length === 0}
 						>
 							<Download className="mr-1 h-3.5 w-3.5" />
@@ -810,6 +817,17 @@ function DashboardPage() {
 							setSectionFilter(v.sectionId);
 						}}
 					/>
+					{hasActiveFilters && (
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							disabled={!isHydrated || !filteredLinks.length}
+							onClick={() => handleExportLinks(true)}
+						>
+							Export filtered links ({filteredLinks.length})
+						</Button>
+					)}
 					<BookmarkExport links={layout.links} sections={layout.sections} />
 					<MarkdownExport links={layout.links} sections={layout.sections} />
 				</div>
