@@ -44,7 +44,7 @@ test("recorded demo waits for playback and chapter buttons seek the real video",
 }) => {
 	const mediaRequests: string[] = [];
 	page.on("request", (request) => {
-		if (request.url().endsWith("/api/demo-video"))
+		if (new URL(request.url()).pathname === "/api/demo-video")
 			mediaRequests.push(request.url());
 	});
 	await page.goto("/");
@@ -64,13 +64,32 @@ test("recorded demo waits for playback and chapter buttons seek the real video",
 	await expect
 		.poll(() => video.evaluate((v: HTMLVideoElement) => v.videoWidth))
 		.toBe(1280);
-	const chapter = demo.chapters[2];
-	await page.getByRole("button", { name: new RegExp(chapter.title) }).click();
+	expect(await video.getAttribute("poster")).toContain(`v=${demo.version}`);
+	expect(await video.locator("track").getAttribute("src")).toContain(
+		`v=${demo.version}`,
+	);
+	expect(
+		mediaRequests.every(
+			(url) => new URL(url).searchParams.get("v") === demo.version,
+		),
+	).toBe(true);
 	await expect
-		.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime))
-		.toBeGreaterThanOrEqual(chapter.time);
-	await video.evaluate((v: HTMLVideoElement) => v.pause());
-	await expect(video).toHaveAttribute("controls", "");
+		.poll(() =>
+			video.evaluate(
+				(v: HTMLVideoElement) => v.textTracks[0]?.cues?.length ?? 0,
+			),
+		)
+		.toBeGreaterThan(0);
+	const duration = await video.evaluate((v: HTMLVideoElement) => v.duration);
+	expect(Math.round(duration)).toBe(Number.parseInt(demo.durationLabel, 10));
+	for (const chapter of demo.chapters) {
+		await page.getByRole("button", { name: new RegExp(chapter.title) }).click();
+		await expect
+			.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime))
+			.toBeGreaterThanOrEqual(chapter.time);
+		await video.evaluate((v: HTMLVideoElement) => v.pause());
+		await expect(video).toHaveAttribute("controls", "");
+	}
 	await page.getByText("Read the walkthrough", { exact: true }).click();
 	await expect(page.locator(".marketing-transcript li")).toHaveCount(4);
 	const captions = await page.request.get("/demo/product-tour.vtt");

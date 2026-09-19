@@ -12,7 +12,7 @@ Use the shared background, card, border, input, and accent tokens for applicatio
 
 The dashboard uses distinct icons for each destination and more room for link management on desktop. Auth, onboarding, loading states, dialogs, forms, analytics, health, audience, and domain settings share the same surfaces. The mobile dock remains fixed above the safe area. Search retains 16px mobile inputs, visual-viewport positioning, and background scroll locking.
 
-Public cards retain compact spacing, keyboard-accessible bookmarks, and visible touch targets. Section labels are simple left-aligned dividers. Marketing uses sentence-case typography, softened product framing, and a refreshed 3× screenshot of a fictional local profile. The existing captioned product-tour recording is preserved; it was recorded before this visual refresh.
+Public cards retain compact spacing, keyboard-accessible bookmarks, and visible touch targets. Section labels are simple left-aligned dividers. Marketing uses sentence-case typography, softened product framing, and a refreshed 3× screenshot of a fictional local profile. The captioned product tour was subsequently re-recorded against the refreshed UI; see `docs/marketing-demo.md`.
 
 ## Verification
 

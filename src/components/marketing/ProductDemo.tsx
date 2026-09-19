@@ -53,7 +53,7 @@ export function ProductDemo() {
 						playsInline
 						muted
 						preload="none"
-						poster="/demo/product-tour-poster.webp"
+						poster={`/demo/product-tour-poster.webp?v=${demo.version}`}
 						aria-label="llink.space product walkthrough"
 						onLoadedMetadata={() => {
 							if (pendingTime.current !== null && video.current) {
@@ -72,10 +72,13 @@ export function ProductDemo() {
 						}}
 						onError={() => setError(true)}
 					>
-						<source src="/api/demo-video" type="video/mp4" />
+						<source
+							src={`/api/demo-video?v=${demo.version}`}
+							type="video/mp4"
+						/>
 						<track
 							kind="captions"
-							src="/demo/product-tour.vtt"
+							src={`/demo/product-tour.vtt?v=${demo.version}`}
 							srcLang="en"
 							label="English walkthrough"
 							default
@@ -117,8 +120,10 @@ export function ProductDemo() {
 			{error && (
 				<p role="status" className="marketing-video-error">
 					Use the video’s play button to continue, or{" "}
-					<a href="/api/demo-video">open the recording directly</a>. You can
-					also read the walkthrough below.
+					<a href={`/api/demo-video?v=${demo.version}`}>
+						open the recording directly
+					</a>
+					. You can also read the walkthrough below.
 				</p>
 			)}
 			<details className="marketing-transcript">
