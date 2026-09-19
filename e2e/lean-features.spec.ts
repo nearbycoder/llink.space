@@ -128,3 +128,13 @@ test("Stale health selection excludes recent and unchecked links", async ({page}
  const {Client}=await import('pg'); const db=new Client({connectionString:process.env.DATABASE_URL||'postgres://postgres:postgres@127.0.0.1:5432/llink_test'}); await db.connect(); try {await db.query("UPDATE links SET health_checked_at=now()-interval '8 days', health_state='healthy' WHERE id=$1 AND profile_id=$2",[old.id,profile.id]); await db.query("UPDATE links SET health_checked_at=now(), health_state='healthy' WHERE id=$1 AND profile_id=$2",[fresh.id,profile.id]);}finally{await db.end();}
  await page.goto('/dashboard/health'); await expect(page.getByRole('button',{name:'Select stale checks (1)',exact:true})).toBeEnabled(); await page.getByRole('button',{name:'Select stale checks (1)',exact:true}).click(); await expect(page.getByRole('checkbox',{name:/Stale/})).toBeChecked(); await expect(page.getByRole('checkbox',{name:/Fresh/})).not.toBeChecked(); await expect(page.getByRole('checkbox',{name:/Unchecked/})).not.toBeChecked();
 });
+
+test("Audience search finds subscribers beyond the first page and treats wildcards literally", async ({page}) => {
+ const {profile}=await setupCreator(page); const {Client}=await import('pg'); const db=new Client({connectionString:process.env.DATABASE_URL||'postgres://postgres:postgres@127.0.0.1:5432/llink_test'}); await db.connect(); try {
+ await db.query("INSERT INTO subscribers(profile_id,email,name,consent_text,unsubscribe_hash) SELECT $1::uuid, 'reader'||n||'@example.test','Reader '||n,'Test consent', $1::uuid::text||'-'||n FROM generate_series(1,51) n",[profile.id]);
+ await db.query("INSERT INTO subscribers(profile_id,email,name,consent_text,unsubscribe_hash,consent_at) VALUES($1,'needle@example.test','Old Subscriber','Test consent',$2,'2000-01-01')",[profile.id,crypto.randomUUID()]);
+ }finally{await db.end();}
+ await page.goto('/dashboard/audience'); await expect(page.getByRole('button',{name:'Search subscribers',exact:true})).toBeEnabled(); await expect(page.getByText('needle@example.test',{exact:true})).toHaveCount(0);
+ await page.getByLabel('Search subscribers',{exact:true}).fill('OLD SUBSCRIBER'); await page.getByRole('button',{name:'Search subscribers',exact:true}).click(); await expect(page.getByText('needle@example.test',{exact:true})).toBeVisible(); await expect(page.getByRole('button',{name:'Next',exact:true})).toBeDisabled();
+ await page.getByLabel('Search subscribers',{exact:true}).fill('%'); await page.getByRole('button',{name:'Search subscribers',exact:true}).click(); await expect(page.getByText('No subscribers match this search.',{exact:true})).toBeVisible();
+});
