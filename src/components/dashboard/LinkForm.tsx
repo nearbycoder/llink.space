@@ -20,6 +20,7 @@ import {
 } from "#/lib/security";
 import { cn } from "#/lib/utils";
 import { CampaignUrlBuilder } from "./CampaignUrlBuilder";
+import { UrlCleanup } from "./UrlCleanup";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 const DEFAULT_ICON_BG_COLOR = "#F5FF7B";
@@ -241,6 +242,12 @@ export function LinkForm({
 				)}
 			</div>
 
+			<UrlCleanup
+				url={watch("url") ?? ""}
+				onApply={(url) =>
+					setValue("url", url, { shouldDirty: true, shouldValidate: true })
+				}
+			/>
 			<CampaignUrlBuilder
 				url={watch("url") ?? ""}
 				onApply={(url) =>
