@@ -6,6 +6,7 @@ import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AccountSessions } from "#/components/dashboard/AccountSessions";
 import { ProfileLoadingState } from "#/components/dashboard/DashboardLoading";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
@@ -856,6 +857,7 @@ function ProfilePage() {
 					</Button>
 				</form>
 			</div>
+			<AccountSessions />
 		</div>
 	);
 }

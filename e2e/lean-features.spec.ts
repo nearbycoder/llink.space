@@ -148,3 +148,10 @@ test("Audience status filters compose with search and preserve owner boundaries"
  const name='other'+Date.now(); expect((await request.post('/api/auth/sign-up/email',{data:{name,email:name+'@example.test',password:'FeaturePassword123!'}})).ok()).toBe(true); await api(request,'profile.create',{username:name});
  const response=await request.get('/api/trpc/audience.list',{params:{input:JSON.stringify({json:{search:'Reader',status:'active'}})}}); const data=(await response.json()).result.data.json; expect(data.rows).toEqual([]); expect(data.matchingCount).toBe(0);
 });
+
+test("Session management signs out other devices and preserves the current login", async ({page,request}) => {
+ const {username}=await setupCreator(page); expect((await request.post('/api/auth/sign-in/email',{data:{email:username+'@example.test',password:'FeaturePassword123!'}})).ok()).toBe(true);
+ await page.goto('/dashboard/profile'); await expect(page.getByLabel('Display name',{exact:true})).toBeEnabled(); await page.getByText('Active sessions',{exact:true}).click(); await expect(page.getByText('2 active sessions',{exact:true})).toBeVisible(); await expect(page.getByText('This session',{exact:true})).toHaveCount(1);
+ await page.getByRole('button',{name:'Sign out other devices',exact:true}).click(); await page.getByRole('dialog').getByRole('button',{name:'Sign out other devices',exact:true}).click(); await expect(page.getByText('Other devices signed out',{exact:true})).toBeVisible(); await expect(page.getByText('1 active session',{exact:true})).toBeVisible();
+ expect((await request.get('/api/trpc/links.list')).status()).toBe(401); expect((await page.request.get('/api/trpc/links.list')).status()).toBe(200);
+});
