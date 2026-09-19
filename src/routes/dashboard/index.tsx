@@ -1015,6 +1015,7 @@ function DashboardPage() {
 						<DialogTitle>Add link</DialogTitle>
 					</DialogHeader>
 					<LinkForm
+						existingLinks={layout.links}
 						sections={layout.sections}
 						onSubmit={async (data) => {
 							await handleAddLink(data);
@@ -1033,6 +1034,9 @@ function DashboardPage() {
 					</DialogHeader>
 					{editingLink && (
 						<LinkForm
+							existingLinks={layout.links.filter(
+								(link) => link.id !== editingLink.id,
+							)}
 							defaultValues={{
 								title: editingLink.title,
 								url: editingLink.url,

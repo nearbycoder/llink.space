@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setupCreator } from "./feature-helpers";
+import { api, setupCreator } from "./feature-helpers";
 
 test("CSV files preview and import titles as paused drafts", async ({page})=>{
  await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled();
@@ -45,4 +45,12 @@ test("URL cleanup is opt-in and preserves destination parameters", async ({page}
  const url=page.getByRole('dialog').getByLabel('URL',{exact:true}); await url.fill('https://example.com/?utm_source=mail&product=42#buy');
  await page.getByText('Remove tracking parameters',{exact:true}).click(); await expect(url).toHaveValue('https://example.com/?utm_source=mail&product=42#buy');
  await page.getByRole('button',{name:'Use clean URL'}).click(); await expect(url).toHaveValue('https://example.com/?product=42#buy');
+});
+
+test("Link editor warns about duplicate destinations including tracking variants", async ({page}) => {
+ await setupCreator(page); await api(page.request,'links.add',{title:'Existing site',url:'https://example.com/?utm_source=mail'});
+ await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled(); await page.getByRole('button',{name:'Add link',exact:true}).click();
+ const dialog=page.getByRole('dialog'); await dialog.getByLabel('URL',{exact:true}).fill('example.com');
+ await expect(dialog.getByRole('status')).toContainText('already appears in 1 link: Existing site');
+ await dialog.getByLabel('URL',{exact:true}).fill('example.org'); await expect(dialog.getByRole('status')).toHaveCount(0);
 });
