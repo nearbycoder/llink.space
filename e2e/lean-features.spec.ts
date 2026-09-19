@@ -136,5 +136,15 @@ test("Audience search finds subscribers beyond the first page and treats wildcar
  }finally{await db.end();}
  await page.goto('/dashboard/audience'); await expect(page.getByRole('button',{name:'Search subscribers',exact:true})).toBeEnabled(); await expect(page.getByText('needle@example.test',{exact:true})).toHaveCount(0);
  await page.getByLabel('Search subscribers',{exact:true}).fill('OLD SUBSCRIBER'); await page.getByRole('button',{name:'Search subscribers',exact:true}).click(); await expect(page.getByText('needle@example.test',{exact:true})).toBeVisible(); await expect(page.getByRole('button',{name:'Next',exact:true})).toBeDisabled();
- await page.getByLabel('Search subscribers',{exact:true}).fill('%'); await page.getByRole('button',{name:'Search subscribers',exact:true}).click(); await expect(page.getByText('No subscribers match this search.',{exact:true})).toBeVisible();
+ await page.getByLabel('Search subscribers',{exact:true}).fill('%'); await page.getByRole('button',{name:'Search subscribers',exact:true}).click(); await expect(page.getByText('No subscribers match these filters.',{exact:true})).toBeVisible();
+});
+
+test("Audience status filters compose with search and preserve owner boundaries", async ({page,request}) => {
+ const {profile}=await setupCreator(page); const {Client}=await import('pg'); const db=new Client({connectionString:process.env.DATABASE_URL||'postgres://postgres:postgres@127.0.0.1:5432/llink_test'}); await db.connect(); try {
+ await db.query("INSERT INTO subscribers(profile_id,email,name,consent_text,unsubscribe_hash,unsubscribed_at) VALUES($1,'active@example.test','Reader','Test',$2,null),($1,'left@example.test','Reader','Test',$3,now())",[profile.id,crypto.randomUUID(),crypto.randomUUID()]);
+ }finally{await db.end();}
+ await page.goto('/dashboard/audience'); const filter=page.getByLabel('Subscriber status'); await expect(filter).toBeEnabled(); await filter.selectOption('unsubscribed'); await expect(page.getByText('left@example.test',{exact:true})).toBeVisible(); await expect(page.getByText('active@example.test',{exact:true})).toHaveCount(0);
+ await filter.selectOption('active'); await expect(page.getByText('active@example.test',{exact:true})).toBeVisible(); await expect(page.getByText('left@example.test',{exact:true})).toHaveCount(0);
+ const name='other'+Date.now(); expect((await request.post('/api/auth/sign-up/email',{data:{name,email:name+'@example.test',password:'FeaturePassword123!'}})).ok()).toBe(true); await api(request,'profile.create',{username:name});
+ const response=await request.get('/api/trpc/audience.list',{params:{input:JSON.stringify({json:{search:'Reader',status:'active'}})}}); const data=(await response.json()).result.data.json; expect(data.rows).toEqual([]); expect(data.matchingCount).toBe(0);
 });

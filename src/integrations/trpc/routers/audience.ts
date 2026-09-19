@@ -37,8 +37,9 @@ export const audienceRouter = createTRPCRouter({
 				.object({
 					page: z.number().int().min(0).default(0),
 					search: z.string().trim().max(100).default(""),
+					status: z.enum(["all", "active", "unsubscribed"]).default("all"),
 				})
-				.default({ page: 0, search: "" }),
+				.default({ page: 0, search: "", status: "all" }),
 		)
 		.query(async ({ ctx, input }) => {
 			const p = await owner(ctx.userId);
@@ -49,6 +50,14 @@ export const audienceRouter = createTRPCRouter({
 						sql`position(${query} in lower(${subscribers.name})) > 0`,
 					)
 				: undefined;
+			const filter = and(
+				searchFilter,
+				input.status === "active"
+					? isNull(subscribers.unsubscribedAt)
+					: input.status === "unsubscribed"
+						? isNotNull(subscribers.unsubscribedAt)
+						: undefined,
+			);
 			const [rows, counts, connection] = await Promise.all([
 				db
 					.select({
@@ -62,14 +71,14 @@ export const audienceRouter = createTRPCRouter({
 						providerRemovedAt: subscribers.providerRemovedAt,
 					})
 					.from(subscribers)
-					.where(and(eq(subscribers.profileId, p.id), searchFilter))
+					.where(and(eq(subscribers.profileId, p.id), filter))
 					.orderBy(desc(subscribers.consentAt), desc(subscribers.id))
 					.limit(50)
 					.offset(input.page * 50),
 				db
 					.select({
 						total: sql<number>`count(*)::int`,
-						matchingCount: sql<number>`count(*) filter (where ${searchFilter ?? sql`true`})::int`,
+						matchingCount: sql<number>`count(*) filter (where ${filter ?? sql`true`})::int`,
 						active: sql<number>`count(*) filter (where ${subscribers.unsubscribedAt} is null)::int`,
 					})
 					.from(subscribers)

@@ -24,6 +24,9 @@ function AudiencePage() {
 	const [page, setPage] = useState(0),
 		[ready, setReady] = useState(false);
 	useEffect(() => setReady(true), []);
+	const [status, setStatus] = useState<"all" | "active" | "unsubscribed">(
+		"all",
+	);
 	const [search, setSearch] = useState("");
 	const [searchInput, setSearchInput] = useState("");
 	const {
@@ -32,8 +35,9 @@ function AudiencePage() {
 		refetch,
 		error: searchError,
 	} = useQuery({
-		...trpc.audience.list.queryOptions({ page, search }),
-		initialData: page === 0 && !search ? initial : undefined,
+		...trpc.audience.list.queryOptions({ page, search, status }),
+		initialData:
+			page === 0 && !search && status === "all" ? initial : undefined,
 		enabled: ready,
 	});
 	const data = queryData ?? { ...initial, rows: [], matchingCount: 0 };
@@ -291,6 +295,22 @@ function AudiencePage() {
 						: `${data.matchingCount} matching subscribers`}
 					. CSV export includes all subscribers.
 				</p>
+				<label className="mb-4 block text-sm">
+					Subscriber status
+					<select
+						value={status}
+						disabled={!ready}
+						onChange={(event) => {
+							setStatus(event.target.value as typeof status);
+							setPage(0);
+						}}
+						className="ml-2 rounded-xl border-2 border-black bg-white p-2 text-base"
+					>
+						<option value="all">All subscribers</option>
+						<option value="active">Active only</option>
+						<option value="unsubscribed">Unsubscribed only</option>
+					</select>
+				</label>
 				<div className="overflow-x-auto">
 					<table className="w-full text-left text-sm">
 						<thead>
@@ -346,8 +366,8 @@ function AudiencePage() {
 				</div>
 				{!isFetching && !searchError && !data.rows.length && (
 					<p className="py-6 text-sm">
-						{search
-							? "No subscribers match this search."
+						{search || status !== "all"
+							? "No subscribers match these filters."
 							: "Your subscribers will appear here after they sign up."}
 					</p>
 				)}
