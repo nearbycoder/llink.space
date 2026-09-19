@@ -82,3 +82,11 @@ test("Catalog search combines words across fields and supports quoted phrases", 
  await search.fill('"portfolio projects"'); await expect(page.getByText('Showing 0 of 1 links',{exact:true})).toBeVisible();
  await search.fill('portfolio "selected projects"'); await expect(page.getByText('Showing 1 of 1 links',{exact:true})).toBeVisible();
 });
+
+test("An existing saved view can be updated without creating duplicates", async ({page}) => {
+ await setupCreator(page); await page.goto('/dashboard'); const search=page.getByLabel('Search links',{exact:true}); await expect(search).toBeEnabled(); await search.fill('old'); await page.getByText('More link tools',{exact:true}).click(); await page.getByText('Saved filter views',{exact:true}).click();
+ await page.getByLabel('View name',{exact:true}).fill('Work'); await page.getByRole('button',{name:'Save current filters',exact:true}).click();
+ await search.fill('new'); await page.getByLabel('View name',{exact:true}).fill('work'); await page.getByRole('button',{name:'Update saved view',exact:true}).click();
+ await search.fill(''); await page.getByRole('button',{name:'Work',exact:true}).click(); await expect(search).toHaveValue('new'); await page.reload();
+ await page.getByText('More link tools',{exact:true}).click(); await page.getByText('Saved filter views',{exact:true}).click(); await expect(page.getByRole('button',{name:'Work',exact:true})).toHaveCount(1); await page.getByRole('button',{name:'Work',exact:true}).click(); await expect(search).toHaveValue('new');
+});
