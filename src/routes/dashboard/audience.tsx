@@ -24,11 +24,19 @@ function AudiencePage() {
 	const [page, setPage] = useState(0),
 		[ready, setReady] = useState(false);
 	useEffect(() => setReady(true), []);
-	const { data = initial, isFetching } = useQuery({
-		...trpc.audience.list.queryOptions({ page }),
-		initialData: page === 0 ? initial : undefined,
+	const [search, setSearch] = useState("");
+	const [searchInput, setSearchInput] = useState("");
+	const {
+		data: queryData,
+		isFetching,
+		refetch,
+		error: searchError,
+	} = useQuery({
+		...trpc.audience.list.queryOptions({ page, search }),
+		initialData: page === 0 && !search ? initial : undefined,
 		enabled: ready,
 	});
+	const data = queryData ?? { ...initial, rows: [], matchingCount: 0 };
 	const [enabled, setEnabled] = useState(initial.signupEnabled),
 		[title, setTitle] = useState(initial.signupTitle),
 		[saved, setSaved] = useState({
@@ -230,6 +238,59 @@ function AudiencePage() {
 						Export subscribers CSV
 					</Button>
 				</div>
+				<form
+					className="mb-4 flex flex-wrap items-end gap-2"
+					onSubmit={(event) => {
+						event.preventDefault();
+						if (page === 0 && searchInput.trim() === search) void refetch();
+						setPage(0);
+						setSearch(searchInput.trim());
+					}}
+				>
+					<label className="min-w-0 flex-1 text-sm">
+						Search subscribers
+						<input
+							type="search"
+							value={searchInput}
+							maxLength={100}
+							disabled={!ready}
+							onChange={(event) => setSearchInput(event.target.value)}
+							placeholder="Email or name, across all pages"
+							className="mt-1 block w-full rounded-xl border-2 border-black bg-white p-2 text-base"
+						/>
+					</label>
+					<Button
+						type="submit"
+						variant="outline"
+						disabled={!ready || isFetching}
+					>
+						Search subscribers
+					</Button>
+					{(search || searchInput) && (
+						<Button
+							type="button"
+							variant="ghost"
+							onClick={() => {
+								setSearchInput("");
+								setSearch("");
+								setPage(0);
+							}}
+						>
+							Clear search
+						</Button>
+					)}
+				</form>
+				{searchError && (
+					<p role="alert" className="mb-3 text-sm text-red-700">
+						Could not load subscribers. Try searching again.
+					</p>
+				)}
+				<p role="status" className="mb-3 text-xs">
+					{isFetching
+						? "Loading subscribers…"
+						: `${data.matchingCount} matching subscribers`}
+					. CSV export includes all subscribers.
+				</p>
 				<div className="overflow-x-auto">
 					<table className="w-full text-left text-sm">
 						<thead>
@@ -283,9 +344,11 @@ function AudiencePage() {
 						</tbody>
 					</table>
 				</div>
-				{!data.rows.length && (
+				{!isFetching && !searchError && !data.rows.length && (
 					<p className="py-6 text-sm">
-						Your subscribers will appear here after they sign up.
+						{search
+							? "No subscribers match this search."
+							: "Your subscribers will appear here after they sign up."}
 					</p>
 				)}
 				<div className="mt-4 flex items-center gap-3">
@@ -299,7 +362,7 @@ function AudiencePage() {
 					<span className="text-xs">Page {page + 1}</span>
 					<Button
 						variant="outline"
-						disabled={(page + 1) * 50 >= data.total || isFetching}
+						disabled={(page + 1) * 50 >= data.matchingCount || isFetching}
 						onClick={() => setPage((p) => p + 1)}
 					>
 						Next

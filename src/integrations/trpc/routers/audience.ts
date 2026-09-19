@@ -34,11 +34,21 @@ export const audienceRouter = createTRPCRouter({
 	list: protectedProcedure
 		.input(
 			z
-				.object({ page: z.number().int().min(0).default(0) })
-				.default({ page: 0 }),
+				.object({
+					page: z.number().int().min(0).default(0),
+					search: z.string().trim().max(100).default(""),
+				})
+				.default({ page: 0, search: "" }),
 		)
 		.query(async ({ ctx, input }) => {
 			const p = await owner(ctx.userId);
+			const query = input.search.toLowerCase();
+			const searchFilter = query
+				? or(
+						sql`position(${query} in lower(${subscribers.email})) > 0`,
+						sql`position(${query} in lower(${subscribers.name})) > 0`,
+					)
+				: undefined;
 			const [rows, counts, connection] = await Promise.all([
 				db
 					.select({
@@ -52,13 +62,14 @@ export const audienceRouter = createTRPCRouter({
 						providerRemovedAt: subscribers.providerRemovedAt,
 					})
 					.from(subscribers)
-					.where(eq(subscribers.profileId, p.id))
+					.where(and(eq(subscribers.profileId, p.id), searchFilter))
 					.orderBy(desc(subscribers.consentAt), desc(subscribers.id))
 					.limit(50)
 					.offset(input.page * 50),
 				db
 					.select({
 						total: sql<number>`count(*)::int`,
+						matchingCount: sql<number>`count(*) filter (where ${searchFilter ?? sql`true`})::int`,
 						active: sql<number>`count(*) filter (where ${subscribers.unsubscribedAt} is null)::int`,
 					})
 					.from(subscribers)
