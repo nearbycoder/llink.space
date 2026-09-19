@@ -260,6 +260,8 @@ export function PublicProfilePage({
 								links={links.filter((l) => reading.ids.includes(l.id))}
 								onRemove={reading.toggle}
 								onClear={reading.clear}
+								onUndo={reading.undo}
+								canUndo={reading.canUndo}
 								onVisit={handleLinkClick}
 								error={reading.error}
 							/>

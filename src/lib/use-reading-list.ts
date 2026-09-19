@@ -5,12 +5,14 @@ export function useReadingList(
 	visibleIds: string[],
 	enabled: boolean,
 ) {
+	const [undoIds, setUndoIds] = useState<string[] | null>(null);
 	const [ids, setIds] = useState<string[]>([]),
 		[ready, setReady] = useState(false),
 		[error, setError] = useState("");
 	const key = readingListKey(profileId),
 		visibleKey = visibleIds.join(",");
 	useEffect(() => {
+		setUndoIds(null);
 		if (!enabled) return;
 		const visible = visibleKey.split(",");
 		try {
@@ -24,8 +26,10 @@ export function useReadingList(
 		}
 		setReady(true);
 		const sync = (e: StorageEvent) => {
-			if (e.key === key || e.key === null)
+			if (e.key === key || e.key === null) {
+				setUndoIds(null);
 				setIds(readSavedLinks(e.newValue, visible));
+			}
 		};
 		window.addEventListener("storage", sync);
 		return () => window.removeEventListener("storage", sync);
@@ -47,13 +51,28 @@ export function useReadingList(
 		error,
 		toggle: (id: string) => {
 			if (!ready || !visibleIds.includes(id)) return;
-			if (ids.includes(id)) persist(ids.filter((v) => v !== id));
-			else if (ids.length < 500) persist([...ids, id]);
-			else
+			if (ids.includes(id)) {
+				setUndoIds(ids);
+				persist(ids.filter((v) => v !== id));
+			} else if (ids.length < 500) {
+				setUndoIds(null);
+				persist([...ids, id]);
+			} else
 				setError(
 					"Your reading list is full. Remove a saved link before adding another.",
 				);
 		},
-		clear: () => persist([]),
+		clear: () => {
+			if (ready && ids.length) {
+				setUndoIds(ids);
+				persist([]);
+			}
+		},
+		canUndo: undoIds !== null,
+		undo: () => {
+			if (!ready || !undoIds) return;
+			persist(undoIds.filter((id) => visibleIds.includes(id)));
+			setUndoIds(null);
+		},
 	};
 }
