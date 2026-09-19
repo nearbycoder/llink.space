@@ -54,3 +54,10 @@ test("Link editor warns about duplicate destinations including tracking variants
  await expect(dialog.getByRole('status')).toContainText('already appears in 1 link: Existing site');
  await dialog.getByLabel('URL',{exact:true}).fill('example.org'); await expect(dialog.getByRole('status')).toHaveCount(0);
 });
+
+test("Publishing shortcuts fill editable dates and clear schedules", async ({page}) => {
+ await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled(); await page.getByRole('button',{name:'Add link',exact:true}).click();
+ const dialog=page.getByRole('dialog'); await dialog.getByLabel('Schedule shortcut').selectOption('tomorrow'); await expect(dialog.getByLabel('Publish at',{exact:true})).toHaveValue(/T09:00$/);
+ await dialog.getByLabel('Schedule shortcut').selectOption('week'); await expect(dialog.getByLabel('Publish at',{exact:true})).toHaveValue(''); await expect(dialog.getByLabel('Hide at',{exact:true})).not.toHaveValue('');
+ await dialog.getByLabel('Schedule shortcut').selectOption('none'); await expect(dialog.getByLabel('Hide at',{exact:true})).toHaveValue('');
+});

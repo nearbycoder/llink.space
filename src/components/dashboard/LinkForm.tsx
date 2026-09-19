@@ -14,6 +14,10 @@ import { duplicateDestinations } from "#/lib/duplicate-links";
 import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import { localDateInput, validSchedule } from "#/lib/link-publishing";
 import {
+	type PublishingPreset,
+	publishingPreset,
+} from "#/lib/publishing-presets";
+import {
 	isAllowedAvatarUrl,
 	isSafeHttpUrl,
 	normalizeHttpUrl,
@@ -590,6 +594,34 @@ export function LinkForm({
 						</label>
 					</>
 				)}
+				<label className="block text-sm">
+					Schedule shortcut
+					<select
+						value=""
+						className="mt-1 block w-full rounded-xl border-2 border-black bg-white p-2 text-base"
+						onChange={(event) => {
+							const next = publishingPreset(
+								event.target.value as PublishingPreset,
+							);
+							setValue("publishAt", next.publishAt, { shouldDirty: true });
+							setValue("expireAt", next.expireAt, {
+								shouldDirty: true,
+								shouldValidate: true,
+							});
+						}}
+					>
+						<option value="" disabled>
+							Choose a schedule…
+						</option>
+						<option value="tomorrow">Publish tomorrow at 9am</option>
+						<option value="week">Live now, hide in 7 days</option>
+						<option value="none">No schedule</option>
+					</select>
+				</label>
+				<p className="text-xs text-[#4B4B45]">
+					Shortcuts replace both dates below. Hidden links stay hidden until you
+					activate them.
+				</p>
 				<div className="grid gap-3 sm:grid-cols-2">
 					<label htmlFor={`${publishingId}-publishAt`} className="text-sm">
 						Publish at
