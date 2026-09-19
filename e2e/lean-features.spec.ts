@@ -90,3 +90,9 @@ test("An existing saved view can be updated without creating duplicates", async 
  await search.fill(''); await page.getByRole('button',{name:'Work',exact:true}).click(); await expect(search).toHaveValue('new'); await page.reload();
  await page.getByText('More link tools',{exact:true}).click(); await page.getByText('Saved filter views',{exact:true}).click(); await expect(page.getByRole('button',{name:'Work',exact:true})).toHaveCount(1); await page.getByRole('button',{name:'Work',exact:true}).click(); await expect(search).toHaveValue('new');
 });
+
+test("Visitors can download their saved links without an account", async ({page}) => {
+ const {username}=await setupCreator(page); await api(page.request,'links.add',{title:'Saved essay',url:'https://example.com/essay'}); await api(page.request,'links.add',{title:'Not saved',url:'https://example.com/no'});
+ await page.goto('/u/'+username); const save=page.getByRole('button',{name:'Save Saved essay for later',exact:true}); await expect(save).toBeEnabled(); await save.click(); await page.getByRole('button',{name:'Saved links · 1',exact:true}).click();
+ const pending=page.waitForEvent('download'); await page.getByRole('button',{name:'Download saved links',exact:true}).click(); const download=await pending; expect(download.suggestedFilename()).toBe('saved-links.md'); const stream=await download.createReadStream(); const chunks=[]; for await(const chunk of stream!) chunks.push(chunk); const text=Buffer.concat(chunks).toString(); expect(text).toContain('[Saved essay](<https://example.com/essay>)'); expect(text).not.toContain('Not saved');
+});
