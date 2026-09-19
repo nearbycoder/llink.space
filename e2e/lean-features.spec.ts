@@ -29,3 +29,13 @@ test("Save and add another keeps the form ready for the next link", async ({page
  await dialog.getByRole('button',{name:'Add link',exact:true}).click(); await expect(dialog).not.toBeVisible();
  await expect(page.getByText('First',{exact:true})).toBeVisible(); await expect(page.getByText('Second',{exact:true})).toBeVisible();
 });
+
+test("Link editor preview follows content without publishing", async ({page}) => {
+ await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Add link',exact:true}).click(); const dialog=page.getByRole('dialog');
+ await dialog.getByLabel('Title',{exact:true}).fill('Preview title'); await dialog.getByLabel('Description (optional)').fill('Preview description');
+ await dialog.getByText('Preview link card',{exact:true}).click();
+ await expect(dialog.locator('[data-card-preview="true"]')).toContainText('Preview title'); await expect(dialog.locator('[data-card-preview="true"]')).toContainText('Preview description');
+ await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+ const response=await page.request.get('/api/trpc/links.list'); expect((await response.json()).result.data.json.links).toHaveLength(0);
+});
