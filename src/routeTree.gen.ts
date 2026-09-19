@@ -9,28 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as UUsernameRouteImport } from './routes/u/$username'
-import { Route as DashboardProfileRouteImport } from './routes/dashboard/profile'
-import { Route as DashboardHealthRouteImport } from './routes/dashboard/health'
-import { Route as DashboardDomainsRouteImport } from './routes/dashboard/domains'
-import { Route as DashboardDesignRouteImport } from './routes/dashboard/design'
-import { Route as DashboardAudienceRouteImport } from './routes/dashboard/audience'
-import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
-import { Route as ApiOgRouteImport } from './routes/api.og'
-import { Route as ApiDemoVideoRouteImport } from './routes/api.demo-video'
-import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
-import { Route as ApiUploadAvatarRouteImport } from './routes/api.upload.avatar'
-import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
-import { Route as ApiStorageSplatRouteImport } from './routes/api.storage.$'
+import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
+import { Route as ApiDemoVideoRouteImport } from './routes/api.demo-video'
+import { Route as ApiOgRouteImport } from './routes/api.og'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
+import { Route as DashboardAudienceRouteImport } from './routes/dashboard/audience'
+import { Route as DashboardDesignRouteImport } from './routes/dashboard/design'
+import { Route as DashboardDomainsRouteImport } from './routes/dashboard/domains'
+import { Route as DashboardHealthRouteImport } from './routes/dashboard/health'
+import { Route as DashboardProfileRouteImport } from './routes/dashboard/profile'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
+import { Route as UUsernameRouteImport } from './routes/u/$username'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiStorageSplatRouteImport } from './routes/api.storage.$'
+import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
+import { Route as ApiUploadAvatarRouteImport } from './routes/api.upload.avatar'
 import { Route as ApiOgUUsernameRouteImport } from './routes/api.og.u.$username'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
@@ -40,14 +45,24 @@ const DashboardRouteRoute = DashboardRouteRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSignUpRoute = AuthSignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => AuthRoute,
+} as any)
+const ApiDemoVideoRoute = ApiDemoVideoRouteImport.update({
+  id: '/api/demo-video',
+  path: '/api/demo-video',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
-  id: '/onboarding/',
-  path: '/onboarding/',
+const ApiOgRoute = ApiOgRouteImport.update({
+  id: '/api/og',
+  path: '/api/og',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -55,29 +70,9 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const UUsernameRoute = UUsernameRouteImport.update({
-  id: '/u/$username',
-  path: '/u/$username',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardProfileRoute = DashboardProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardHealthRoute = DashboardHealthRouteImport.update({
-  id: '/health',
-  path: '/health',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardDomainsRoute = DashboardDomainsRouteImport.update({
-  id: '/domains',
-  path: '/domains',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardDesignRoute = DashboardDesignRouteImport.update({
-  id: '/design',
-  path: '/design',
+const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardAudienceRoute = DashboardAudienceRouteImport.update({
@@ -85,39 +80,39 @@ const DashboardAudienceRoute = DashboardAudienceRouteImport.update({
   path: '/audience',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
+const DashboardDesignRoute = DashboardDesignRouteImport.update({
+  id: '/design',
+  path: '/design',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
-const ApiOgRoute = ApiOgRouteImport.update({
-  id: '/api/og',
-  path: '/api/og',
+const DashboardDomainsRoute = DashboardDomainsRouteImport.update({
+  id: '/domains',
+  path: '/domains',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardHealthRoute = DashboardHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const DashboardProfileRoute = DashboardProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiDemoVideoRoute = ApiDemoVideoRouteImport.update({
-  id: '/api/demo-video',
-  path: '/api/demo-video',
+const UUsernameRoute = UUsernameRouteImport.update({
+  id: '/u/$username',
+  path: '/u/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthSignUpRoute = AuthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthSignInRoute = AuthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => AuthRoute,
-} as any)
-const ApiUploadAvatarRoute = ApiUploadAvatarRouteImport.update({
-  id: '/api/upload/avatar',
-  path: '/api/upload/avatar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
-  id: '/api/trpc/$',
-  path: '/api/trpc/$',
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStorageSplatRoute = ApiStorageSplatRouteImport.update({
@@ -125,9 +120,14 @@ const ApiStorageSplatRoute = ApiStorageSplatRouteImport.update({
   path: '/api/storage/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
+const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
+  id: '/api/trpc/$',
+  path: '/api/trpc/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadAvatarRoute = ApiUploadAvatarRouteImport.update({
+  id: '/api/upload/avatar',
+  path: '/api/upload/avatar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOgUUsernameRoute = ApiOgUUsernameRouteImport.update({
@@ -288,6 +288,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -302,18 +309,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/_auth/sign-in': {
+      id: '/_auth/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sign-up': {
+      id: '/_auth/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof AuthSignUpRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/api/demo-video': {
+      id: '/api/demo-video'
+      path: '/api/demo-video'
+      fullPath: '/api/demo-video'
+      preLoaderRoute: typeof ApiDemoVideoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/onboarding/': {
-      id: '/onboarding/'
-      path: '/onboarding'
-      fullPath: '/onboarding/'
-      preLoaderRoute: typeof OnboardingIndexRouteImport
+    '/api/og': {
+      id: '/api/og'
+      path: '/api/og'
+      fullPath: '/api/og'
+      preLoaderRoute: typeof ApiOgRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -323,39 +344,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/u/$username': {
-      id: '/u/$username'
-      path: '/u/$username'
-      fullPath: '/u/$username'
-      preLoaderRoute: typeof UUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard/profile': {
-      id: '/dashboard/profile'
-      path: '/profile'
-      fullPath: '/dashboard/profile'
-      preLoaderRoute: typeof DashboardProfileRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/health': {
-      id: '/dashboard/health'
-      path: '/health'
-      fullPath: '/dashboard/health'
-      preLoaderRoute: typeof DashboardHealthRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/domains': {
-      id: '/dashboard/domains'
-      path: '/domains'
-      fullPath: '/dashboard/domains'
-      preLoaderRoute: typeof DashboardDomainsRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/design': {
-      id: '/dashboard/design'
-      path: '/design'
-      fullPath: '/dashboard/design'
-      preLoaderRoute: typeof DashboardDesignRouteImport
+    '/dashboard/analytics': {
+      id: '/dashboard/analytics'
+      path: '/analytics'
+      fullPath: '/dashboard/analytics'
+      preLoaderRoute: typeof DashboardAnalyticsRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
     '/dashboard/audience': {
@@ -365,53 +358,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAudienceRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/dashboard/analytics': {
-      id: '/dashboard/analytics'
-      path: '/analytics'
-      fullPath: '/dashboard/analytics'
-      preLoaderRoute: typeof DashboardAnalyticsRouteImport
+    '/dashboard/design': {
+      id: '/dashboard/design'
+      path: '/design'
+      fullPath: '/dashboard/design'
+      preLoaderRoute: typeof DashboardDesignRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    '/api/og': {
-      id: '/api/og'
-      path: '/api/og'
-      fullPath: '/api/og'
-      preLoaderRoute: typeof ApiOgRouteImport
+    '/dashboard/domains': {
+      id: '/dashboard/domains'
+      path: '/domains'
+      fullPath: '/dashboard/domains'
+      preLoaderRoute: typeof DashboardDomainsRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/health': {
+      id: '/dashboard/health'
+      path: '/health'
+      fullPath: '/dashboard/health'
+      preLoaderRoute: typeof DashboardHealthRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/dashboard/profile': {
+      id: '/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof DashboardProfileRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/demo-video': {
-      id: '/api/demo-video'
-      path: '/api/demo-video'
-      fullPath: '/api/demo-video'
-      preLoaderRoute: typeof ApiDemoVideoRouteImport
+    '/u/$username': {
+      id: '/u/$username'
+      path: '/u/$username'
+      fullPath: '/u/$username'
+      preLoaderRoute: typeof UUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth/sign-up': {
-      id: '/_auth/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof AuthSignUpRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/sign-in': {
-      id: '/_auth/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof AuthSignInRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/api/upload/avatar': {
-      id: '/api/upload/avatar'
-      path: '/api/upload/avatar'
-      fullPath: '/api/upload/avatar'
-      preLoaderRoute: typeof ApiUploadAvatarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/trpc/$': {
-      id: '/api/trpc/$'
-      path: '/api/trpc/$'
-      fullPath: '/api/trpc/$'
-      preLoaderRoute: typeof ApiTrpcSplatRouteImport
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/storage/$': {
@@ -421,11 +414,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorageSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
+    '/api/trpc/$': {
+      id: '/api/trpc/$'
+      path: '/api/trpc/$'
+      fullPath: '/api/trpc/$'
+      preLoaderRoute: typeof ApiTrpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/upload/avatar': {
+      id: '/api/upload/avatar'
+      path: '/api/upload/avatar'
+      fullPath: '/api/upload/avatar'
+      preLoaderRoute: typeof ApiUploadAvatarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/og/u/$username': {

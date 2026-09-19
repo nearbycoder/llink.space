@@ -51,6 +51,20 @@ describe("security", () => {
 			expect(isAllowedAvatarUrl("/uploads/logo.svg")).toBe(false);
 		});
 
+		it("rejects SVG query/fragment bypasses and local path escapes", () => {
+			for (const value of [
+				"/uploads/logo.svg?size=64",
+				"/api/storage/logo.SVG#image",
+				"/uploads/%6cogo%2esvg",
+				"/uploads/../api/auth/sign-out",
+				"/api/storage/%2e%2e/other",
+				"/uploads/%zz",
+			]) {
+				expect(isAllowedAvatarUrl(value), value).toBe(false);
+			}
+			expect(isAllowedAvatarUrl("/uploads/avatar.png?size=64")).toBe(true);
+		});
+
 		it("allows safe http avatar URLs and blocks svg URLs", () => {
 			expect(isAllowedAvatarUrl("https://cdn.llink.space/avatar.jpg")).toBe(
 				true,
@@ -77,6 +91,17 @@ describe("security", () => {
 	});
 
 	describe("resolveTrustedOrigins", () => {
+		it("does not trust opaque configured origins or unconfigured auth hosts", () => {
+			vi.stubEnv(
+				"BETTER_AUTH_TRUSTED_ORIGINS",
+				"data:text/plain,https://login.example",
+			);
+			expect(resolveTrustedOrigins()).not.toContain("null");
+			expect(resolveTrustedOrigins()).not.toContain(
+				"https://untrusted.example",
+			);
+			expect(resolveTrustedOrigins()).toContain("https://login.example");
+		});
 		it("includes request origin and valid configured origins", () => {
 			vi.stubEnv("BETTER_AUTH_URL", "https://auth.llink.space/auth");
 			vi.stubEnv("APP_URL", "https://app.llink.space");
@@ -158,6 +183,16 @@ describe("security", () => {
 			});
 
 			expect(isTrustedRequestOrigin(request)).toBe(false);
+		});
+
+		it("rejects same-site sibling requests without an explicit trusted origin", () => {
+			expect(
+				isTrustedRequestOrigin(
+					new Request("https://app.llink.space/api/upload/avatar", {
+						headers: { "sec-fetch-site": "same-site" },
+					}),
+				),
+			).toBe(false);
 		});
 
 		it("allows requests that omit browser origin metadata", () => {

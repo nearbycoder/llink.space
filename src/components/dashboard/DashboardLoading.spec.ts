@@ -13,14 +13,17 @@ describe("dashboard loading states", () => {
 		[LinksLoadingState, "Loading your links", "Featured"],
 		[ProfileLoadingState, "Loading your profile", "Display name"],
 		[AnalyticsLoadingState, "Loading your analytics", "Total clicks"],
-	] as const)("renders an accessible, content-shaped %s state", (Component, accessibleLabel, visibleContext) => {
-		const markup = renderToStaticMarkup(createElement(Component));
+	] as const)(
+		"renders an accessible, content-shaped %s state",
+		(Component, accessibleLabel, visibleContext) => {
+			const markup = renderToStaticMarkup(createElement(Component));
 
-		expect(markup).toContain('role="status"');
-		expect(markup).toContain('aria-busy="true"');
-		expect(markup).toContain(accessibleLabel);
-		expect(markup).toContain(visibleContext);
-	});
+			expect(markup).toContain('role="status"');
+			expect(markup).toContain('aria-busy="true"');
+			expect(markup).toContain(accessibleLabel);
+			expect(markup).toContain(visibleContext);
+		},
+	);
 
 	it("keeps dashboard navigation visible while the authenticated route loads", () => {
 		const markup = renderToStaticMarkup(

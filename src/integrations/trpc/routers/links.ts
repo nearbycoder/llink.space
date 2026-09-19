@@ -847,7 +847,7 @@ export const linksRouter = createTRPCRouter({
 		}),
 
 	getPublic: publicProcedure
-		.input(z.object({ username: z.string() }))
+		.input(z.object({ username: z.string().min(1).max(30) }))
 		.query(async ({ input }) => {
 			const profile = await db.query.profiles.findFirst({
 				where: eq(profiles.username, input.username.toLowerCase()),
@@ -864,14 +864,28 @@ export const linksRouter = createTRPCRouter({
 				onlyActiveLinks: true,
 			});
 
+			// Explicit public fields keep account IDs and diagnostic URLs private.
+			const publicLinks = layout.links.map((link) => ({
+				id: link.id,
+				title: link.title,
+				url: link.url,
+				description: link.description,
+				iconUrl: link.iconUrl,
+				iconBgColor: link.iconBgColor,
+				sectionId: link.sectionId,
+				featured: link.featured,
+				featureImageUrl: link.featureImageUrl,
+				ctaLabel: link.ctaLabel,
+			}));
 			const sections = layout.sections
 				.map((section) => ({
-					...section,
-					links: layout.links.filter((link) => link.sectionId === section.id),
+					id: section.id,
+					title: section.title,
+					links: publicLinks.filter((link) => link.sectionId === section.id),
 				}))
 				.filter((section) => section.links.length > 0);
 
-			const unsectionedLinks = layout.links.filter(
+			const unsectionedLinks = publicLinks.filter(
 				(link) => link.sectionId === null,
 			);
 
@@ -885,13 +899,26 @@ export const linksRouter = createTRPCRouter({
 			return {
 				customDomain: domain?.hostname ?? null,
 				profile: {
-					...profile,
+					id: profile.id,
+					username: profile.username,
+					displayName: profile.displayName,
+					bio: profile.bio,
+					theme: profile.theme,
+					fontFamily: profile.fontFamily,
+					buttonStyle: profile.buttonStyle,
+					accentColor: profile.accentColor,
+					contentBlocks: profile.contentBlocks,
+					pageBackgroundType: profile.pageBackgroundType,
+					pageBackgroundColor: profile.pageBackgroundColor,
+					pageBackgroundGradient: profile.pageBackgroundGradient,
+					signupEnabled: profile.signupEnabled,
+					signupTitle: profile.signupTitle,
 					avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),
 					pageBackgroundImageUrl: normalizeObjectUrlForClient(
 						profile.pageBackgroundImageUrl,
 					),
 				},
-				links: layout.links,
+				links: publicLinks,
 				sections,
 				unsectionedLinks,
 			};

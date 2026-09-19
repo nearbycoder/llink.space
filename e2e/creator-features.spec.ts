@@ -165,8 +165,8 @@ test('mobile floating navigation opens pages and search without crowding the hea
  const controls=page.getByRole('navigation',{name:'Mobile dashboard controls'});
  const trigger=controls.getByRole('button',{name:'Open navigation menu'});
  await expect(trigger).toBeEnabled();
- await expect(page.locator('header').getByRole('link',{name:'Sign out'})).toHaveCount(0);
- await expect(page.locator('header nav')).toHaveCount(0);
+ await expect(page.locator('#main-content header').getByRole('link',{name:'Sign out'})).toHaveCount(0);
+ await expect(page.locator('#main-content header nav')).toHaveCount(0);
  await page.screenshot({path:'/tmp/mobile-dock-closed.png',animations:'disabled'});
  await trigger.click();
  const menu=page.getByRole('dialog',{name:'Your dashboard'});

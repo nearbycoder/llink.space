@@ -30,16 +30,31 @@ export function isSafeHttpUrl(value: string): boolean {
 }
 
 function isAllowedProfileImageUrl(value: string): boolean {
-	const lower = value.trim().toLowerCase();
-	if (lower.startsWith("/uploads/") || lower.startsWith("/api/storage/")) {
-		return !lower.endsWith(".svg");
+	const trimmed = value.trim();
+	const local =
+		trimmed.startsWith("/uploads/") || trimmed.startsWith("/api/storage/");
+	try {
+		const normalized = local ? trimmed : normalizeHttpUrl(trimmed);
+		if (
+			!normalized ||
+			normalized.includes("\\") ||
+			[...normalized].some((char) => char.charCodeAt(0) < 32)
+		)
+			return false;
+		const url = new URL(normalized, "https://profile-image.invalid");
+		const pathname = decodeURIComponent(url.pathname);
+		if (
+			local &&
+			!pathname.startsWith("/uploads/") &&
+			!pathname.startsWith("/api/storage/")
+		)
+			return false;
+		if (pathname.split("/").some((part) => part === "." || part === ".."))
+			return false;
+		return !pathname.toLowerCase().endsWith(".svg");
+	} catch {
+		return false;
 	}
-
-	const normalized = normalizeHttpUrl(value);
-	if (!normalized) return false;
-
-	const url = new URL(normalized);
-	return !url.pathname.toLowerCase().endsWith(".svg");
 }
 
 export function isAllowedAvatarUrl(value: string): boolean {
@@ -55,6 +70,7 @@ function getTrustedOriginCandidates(): string[] {
 
 	for (const value of [
 		process.env.BETTER_AUTH_URL,
+		process.env.BETTER_AUTH_BASE_URL,
 		process.env.APP_URL,
 		process.env.PUBLIC_URL,
 	]) {
@@ -89,7 +105,10 @@ export function resolveTrustedOrigins(request?: Request): string[] {
 
 	for (const candidate of getTrustedOriginCandidates()) {
 		try {
-			trustedOrigins.add(new URL(candidate).origin);
+			const url = new URL(candidate);
+			if (url.protocol === "https:" || url.protocol === "http:") {
+				trustedOrigins.add(url.origin);
+			}
 		} catch {
 			// Ignore malformed configured origin values.
 		}
@@ -119,7 +138,6 @@ export function isTrustedRequestOrigin(request: Request): boolean {
 	if (
 		secFetchSite &&
 		secFetchSite !== "same-origin" &&
-		secFetchSite !== "same-site" &&
 		secFetchSite !== "none"
 	) {
 		return false;

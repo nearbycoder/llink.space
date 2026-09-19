@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "#/lib/auth";
+import {
+	limitRequestBody,
+	oversizedRequestResponse,
+	PayloadTooLargeError,
+} from "#/lib/request-body";
 import { isTrustedRequestOrigin } from "#/lib/security";
 
 async function authHandler(request: Request) {
@@ -11,6 +16,14 @@ async function authHandler(request: Request) {
 				"cache-control": "no-store",
 			},
 		});
+	}
+
+	try {
+		request = await limitRequestBody(request, 64 * 1024);
+	} catch (error) {
+		if (error instanceof PayloadTooLargeError)
+			return oversizedRequestResponse();
+		throw error;
 	}
 
 	const response = await auth.handler(request);

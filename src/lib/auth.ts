@@ -30,7 +30,9 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 	},
-	trustedOrigins: (request) => resolveTrustedOrigins(request),
+	// Only configured application origins may participate in authentication.
+	// Public custom domains must not become trusted auth origins from Host input.
+	trustedOrigins: () => resolveTrustedOrigins(),
 	rateLimit: {
 		enabled: isProduction,
 		window: 60,

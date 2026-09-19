@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { PayloadTooLargeError, readStreamWithLimit } from "./request-body";
+import {
+	limitRequestBody,
+	PayloadTooLargeError,
+	readStreamWithLimit,
+} from "./request-body";
 
 describe("bounded request bodies", () => {
 	it("accepts the exact limit across chunks", async () => {
@@ -45,5 +49,53 @@ describe("bounded request bodies", () => {
 				10,
 			),
 		).rejects.toThrow("disconnected");
+	});
+});
+
+describe("API request limits", () => {
+	it("preserves request metadata and valid JSON for framework parsing", async () => {
+		const request = new Request("https://app.example/api", {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				cookie: "session=example",
+			},
+			body: JSON.stringify({ title: "Hello" }),
+		});
+		const bounded = await limitRequestBody(request, 100);
+		expect(bounded.url).toBe(request.url);
+		expect(bounded.headers.get("cookie")).toBe("session=example");
+		expect(await bounded.json()).toEqual({ title: "Hello" });
+	});
+	it("enforces actual body size even when content-length is missing or false", async () => {
+		for (const headers of [{}, { "content-length": "1" }] as Record<
+			string,
+			string
+		>[]) {
+			await expect(
+				limitRequestBody(
+					new Request("https://app.example/api", {
+						method: "POST",
+						headers,
+						body: "x".repeat(101),
+					}),
+					100,
+				),
+			).rejects.toBeInstanceOf(PayloadTooLargeError);
+		}
+	});
+	it("rejects a declared oversized body before reading it", async () => {
+		const cancel = vi.fn();
+		const body = new ReadableStream({ cancel }, { highWaterMark: 0 });
+		const request = new Request("https://app.example/api", {
+			method: "POST",
+			headers: { "content-length": "101" },
+			body,
+			duplex: "half",
+		} as RequestInit);
+		await expect(limitRequestBody(request, 100)).rejects.toBeInstanceOf(
+			PayloadTooLargeError,
+		);
+		expect(cancel).toHaveBeenCalledOnce();
 	});
 });

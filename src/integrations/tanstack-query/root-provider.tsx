@@ -31,6 +31,7 @@ function getUrl() {
 export const trpcClient = createTRPCClient<TRPCRouter>({
 	links: [
 		httpBatchStreamLink({
+			maxItems: 10,
 			transformer: superjson,
 			url: getUrl(),
 		}),

@@ -22,6 +22,18 @@ export async function createContext({
 
 const t = initTRPC.context<TRPCContext>().create({
 	transformer: superjson,
+	errorFormatter({ shape, error }) {
+		if (error.code !== "INTERNAL_SERVER_ERROR") return shape;
+		return {
+			...shape,
+			message: "Something went wrong. Please try again.",
+			data: {
+				code: shape.data.code,
+				httpStatus: shape.data.httpStatus,
+				path: shape.data.path,
+			},
+		};
+	},
 });
 
 export const createTRPCRouter = t.router;

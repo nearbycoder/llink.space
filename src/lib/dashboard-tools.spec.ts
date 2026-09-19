@@ -129,18 +129,13 @@ describe("links CSV", () => {
 });
 
 describe("export safety and date range", () => {
-	it.each([
-		"=1+1",
-		"+SUM(1)",
-		"-1+1",
-		"@SUM(1)",
-		"  =1+1",
-		"\t=1+1",
-		"\r=1+1",
-	])("escapes formula-like text: %s", (title) => {
-		const csv = buildLinksCsv([{ ...links[0], title }], []);
-		expect(csv.split("\r\n")[1]).toMatch(/^"?'/);
-	});
+	it.each(["=1+1", "+SUM(1)", "-1+1", "@SUM(1)", "  =1+1", "\t=1+1", "\r=1+1"])(
+		"escapes formula-like text: %s",
+		(title) => {
+			const csv = buildLinksCsv([{ ...links[0], title }], []);
+			expect(csv.split("\r\n")[1]).toMatch(/^"?'/);
+		},
+	);
 
 	it("exports the selected UTC range and zero-filled daily data", () => {
 		const csv = buildAnalyticsCsv({
