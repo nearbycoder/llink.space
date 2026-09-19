@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, setupCreator } from "./feature-helpers";
+import { setupCreator } from "./feature-helpers";
 
 test("CSV files preview and import titles as paused drafts", async ({page})=>{
  await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled();
