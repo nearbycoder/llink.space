@@ -103,3 +103,10 @@ test("Reading list removal and clearing can be undone and persist", async ({page
  await page.getByRole('button',{name:'Remove Undo essay from reading list'}).click(); await expect(page.getByText('No saved links yet.',{exact:true})).toBeVisible(); await page.getByRole('button',{name:'Undo removal',exact:true}).click(); await expect(page.getByRole('dialog').getByRole('link',{name:'Undo essay'})).toBeVisible();
  await page.getByRole('button',{name:'Clear reading list',exact:true}).click(); await page.getByRole('button',{name:'Undo removal',exact:true}).click(); await page.reload(); await expect(page.getByRole('button',{name:'Saved links · 1',exact:true})).toBeVisible();
 });
+
+test("Search within saved links leaves the reading list intact", async ({page}) => {
+ const {username}=await setupCreator(page); for(const title of ['Essay','Guide']) await api(page.request,'links.add',{title,url:'https://example.com/'+title}); await page.goto('/u/'+username);
+ for(const title of ['Essay','Guide']) {const save=page.getByRole('button',{name:'Save '+title+' for later',exact:true}); await expect(save).toBeEnabled(); await save.click();}
+ await page.getByRole('button',{name:'Saved links · 2',exact:true}).click(); const dialog=page.getByRole('dialog'); await dialog.getByLabel('Search saved links').fill('Essay'); await expect(dialog.getByRole('link',{name:'Essay',exact:true})).toBeVisible(); await expect(dialog.getByRole('link',{name:'Guide',exact:true})).toHaveCount(0);
+ await dialog.getByLabel('Search saved links').fill('missing'); await expect(dialog.getByText('No saved links match this search.')).toBeVisible(); await dialog.getByLabel('Search saved links').fill(''); await expect(dialog.getByRole('link')).toHaveCount(2);
+});

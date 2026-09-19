@@ -1,4 +1,5 @@
 import { Bookmark } from "lucide-react";
+import { useId, useState } from "react";
 import {
 	Dialog,
 	DialogContent,
@@ -7,8 +8,10 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "#/components/ui/dialog";
+import { Input } from "#/components/ui/input";
 import { downloadFile } from "#/lib/download-file";
 import { buildLinkMarkdown } from "#/lib/markdown-export";
+import { matchesSearch, searchTerms } from "#/lib/search-terms";
 import { normalizeHttpUrl } from "#/lib/security";
 export function ReadingList({
 	links,
@@ -27,6 +30,12 @@ export function ReadingList({
 	onVisit: (id: string) => void;
 	error: string;
 }) {
+	const searchId = useId();
+	const [query, setQuery] = useState("");
+	const terms = searchTerms(query);
+	const filtered = links.filter((link) =>
+		matchesSearch([link.title, link.url], terms),
+	);
 	return (
 		<>
 			{error && (
@@ -34,7 +43,11 @@ export function ReadingList({
 					{error}
 				</p>
 			)}
-			<Dialog>
+			<Dialog
+				onOpenChange={(open) => {
+					if (!open) setQuery("");
+				}}
+			>
 				<DialogTrigger asChild>
 					<button
 						type="button"
@@ -96,8 +109,25 @@ export function ReadingList({
 							>
 								Download saved links
 							</button>
+							<label htmlFor={searchId} className="block text-sm">
+								Search saved links
+								<Input
+									id={searchId}
+									value={query}
+									onChange={(event) => setQuery(event.target.value)}
+									placeholder="Search titles or destinations"
+									maxLength={500}
+									className="mt-1"
+								/>
+							</label>
+							<p className="text-xs" role="status">
+								Showing {filtered.length} of {links.length} saved links
+							</p>
+							{filtered.length === 0 && (
+								<p className="text-sm">No saved links match this search.</p>
+							)}
 							<ul className="divide-y divide-current/15">
-								{links.map((link) => (
+								{filtered.map((link) => (
 									<li
 										key={link.id}
 										className="flex items-center justify-between gap-3 py-2"
