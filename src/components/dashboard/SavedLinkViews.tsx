@@ -42,6 +42,9 @@ export function SavedLinkViews({
 			);
 		}
 	};
+	const existing = views.find(
+		(view) => view.name.toLowerCase() === name.trim().toLowerCase(),
+	);
 	const save = () => {
 		const parsed = linkViewSchema.safeParse({ ...current, name });
 		if (!parsed.success) {
@@ -50,16 +53,18 @@ export function SavedLinkViews({
 			);
 			return;
 		}
-		if (
-			views.some((v) => v.name.toLowerCase() === parsed.data.name.toLowerCase())
-		) {
-			setError(
-				"A view with that name already exists. Delete it or choose a new name.",
+		if (existing) {
+			persist(
+				views.map((view) =>
+					view.name === existing.name
+						? { ...parsed.data, name: existing.name }
+						: view,
+				),
 			);
-			return;
+		} else {
+			if (views.length >= 10) return;
+			persist([...views, parsed.data]);
 		}
-		if (views.length >= 10) return;
-		persist([...views, parsed.data]);
 		setName("");
 	};
 	return (
@@ -84,12 +89,18 @@ export function SavedLinkViews({
 				<Button
 					size="sm"
 					variant="outline"
-					disabled={!ready || !name.trim() || views.length >= 10}
+					disabled={!ready || !name.trim() || (views.length >= 10 && !existing)}
 					onClick={save}
 				>
-					Save current filters
+					{existing ? "Update saved view" : "Save current filters"}
 				</Button>
 			</div>
+			{existing && (
+				<p className="mt-2 text-xs" role="status">
+					Update “{existing.name}” with the current search, status, and section
+					filters.
+				</p>
+			)}
 			{error && (
 				<p role="alert" className="mt-2 text-sm text-red-700">
 					{error}
