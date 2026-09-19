@@ -10,6 +10,7 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
+import { duplicateDestinations } from "#/lib/duplicate-links";
 import { isLinkIconKey, LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import { localDateInput, validSchedule } from "#/lib/link-publishing";
 import {
@@ -106,6 +107,7 @@ export type LinkFormData = z.output<typeof schema>;
 
 interface LinkFormProps {
 	defaultValues?: Partial<LinkFormInput>;
+	existingLinks?: Array<{ id: string; url: string; title: string }>;
 	sections?: Array<{ id: string; title: string }>;
 	onSubmit: (data: LinkFormData) => Promise<void>;
 	onCancel: () => void;
@@ -116,6 +118,7 @@ interface LinkFormProps {
 
 export function LinkForm({
 	defaultValues,
+	existingLinks = [],
 	sections = [],
 	onSubmit,
 	onCancel,
@@ -162,6 +165,19 @@ export function LinkForm({
 	});
 
 	const [previewOpen, setPreviewOpen] = useState(false);
+	const urlValue = watch("url") ?? "";
+	const duplicates = useMemo(
+		() =>
+			duplicateDestinations([
+				...existingLinks,
+				{ id: "editor-candidate", url: prepareHttpUrl(urlValue), title: "" },
+			])
+				.find((group) =>
+					group.links.some((link) => link.id === "editor-candidate"),
+				)
+				?.links.filter((link) => link.id !== "editor-candidate") ?? [],
+		[existingLinks, urlValue],
+	);
 	const isActive = watch("isActive");
 	const titleValue = watch("title") ?? "";
 	const descriptionValue = watch("description") ?? "";
@@ -242,6 +258,21 @@ export function LinkForm({
 				)}
 			</div>
 
+			{duplicates.length > 0 && (
+				<p
+					role="status"
+					className="rounded-lg border border-amber-700/30 bg-amber-50 p-3 text-sm"
+				>
+					This destination already appears in {duplicates.length} link
+					{duplicates.length === 1 ? "" : "s"}:{" "}
+					{duplicates
+						.slice(0, 3)
+						.map((link) => link.title)
+						.join(", ")}
+					{duplicates.length > 3 ? "…" : ""}. You can still save a separate
+					entry.
+				</p>
+			)}
 			<UrlCleanup
 				url={watch("url") ?? ""}
 				onApply={(url) =>
