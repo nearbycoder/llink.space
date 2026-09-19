@@ -540,7 +540,7 @@ export function LinkForm({
 				</p>
 				{errors.expireAt && <p role="alert">{errors.expireAt.message}</p>}
 			</fieldset>
-			<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
+			<div className="sticky -bottom-6 z-10 -mx-1 flex flex-col-reverse gap-2 border-t border-black/15 bg-[#FFFCEF] px-1 py-4 sm:flex-row">
 				<Button
 					type="submit"
 					disabled={isSubmitting}
@@ -552,6 +552,7 @@ export function LinkForm({
 					type="button"
 					variant="outline"
 					onClick={onCancel}
+					disabled={isSubmitting}
 					className="w-full sm:w-auto"
 				>
 					{cancelLabel}

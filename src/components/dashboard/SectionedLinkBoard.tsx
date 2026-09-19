@@ -346,11 +346,11 @@ function LinkRow({
 			</div>
 
 			{!selectionMode && (
-				<div className="col-span-2 flex justify-end gap-1 border-t border-black/10 pt-2 sm:border-0 sm:pt-0 transition-opacity sm:pointer-events-none sm:opacity-0 sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 sm:group-focus-within:pointer-events-auto sm:group-focus-within:opacity-100">
+				<div className="col-span-2 flex justify-end gap-1 border-t border-black/10 pt-2 sm:border-0 sm:pt-0">
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-10 w-10 p-0 sm:h-8 sm:w-8"
+						className="h-11 w-11 p-0 sm:h-9 sm:w-9 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
 						onClick={() => onToggle(link)}
 						disabled={isBusy}
 						aria-label={`${link.isActive === false ? "Publish" : "Pause"} ${link.title}`}
@@ -365,7 +365,7 @@ function LinkRow({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-10 w-10 p-0 sm:h-8 sm:w-8"
+						className="h-11 w-11 p-0 sm:h-9 sm:w-9 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
 						onClick={() => onDuplicate(link)}
 						disabled={isBusy}
 						aria-label={`Duplicate ${link.title}`}
@@ -376,8 +376,9 @@ function LinkRow({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-10 w-10 p-0 sm:h-8 sm:w-8"
+						className="h-11 w-11 p-0 sm:h-9 sm:w-9 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
 						onClick={() => onEdit(link)}
+						disabled={isBusy}
 						aria-label={`Edit ${link.title}`}
 						title={`Edit ${link.title}`}
 					>
@@ -386,8 +387,9 @@ function LinkRow({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-10 w-10 p-0 sm:h-8 sm:w-8 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
+						className="h-11 w-11 p-0 sm:h-9 sm:w-9 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
 						onClick={() => onDelete(link.id)}
+						disabled={isBusy}
 						aria-label={`Delete ${link.title}`}
 						title={`Delete ${link.title}`}
 					>
