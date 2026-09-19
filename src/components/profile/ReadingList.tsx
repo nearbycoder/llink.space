@@ -7,6 +7,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "#/components/ui/dialog";
+import { downloadFile } from "#/lib/download-file";
+import { buildLinkMarkdown } from "#/lib/markdown-export";
 import { normalizeHttpUrl } from "#/lib/security";
 export function ReadingList({
 	links,
@@ -55,6 +57,26 @@ export function ReadingList({
 					</DialogHeader>
 					{links.length ? (
 						<>
+							<button
+								type="button"
+								className="min-h-11 rounded-lg border border-current/30 px-3 text-sm"
+								onClick={() =>
+									downloadFile(
+										buildLinkMarkdown(
+											links.map((link) => ({
+												...link,
+												description: null,
+												sectionId: null,
+											})),
+											[],
+										).replace(/^# My links/, "# Saved links"),
+										"saved-links.md",
+										"text/markdown;charset=utf-8",
+									)
+								}
+							>
+								Download saved links
+							</button>
 							<ul className="divide-y divide-current/15">
 								{links.map((link) => (
 									<li
