@@ -20,7 +20,9 @@ import {
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { BatchLinkTools } from "#/components/dashboard/BatchLinkTools";
 import { BookmarkExport } from "#/components/dashboard/BookmarkExport";
+import { CatalogExport } from "#/components/dashboard/CatalogExport";
 import { LinksLoadingState } from "#/components/dashboard/DashboardLoading";
 import { DuplicateReview } from "#/components/dashboard/DuplicateReview";
 import type { LinkFormData } from "#/components/dashboard/LinkForm";
@@ -29,6 +31,7 @@ import { LinkImportDialog } from "#/components/dashboard/LinkImportDialog";
 import { MarkdownExport } from "#/components/dashboard/MarkdownExport";
 import { PublishingCalendar } from "#/components/dashboard/PublishingCalendar";
 import { SavedLinkViews } from "#/components/dashboard/SavedLinkViews";
+import { SavePageOrder } from "#/components/dashboard/SavePageOrder";
 import {
 	type DashboardLink,
 	type DashboardSection,
@@ -100,11 +103,11 @@ interface LinkDeleteState {
 type BulkLinkAction = "publish" | "pause" | "move" | "delete";
 
 const LINK_STAT_CARDS = [
-	{ id: "total", label: "Total links", Icon: Link2, color: "bg-[#F5FF7B]" },
-	{ id: "live", label: "Live", Icon: Eye, color: "bg-[#8AE1E7]" },
-	{ id: "paused", label: "Paused", Icon: EyeOff, color: "bg-[#F2B7E2]" },
-	{ id: "scheduled", label: "Scheduled", Icon: Clock, color: "bg-[#C5B8FF]" },
-	{ id: "expired", label: "Expired", Icon: CalendarX, color: "bg-[#FFCEA1]" },
+	{ id: "total", label: "Total links", Icon: Link2, color: "bg-accent" },
+	{ id: "live", label: "Live", Icon: Eye, color: "bg-info/10" },
+	{ id: "paused", label: "Paused", Icon: EyeOff, color: "bg-muted" },
+	{ id: "scheduled", label: "Scheduled", Icon: Clock, color: "bg-muted" },
+	{ id: "expired", label: "Expired", Icon: CalendarX, color: "bg-warning/10" },
 ] as const;
 
 function errorMessage(error: unknown, fallback: string) {
@@ -596,16 +599,16 @@ function DashboardPage() {
 	const isBulkBusy = bulkAction.isPending;
 
 	return (
-		<div className="dashboard-page max-w-5xl px-4 py-5 sm:px-6 md:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
 			<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1
-						className="text-2xl text-[#11110F]"
+						className="text-2xl text-foreground"
 						style={{ fontFamily: "'Work Sans', sans-serif" }}
 					>
 						Links
 					</h1>
-					<p className="mt-1 text-sm text-[#4B4B45]">
+					<p className="mt-1 text-sm text-muted-foreground">
 						Organize links into sections and drag them where they belong
 					</p>
 				</div>
@@ -671,10 +674,10 @@ function DashboardPage() {
 							<Icon className="h-4 w-4" />
 						</span>
 						<div>
-							<p className="text-xl font-bold leading-none text-[#11110F]">
+							<p className="text-xl font-bold leading-none text-foreground">
 								{stats[id]}
 							</p>
-							<p className="mt-1 text-[11px] font-semibold text-[#5B5648] sm:text-xs">
+							<p className="mt-1 text-[11px] font-semibold text-muted-foreground sm:text-xs">
 								{label}
 							</p>
 						</div>
@@ -685,7 +688,7 @@ function DashboardPage() {
 			<div className="kinetic-panel mb-5 space-y-3 p-3 sm:p-4">
 				<div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
 					<div className="relative col-span-2 min-w-0 flex-1">
-						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6A675C]" />
+						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 						<Input
 							ref={searchInputRef}
 							value={linkQuery}
@@ -716,7 +719,7 @@ function DashboardPage() {
 						disabled={!isHydrated}
 						value={sortMode}
 						onChange={(e) => setSortMode(e.target.value as LinkSort)}
-						className="h-10 min-w-0 rounded-xl border border-border bg-white px-3 text-base font-semibold"
+						className="h-10 min-w-0 rounded-xl border border-border bg-card px-3 text-base font-semibold"
 					>
 						{Object.entries(LINK_SORTS).map(([value, label]) => (
 							<option key={value} value={value}>
@@ -731,7 +734,7 @@ function DashboardPage() {
 						onChange={(event) =>
 							setStatusFilter(event.target.value as LinkStatusFilter)
 						}
-						className="h-10 min-w-0 rounded-xl border border-border bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
+						className="h-10 min-w-0 rounded-xl border border-border bg-card px-3 text-base font-semibold text-foreground sm:text-sm"
 					>
 						<option value="all">All statuses</option>
 						<option value="live">Live only</option>
@@ -744,7 +747,7 @@ function DashboardPage() {
 						disabled={!isHydrated}
 						value={sectionFilter}
 						onChange={(event) => setSectionFilter(event.target.value)}
-						className="col-span-2 h-10 min-w-0 rounded-xl border border-border bg-white px-3 text-base font-semibold text-[#11110F] sm:text-sm"
+						className="col-span-2 h-10 min-w-0 rounded-xl border border-border bg-card px-3 text-base font-semibold text-foreground sm:text-sm"
 					>
 						<option value="all">All sections</option>
 						<option value="unsectioned">Unsectioned</option>
@@ -757,7 +760,7 @@ function DashboardPage() {
 				</div>
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<p
-						className="text-xs font-semibold text-[#5B5648]"
+						className="text-xs font-semibold text-muted-foreground"
 						aria-live="polite"
 					>
 						Showing {filteredLinks.length} of {layout.links.length} links
@@ -801,10 +804,15 @@ function DashboardPage() {
 			</div>
 
 			{sortMode !== "manual" && (
-				<p className="mb-4 text-sm">
-					Sorted within each section for this view. Public page order is
-					unchanged. Choose Page order to drag links.
-				</p>
+				<SavePageOrder
+					layout={layout}
+					sort={sortMode}
+					disabled={isBusy || isBulkBusy || hasActiveFilters}
+					onSaved={async () => {
+						await refreshLayout();
+						setSortMode("manual");
+					}}
+				/>
 			)}
 			<details className="kinetic-panel mb-5 p-3 sm:p-4">
 				<summary className="cursor-pointer text-sm font-semibold">
@@ -838,6 +846,7 @@ function DashboardPage() {
 							Export filtered links ({filteredLinks.length})
 						</Button>
 					)}
+					<CatalogExport links={layout.links} sections={layout.sections} />
 					<BookmarkExport links={layout.links} sections={layout.sections} />
 					<MarkdownExport links={layout.links} sections={layout.sections} />
 				</div>
@@ -845,13 +854,13 @@ function DashboardPage() {
 
 			{selectionMode && (
 				<fieldset
-					className="kinetic-panel mb-5 border-black bg-accent p-3 sm:p-4"
+					className="kinetic-panel mb-5 border-border bg-accent p-3 sm:p-4"
 					aria-label="Bulk link actions"
 				>
 					<div className="flex flex-col gap-3">
 						<div className="flex flex-wrap items-center justify-between gap-2">
 							<p
-								className="text-sm font-bold text-[#11110F]"
+								className="text-sm font-bold text-foreground"
 								aria-live="polite"
 							>
 								{selectedCount} selected
@@ -869,7 +878,7 @@ function DashboardPage() {
 							</Button>
 						</div>
 						{hiddenSelectedCount > 0 && (
-							<p role="status" className="text-sm text-[#5B3B00]">
+							<p role="status" className="text-sm text-warning-foreground">
 								{hiddenSelectedCount} selected{" "}
 								{hiddenSelectedCount === 1 ? "link is" : "links are"} hidden by
 								your filters. Actions apply to all {selectedCount} selected
@@ -909,6 +918,14 @@ function DashboardPage() {
 							)}
 						</div>
 						<div className="flex flex-wrap gap-2">
+							<BatchLinkTools
+								links={layout.links.filter((l) => selectedLinkIds.has(l.id))}
+								disabled={isBusy || isBulkBusy}
+								onSaved={async () => {
+									await refreshLayout();
+									setSelectedLinkIds(new Set());
+								}}
+							/>
 							<Button
 								type="button"
 								variant="outline"
@@ -951,7 +968,7 @@ function DashboardPage() {
 									aria-label="Bulk move destination"
 									value={bulkMoveSectionId}
 									onChange={(event) => setBulkMoveSectionId(event.target.value)}
-									className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-white px-2 text-xs font-semibold text-[#11110F] sm:w-40"
+									className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-card px-2 text-xs font-semibold text-foreground sm:w-40"
 								>
 									<option value="unsectioned">Unsectioned</option>
 									{layout.sections.map((section) => (
@@ -973,7 +990,7 @@ function DashboardPage() {
 							<Button
 								type="button"
 								size="sm"
-								className="bg-[#B42318] text-white hover:bg-[#8B1B13]"
+								className="bg-destructive text-white hover:bg-destructive/90"
 								onClick={() => setBulkDeleteOpen(true)}
 								disabled={selectedCount === 0 || isBulkBusy}
 							>
@@ -986,7 +1003,7 @@ function DashboardPage() {
 
 			{layout.links.length === 0 && layout.sections.length === 0 ? (
 				<div className="kinetic-panel py-16 text-center">
-					<p className="text-sm text-[#4B4B45]">No links yet</p>
+					<p className="text-sm text-muted-foreground">No links yet</p>
 					<Button
 						onClick={() => setShowAddLink(true)}
 						variant="outline"
@@ -997,11 +1014,11 @@ function DashboardPage() {
 				</div>
 			) : filteredLinks.length === 0 && hasActiveFilters ? (
 				<div className="kinetic-panel py-12 text-center">
-					<Search className="mx-auto h-7 w-7 text-[#6A675C]" />
-					<p className="mt-3 text-sm font-semibold text-[#11110F]">
+					<Search className="mx-auto h-7 w-7 text-muted-foreground" />
+					<p className="mt-3 text-sm font-semibold text-foreground">
 						No matching links
 					</p>
-					<p className="mt-1 text-xs text-[#6A675C]">
+					<p className="mt-1 text-xs text-muted-foreground">
 						Try a different search or clear your filters.
 					</p>
 					<Button
@@ -1105,14 +1122,14 @@ function DashboardPage() {
 						<DialogTitle>Delete selected links?</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
-						<p className="text-sm text-[#4B4B45]">
+						<p className="text-sm text-muted-foreground">
 							{selectedCount} link{selectedCount === 1 ? "" : "s"} will be
 							permanently removed, including their click history.
 						</p>
 						<div className="flex flex-col-reverse gap-2 sm:flex-row">
 							<Button
 								type="button"
-								className="bg-[#B42318] text-white hover:bg-[#8B1B13]"
+								className="bg-destructive text-white hover:bg-destructive/90"
 								onClick={() => void handleBulkAction("delete")}
 								disabled={isBulkBusy}
 							>
@@ -1144,8 +1161,8 @@ function DashboardPage() {
 						<DialogTitle>Delete link?</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
-						<p className="text-sm text-[#4B4B45]">
-							<span className="font-semibold text-[#11110F]">
+						<p className="text-sm text-muted-foreground">
+							<span className="font-semibold text-foreground">
 								{linkDeleteState?.title}
 							</span>{" "}
 							will be permanently removed.
@@ -1153,7 +1170,7 @@ function DashboardPage() {
 						<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
 							<Button
 								type="button"
-								className="bg-[#B42318] text-white hover:bg-[#8B1B13]"
+								className="bg-destructive text-white hover:bg-destructive/90"
 								onClick={handleConfirmDeleteLink}
 								disabled={deleteLink.isPending}
 							>
@@ -1277,8 +1294,8 @@ function DashboardPage() {
 						<DialogTitle>Delete section?</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
-						<p className="text-sm text-[#4B4B45]">
-							<span className="font-semibold text-[#11110F]">
+						<p className="text-sm text-muted-foreground">
+							<span className="font-semibold text-foreground">
 								{sectionDeleteState?.title}
 							</span>{" "}
 							will be removed, and its links will move to Unsectioned.
@@ -1286,7 +1303,7 @@ function DashboardPage() {
 						<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
 							<Button
 								type="button"
-								className="bg-[#B42318] text-white hover:bg-[#8B1B13]"
+								className="bg-destructive text-white hover:bg-destructive/90"
 								onClick={handleConfirmDeleteSection}
 								disabled={deleteSection.isPending}
 							>

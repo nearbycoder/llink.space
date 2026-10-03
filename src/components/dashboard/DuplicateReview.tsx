@@ -39,7 +39,7 @@ export function DuplicateReview({
 						groups.map((group) => (
 							<section
 								key={group.url}
-								className="rounded-xl border border-black/20 p-3"
+								className="rounded-xl border border-border p-3"
 							>
 								<h3 className="break-all text-sm font-semibold">{group.url}</h3>
 								<ul className="mt-3 space-y-2">

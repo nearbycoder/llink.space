@@ -19,7 +19,7 @@ function Command({
 		<CommandPrimitive
 			data-slot="command"
 			className={cn(
-				"flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-[#11110F]",
+				"flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-foreground",
 				className,
 			)}
 			{...props}
@@ -82,7 +82,7 @@ function CommandDialog({
 				<DialogDescription className="sr-only">
 					Search pages and actions, or create a link.
 				</DialogDescription>
-				<Command className="min-h-0 rounded-none border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-[#6A675C] [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:bg-accent [&_[cmdk-item][data-selected=true]]:text-[#273B1D]">
+				<Command className="min-h-0 rounded-none border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:bg-accent [&_[cmdk-item][data-selected=true]]:text-primary">
 					{children}
 				</Command>
 			</DialogContent>
@@ -99,11 +99,14 @@ function CommandInput({
 			data-slot="command-input-wrapper"
 			className="flex min-w-0 flex-1 items-center gap-3"
 		>
-			<Search className="size-5 shrink-0 text-[#6A675C]" aria-hidden="true" />
+			<Search
+				className="size-5 shrink-0 text-muted-foreground"
+				aria-hidden="true"
+			/>
 			<CommandPrimitive.Input
 				data-slot="command-input"
 				className={cn(
-					"flex h-12 w-full min-w-0 rounded-none border-0 bg-transparent p-0 text-base shadow-none outline-none focus-visible:outline-none placeholder:text-[#6A675C] disabled:cursor-not-allowed disabled:opacity-50",
+					"flex h-12 w-full min-w-0 rounded-none border-0 bg-transparent p-0 text-base shadow-none outline-none focus-visible:outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
 					className,
 				)}
 				{...props}
@@ -134,7 +137,7 @@ function CommandEmpty({
 	return (
 		<CommandPrimitive.Empty
 			data-slot="command-empty"
-			className="py-8 text-center text-sm text-[#6A675C]"
+			className="py-8 text-center text-sm text-muted-foreground"
 			{...props}
 		/>
 	);
@@ -147,7 +150,7 @@ function CommandGroup({
 	return (
 		<CommandPrimitive.Group
 			data-slot="command-group"
-			className={cn("overflow-hidden p-1 text-[#11110F]", className)}
+			className={cn("overflow-hidden p-1 text-foreground", className)}
 			{...props}
 		/>
 	);
@@ -190,7 +193,7 @@ function CommandShortcut({
 		<span
 			data-slot="command-shortcut"
 			className={cn(
-				"ml-auto text-[11px] font-medium tracking-wide text-[#6A675C] group-data-[selected=true]/item:text-[#DDFBFD]",
+				"ml-auto text-[11px] font-medium tracking-wide text-muted-foreground group-data-[selected=true]/item:text-primary-foreground/80",
 				className,
 			)}
 			{...props}

@@ -45,7 +45,7 @@ function HealthPage() {
 		}
 	};
 	return (
-		<div className="mx-auto max-w-5xl p-4 sm:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
 			<header className="mb-7">
 				<p className="text-xs font-bold uppercase tracking-widest">
 					Keep every destination working
@@ -77,7 +77,7 @@ function HealthPage() {
 							setState(event.target.value);
 							setSelected([]);
 						}}
-						className="rounded-xl border border-border bg-white p-2 text-base"
+						className="rounded-xl border border-border bg-card p-2 text-base"
 					>
 						<option value="all">All health results</option>
 						{HEALTH_STATES.map((value) => (
@@ -150,7 +150,7 @@ function HealthPage() {
 					{filtered.map((l) => (
 						<label
 							key={l.id}
-							className="flex items-start gap-3 rounded-xl border border-black/20 bg-white p-4"
+							className="flex items-start gap-3 rounded-xl border border-border bg-card p-4"
 						>
 							<input
 								type="checkbox"

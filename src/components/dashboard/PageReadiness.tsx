@@ -19,7 +19,7 @@ export function PageReadiness({
 			</p>
 			<ul className="space-y-3">
 				{checks.map((c) => (
-					<li key={c.id} className="rounded-lg border border-black/15 p-3">
+					<li key={c.id} className="rounded-lg border border-border p-3">
 						<p className="text-sm font-semibold">
 							{c.ok ? "✓ Ready" : "○ Review"} · {c.title}
 						</p>

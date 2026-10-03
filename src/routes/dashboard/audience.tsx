@@ -16,7 +16,7 @@ export const Route = createFileRoute("/dashboard/audience")({
 	component: AudiencePage,
 });
 const field =
-	"mt-1 w-full rounded-lg border border-black/30 bg-white px-3 py-2 text-sm";
+	"mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm";
 function AudiencePage() {
 	const initial = Route.useLoaderData(),
 		trpc = useTRPC(),
@@ -94,7 +94,7 @@ function AudiencePage() {
 		}
 	};
 	return (
-		<div className="mx-auto max-w-5xl p-4 sm:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
 			<UnsavedChangesGuard
 				when={dirty || settings.isPending || connect.isPending}
 			/>
@@ -260,7 +260,7 @@ function AudiencePage() {
 							disabled={!ready}
 							onChange={(event) => setSearchInput(event.target.value)}
 							placeholder="Email or name, across all pages"
-							className="mt-1 block w-full rounded-xl border border-border bg-white p-2 text-base"
+							className="mt-1 block w-full rounded-xl border border-border bg-card p-2 text-base"
 						/>
 					</label>
 					<Button
@@ -304,7 +304,7 @@ function AudiencePage() {
 							setStatus(event.target.value as typeof status);
 							setPage(0);
 						}}
-						className="ml-2 rounded-xl border border-border bg-white p-2 text-base"
+						className="ml-2 rounded-xl border border-border bg-card p-2 text-base"
 					>
 						<option value="all">All subscribers</option>
 						<option value="active">Active only</option>
@@ -325,7 +325,7 @@ function AudiencePage() {
 						</thead>
 						<tbody>
 							{data.rows.map((r) => (
-								<tr key={r.id} className="border-t border-black/15">
+								<tr key={r.id} className="border-t border-border">
 									<td className="py-3 pr-3">
 										<span className="block">{r.email}</span>
 										<span className="block text-xs">{r.name}</span>

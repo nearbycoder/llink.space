@@ -148,7 +148,7 @@ function PublicLinkGroup({
 			{visibleLinks.map(renderLink)}
 			{remainingLinks.length > 0 && (
 				<details className="group space-y-2.5">
-					<summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-black/40 bg-card/80 px-4 py-2.5 text-xs font-semibold text-[#11110F] transition-colors hover:border-foreground/25 hover:bg-accent [&::-webkit-details-marker]:hidden">
+					<summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-card/80 px-4 py-2.5 text-xs font-semibold text-foreground transition-colors hover:border-foreground/25 hover:bg-accent [&::-webkit-details-marker]:hidden">
 						<span className="group-open:hidden">
 							Show {remainingLinks.length} more
 						</span>

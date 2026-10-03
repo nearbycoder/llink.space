@@ -61,8 +61,8 @@ export function DashboardPendingShellContent({
 							key={label}
 							className={`flex min-h-11 items-center gap-3 rounded-xl border px-3 py-2 text-sm font-medium ${
 								isActive(to)
-									? "border-transparent bg-accent text-[#273B1D]"
-									: "border-transparent text-[#4B4B45]"
+									? "border-transparent bg-accent text-primary"
+									: "border-transparent text-muted-foreground"
 							}`}
 						>
 							<Icon className="h-4 w-4" />
@@ -105,12 +105,12 @@ function PageHeading({
 	return (
 		<div className="mb-6">
 			<h1
-				className="text-2xl text-[#11110F]"
+				className="text-2xl text-foreground"
 				style={{ fontFamily: "'Work Sans', sans-serif" }}
 			>
 				{title}
 			</h1>
-			<p className="mt-1 text-sm text-[#4B4B45]">{description}</p>
+			<p className="mt-1 text-sm text-muted-foreground">{description}</p>
 		</div>
 	);
 }
@@ -135,7 +135,7 @@ export function LinksLoadingState() {
 				{loadingSections.map((section) => (
 					<section key={section.title} className="space-y-2">
 						<div className="flex items-center gap-2 px-1">
-							<span className="text-xs font-bold uppercase tracking-[0.12em] text-[#4B4B45]">
+							<span className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
 								{section.title}
 							</span>
 							<Skeleton className="h-2 flex-1" />
@@ -178,21 +178,21 @@ export function AnalyticsLoadingState() {
 						<div key={metric} className="kinetic-panel bg-card p-5">
 							<div className="mb-3 flex items-center gap-2">
 								<span
-									className={`inline-flex rounded-md border border-border p-1 ${index % 2 ? "bg-[#8AE1E7]" : "bg-[#F5FF7B]"}`}
+									className={`inline-flex rounded-md border border-border p-1 ${index % 2 ? "bg-info/10" : "bg-accent"}`}
 								>
 									<MousePointerClick className="h-3.5 w-3.5" />
 								</span>
-								<span className="text-sm text-[#4B4B45]">{metric}</span>
+								<span className="text-sm text-muted-foreground">{metric}</span>
 							</div>
 							<Skeleton className="h-9 w-16" />
 						</div>
 					))}
 				</div>
 				<div className="kinetic-panel p-5">
-					<p className="text-sm font-medium text-[#11110F]">
+					<p className="text-sm font-medium text-foreground">
 						Clicks over the last 7 days
 					</p>
-					<div className="mt-5 flex h-52 items-end gap-3 rounded-xl border border-border/15 bg-white p-4">
+					<div className="mt-5 flex h-52 items-end gap-3 rounded-xl border border-border/15 bg-card p-4">
 						{loadingTrend.map(({ day, height }) => (
 							<Skeleton
 								key={day}
@@ -228,7 +228,7 @@ export function ProfileLoadingState() {
 				{["Display name", "Bio", "Avatar", "Page background"].map(
 					(label, index) => (
 						<div key={label} className="space-y-2">
-							<p className="text-sm font-semibold text-[#11110F]">{label}</p>
+							<p className="text-sm font-semibold text-foreground">{label}</p>
 							<Skeleton
 								className={
 									index === 1

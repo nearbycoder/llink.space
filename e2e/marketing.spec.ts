@@ -4,31 +4,33 @@ import demo from "../src/components/marketing/demo-chapters.json" with {
 	type: "json",
 };
 
-test("marketing guide includes all 20 new features and filters by category", async ({
+test("marketing guide includes all listed features and filters by category", async ({
 	page,
 }) => {
 	await page.goto("/");
 	await expect(
 		page.getByRole("link", { name: "Sign in", exact: true }),
 	).toBeVisible();
+	const count = featureGroups.reduce((sum, group) => sum + group.features.length, 0);
+	const designCount = featureGroups[0].features.length;
 	const headings = page.locator(".marketing-feature-group h4");
-	await expect(headings).toHaveCount(20);
+	await expect(headings).toHaveCount(count);
 	for (const group of featureGroups)
 		for (const feature of group.features)
 			await expect(
 				page.getByRole("heading", { name: feature.name, exact: true }),
 			).toBeVisible();
 	await page
-		.getByRole("button", { name: "Make it yours 6", exact: true })
+		.getByRole("button", { name: `Make it yours ${designCount}`, exact: true })
 		.click();
-	await expect(headings).toHaveCount(6);
+	await expect(headings).toHaveCount(designCount);
 	await expect(
 		page.getByRole("heading", { name: "Event blocks", exact: true }),
 	).toBeVisible();
 	await page
-		.getByRole("button", { name: "Everything 20", exact: true })
+		.getByRole("button", { name: `Everything ${count}`, exact: true })
 		.click();
-	await expect(headings).toHaveCount(20);
+	await expect(headings).toHaveCount(count);
 	await page
 		.getByText("Do saved views and reading lists sync between devices?", {
 			exact: true,
@@ -126,10 +128,11 @@ test("marketing page remains readable on mobile and respects reduced motion", as
 	await expect(
 		page.getByRole("heading", { name: "See it come together.", exact: true }),
 	).toBeVisible();
+	const shareCount = featureGroups.find((group) => group.id === "share")!.features.length;
 	await page
-		.getByRole("button", { name: "Take it everywhere 4", exact: true })
+		.getByRole("button", { name: `Take it everywhere ${shareCount}`, exact: true })
 		.click();
-	await expect(page.locator(".marketing-feature-group h4")).toHaveCount(4);
+	await expect(page.locator(".marketing-feature-group h4")).toHaveCount(shareCount);
 	expect(
 		await page.evaluate(
 			() => document.documentElement.scrollWidth <= innerWidth,

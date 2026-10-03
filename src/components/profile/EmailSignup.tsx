@@ -81,7 +81,7 @@ export function EmailSignup({
 						<label className="block text-sm">
 							Your name (optional)
 							<input
-								className="mt-1 w-full rounded-lg border border-black/30 bg-white px-3 py-2 text-[#11110F]"
+								className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-foreground"
 								value={name}
 								maxLength={100}
 								autoComplete="given-name"
@@ -94,7 +94,7 @@ export function EmailSignup({
 								type="email"
 								required
 								autoComplete="email"
-								className="mt-1 w-full rounded-lg border border-black/30 bg-white px-3 py-2 text-[#11110F]"
+								className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-foreground"
 								value={email}
 								maxLength={254}
 								onChange={(e) => setEmail(e.target.value)}
@@ -124,7 +124,7 @@ export function EmailSignup({
 						<button
 							type="submit"
 							disabled={!consent}
-							className="w-full rounded-lg border border-border bg-[#F5FF7B] px-3 py-2 font-bold text-[#11110F]"
+							className="w-full rounded-lg border border-border bg-accent px-3 py-2 font-bold text-foreground"
 						>
 							{subscribe.isPending ? "Joining…" : "Join the list"}
 						</button>

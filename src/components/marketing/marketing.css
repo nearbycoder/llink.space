@@ -1,6 +1,6 @@
 .marketing-page {
-	--ink: #191a17;
-	--paper: #f8faf5;
+	--ink: var(--foreground);
+	--paper: var(--background);
 	--lime: #ddebaf;
 	color: var(--ink);
 	background: var(--paper);
@@ -18,7 +18,7 @@
 	-webkit-tap-highlight-color: transparent;
 }
 .marketing-page :is(a, button, summary):focus-visible {
-	outline: 3px solid #42745b;
+	outline: 2px solid var(--ring);
 	outline-offset: 5px;
 }
 .marketing-wrap {
@@ -106,7 +106,7 @@
 	line-height: 1.75;
 	max-width: 475px;
 	margin: 34px 0 26px;
-	color: #51534a;
+	color: var(--muted-foreground);
 }
 .marketing-actions {
 	display: flex;

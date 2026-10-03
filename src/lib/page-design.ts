@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+	audioUrl,
+	parseBusinessHours,
+	parseChecklist,
+	validTimeZone,
+} from "./extended-blocks";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "./security";
 export const FONT_OPTIONS = {
 	work: "'Work Sans', sans-serif",
@@ -15,6 +21,12 @@ export const BLOCK_TYPES = [
 	"faq",
 	"quote",
 	"event",
+	"audio",
+	"button",
+	"divider",
+	"code",
+	"checklist",
+	"hours",
 ] as const;
 export function videoEmbedUrl(value: string) {
 	const safe = normalizeHttpUrl(value);
@@ -46,8 +58,37 @@ export const contentBlockSchema = z
 		afterLinkId: z.string().uuid().nullable(),
 		startsAt: z.string().datetime().optional(),
 		endsAt: z.string().datetime().optional(),
+		timeZone: z
+			.string()
+			.max(100)
+			.refine(validTimeZone, "Enter a valid IANA time zone")
+			.optional(),
 	})
 	.superRefine((b, c) => {
+		if (b.type === "audio" && (!b.title || !audioUrl(b.url)))
+			c.addIssue({
+				code: "custom",
+				message: "Audio needs a title and a direct supported audio file URL",
+			});
+		if (b.type === "button" && (!b.title || !normalizeHttpUrl(b.url)))
+			c.addIssue({
+				code: "custom",
+				message: "Buttons need a label and a valid website destination",
+			});
+		if (b.type === "code" && !b.body.trim())
+			c.addIssue({ code: "custom", message: "Add code to share" });
+		if (b.type === "checklist" && !parseChecklist(b.body))
+			c.addIssue({
+				code: "custom",
+				message:
+					"Use up to 30 checklist items in the format - [ ] Item or - [x] Item",
+			});
+		if (b.type === "hours" && (!parseBusinessHours(b.body) || !b.timeZone))
+			c.addIssue({
+				code: "custom",
+				message:
+					"Add unique weekdays with 24-hour opening hours or Closed, and a time zone",
+			});
 		if (
 			b.type === "event" &&
 			(!b.title ||

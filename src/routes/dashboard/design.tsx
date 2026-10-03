@@ -22,6 +22,7 @@ import {
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
 import { duplicateBlock } from "#/lib/duplicate-block";
+import { EXTENDED_BLOCK_HELP } from "#/lib/extended-blocks";
 import { isLinkPublished, localDateInput } from "#/lib/link-publishing";
 import {
 	BLOCK_TYPES,
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/dashboard/design")({
 	component: DesignStudio,
 });
 const field =
-	"mt-1 w-full rounded-lg border border-black/30 bg-white px-3 py-2 text-base sm:text-sm text-[#11110F]";
+	"mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-base sm:text-sm text-foreground";
 function DesignStudio() {
 	const [ready, setReady] = useState(false);
 	useEffect(() => setReady(true), []);
@@ -158,7 +159,7 @@ function DesignStudio() {
 		}
 	};
 	return (
-		<div className="mx-auto max-w-7xl p-4 sm:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
 			<UnsavedChangesGuard when={dirty || save.isPending} />
 			<Dialog
 				open={selectedTemplate !== null}
@@ -406,7 +407,7 @@ function DesignStudio() {
 						{draft.contentBlocks.map((b, index) => (
 							<div
 								key={b.id}
-								className="space-y-3 rounded-xl border border-black/30 bg-white p-4"
+								className="space-y-3 rounded-xl border border-border bg-card p-4"
 							>
 								<div className="flex flex-wrap items-center justify-between gap-2">
 									<strong className="text-sm">Block {index + 1}</strong>
@@ -467,6 +468,14 @@ function DesignStudio() {
 										onChange={(e) =>
 											updateBlock(b.id, {
 												type: e.target.value as ContentBlock["type"],
+												...(e.target.value === "hours"
+													? {
+															timeZone:
+																b.timeZone ||
+																Intl.DateTimeFormat().resolvedOptions()
+																	.timeZone,
+														}
+													: {}),
 											})
 										}
 									>
@@ -475,6 +484,28 @@ function DesignStudio() {
 										))}
 									</select>
 								</label>
+								{b.type in EXTENDED_BLOCK_HELP && (
+									<p className="text-xs text-muted-foreground">
+										{
+											EXTENDED_BLOCK_HELP[
+												b.type as keyof typeof EXTENDED_BLOCK_HELP
+											]
+										}
+									</p>
+								)}
+								{b.type === "hours" && (
+									<label className="block text-sm">
+										Hours time zone
+										<input
+											className={field}
+											value={b.timeZone ?? ""}
+											placeholder="America/Chicago"
+											onChange={(e) =>
+												updateBlock(b.id, { timeZone: e.target.value })
+											}
+										/>
+									</label>
+								)}
 								<label className="block text-sm">
 									{b.type === "faq"
 										? "Question"
@@ -500,12 +531,26 @@ function DesignStudio() {
 										className={field}
 										value={b.body}
 										maxLength={2000}
+										placeholder={
+											b.type === "checklist"
+												? "- [ ] First item\n- [x] Completed item"
+												: b.type === "hours"
+													? "Monday | 09:00-17:00\nSunday | Closed"
+													: undefined
+										}
 										onChange={(e) =>
 											updateBlock(b.id, { body: e.target.value })
 										}
 									/>
 								</label>
-								{["image", "video", "contact", "quote"].includes(b.type) && (
+								{[
+									"image",
+									"video",
+									"contact",
+									"quote",
+									"audio",
+									"button",
+								].includes(b.type) && (
 									<label className="block text-sm">
 										{b.type === "quote"
 											? "Source URL (optional)"
@@ -513,7 +558,11 @@ function DesignStudio() {
 												? "Contact email"
 												: b.type === "video"
 													? "YouTube or Vimeo URL"
-													: "Image URL"}
+													: b.type === "audio"
+														? "Audio file URL"
+														: b.type === "button"
+															? "Button destination"
+															: "Image URL"}
 										<input
 											className={field}
 											value={b.url}
@@ -676,7 +725,7 @@ function DesignStudio() {
 									type="button"
 									key={d}
 									aria-pressed={device === d}
-									className="rounded-lg border border-black px-3 py-2 text-xs"
+									className="rounded-lg border border-border px-3 py-2 text-xs"
 									onClick={() => setDevice(d)}
 								>
 									{d === "phone" ? "Phone" : "Desktop"}
@@ -685,7 +734,7 @@ function DesignStudio() {
 						</div>
 					</div>
 					<div
-						className="max-h-[80vh] overflow-auto rounded-[28px] border border-border bg-white shadow-sm"
+						className="max-h-[80vh] overflow-auto rounded-[28px] border border-border bg-card shadow-sm"
 						data-testid="live-preview"
 					>
 						<div

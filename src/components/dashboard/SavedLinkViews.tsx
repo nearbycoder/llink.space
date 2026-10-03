@@ -68,7 +68,7 @@ export function SavedLinkViews({
 		setName("");
 	};
 	return (
-		<details className="w-full rounded-xl border border-black/15 p-3">
+		<details className="w-full rounded-xl border border-border p-3">
 			<summary className="cursor-pointer text-sm font-semibold">
 				Saved filter views
 			</summary>
@@ -83,7 +83,7 @@ export function SavedLinkViews({
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						maxLength={40}
-						className="ml-2 max-w-full rounded border bg-white p-2 text-base"
+						className="ml-2 max-w-full rounded border bg-card p-2 text-base"
 					/>
 				</label>
 				<Button
@@ -113,7 +113,7 @@ export function SavedLinkViews({
 			)}
 			<ul className="mt-3 flex flex-wrap gap-2">
 				{views.map((v) => (
-					<li key={v.name} className="flex rounded-lg border border-black/20">
+					<li key={v.name} className="flex rounded-lg border border-border">
 						<button
 							type="button"
 							className="min-h-11 px-3 text-sm font-semibold"

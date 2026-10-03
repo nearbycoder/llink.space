@@ -184,7 +184,7 @@ export function DashboardCommandPalette({
 
 	return (
 		<CommandDialog open={open} onOpenChange={onOpenChange}>
-			<div className="shrink-0 border-b border-black/15">
+			<div className="shrink-0 border-b border-border">
 				<div className="flex items-center gap-2 px-4 py-2">
 					{mode === "navigate" ? (
 						<CommandInput
@@ -206,7 +206,7 @@ export function DashboardCommandPalette({
 						type="button"
 						onClick={() => onOpenChange(false)}
 						aria-label="Close search"
-						className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 text-[#4B4B45] transition-colors hover:bg-black/10 focus-visible:outline-offset-0"
+						className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-offset-0"
 					>
 						<X className="size-5" aria-hidden="true" />
 					</button>
@@ -222,8 +222,8 @@ export function DashboardCommandPalette({
 						className={cn(
 							"min-h-11 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "navigate"
-								? "bg-accent text-[#273B1D]"
-								: "text-[#6A675C] hover:bg-black/5",
+								? "bg-accent text-primary"
+								: "text-muted-foreground hover:bg-black/5",
 						)}
 					>
 						Search
@@ -238,8 +238,8 @@ export function DashboardCommandPalette({
 						className={cn(
 							"inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "create"
-								? "bg-accent text-[#273B1D]"
-								: "text-[#6A675C] hover:bg-black/5",
+								? "bg-accent text-primary"
+								: "text-muted-foreground hover:bg-black/5",
 						)}
 					>
 						<Link2 className="size-4" aria-hidden="true" />
@@ -251,7 +251,7 @@ export function DashboardCommandPalette({
 				<>
 					<CommandList>
 						<CommandEmpty>
-							<p className="font-semibold text-[#11110F]">No matches found</p>
+							<p className="font-semibold text-foreground">No matches found</p>
 							<p className="mt-1">Try a page name or “add link”.</p>
 						</CommandEmpty>
 						{[
@@ -261,7 +261,7 @@ export function DashboardCommandPalette({
 							<CommandGroup
 								key={group.heading}
 								heading={group.heading}
-								className={index ? "border-t border-black/10" : undefined}
+								className={index ? "border-t border-border" : undefined}
 							>
 								{group.actions.map((action) => (
 									<CommandItem
@@ -281,7 +281,7 @@ export function DashboardCommandPalette({
 											</p>
 											<p
 												data-slot="command-item-description"
-												className="hidden truncate text-xs text-[#6A675C] sm:block group-data-[selected=true]/item:text-[#DDFBFD]"
+												className="hidden truncate text-xs text-muted-foreground sm:block group-data-[selected=true]/item:text-primary-foreground/80"
 											>
 												{action.description}
 											</p>
@@ -294,14 +294,14 @@ export function DashboardCommandPalette({
 					{actionError && (
 						<p
 							role="alert"
-							className="mx-3 mb-3 rounded-lg border border-[#D94841]/40 bg-[#FFF1EE] px-3 py-2 text-xs text-[#B42318]"
+							className="mx-3 mb-3 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive"
 						>
 							{actionError}
 						</p>
 					)}
 					<div
 						data-slot="command-keyboard-help"
-						className="hidden shrink-0 items-center justify-between border-t border-black/15 bg-black/[0.025] px-4 py-3 text-xs text-[#6A675C] sm:flex"
+						className="hidden shrink-0 items-center justify-between border-t border-border bg-black/[0.025] px-4 py-3 text-xs text-muted-foreground sm:flex"
 					>
 						<span>
 							↑ ↓ to browse <span className="mx-2 text-black/20">/</span> ↵ to
@@ -323,7 +323,7 @@ export function DashboardCommandPalette({
 					{createError && (
 						<p
 							role="alert"
-							className="mb-3 rounded-lg border border-[#D94841]/40 bg-[#FFF1EE] px-3 py-2 text-xs text-[#B42318]"
+							className="mb-3 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive"
 						>
 							{createError}
 						</p>

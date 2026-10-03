@@ -38,7 +38,7 @@ function DomainPage() {
 		}
 	};
 	return (
-		<div className="mx-auto max-w-4xl p-4 sm:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
 			<header className="mb-7">
 				<p className="text-xs font-bold uppercase tracking-widest">
 					Your page. Your address.
@@ -65,7 +65,7 @@ function DomainPage() {
 								disabled={!ready || busy}
 								value={hostname}
 								onChange={(e) => setHostname(e.target.value)}
-								className="mt-2 w-full rounded-lg border border-black/30 bg-white px-3 py-3"
+								className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-3"
 								placeholder="links.yourname.com"
 								autoComplete="off"
 							/>
@@ -78,11 +78,11 @@ function DomainPage() {
 					<>
 						<div className="flex flex-wrap items-center justify-between gap-3">
 							<h2 className="break-all text-xl font-bold">{domain.hostname}</h2>
-							<span className="rounded-full border border-black px-3 py-1 text-xs font-bold uppercase">
+							<span className="rounded-full border border-border px-3 py-1 text-xs font-bold uppercase">
 								{domain.status}
 							</span>
 						</div>
-						<div className="rounded-xl border border-black/20 bg-white p-4">
+						<div className="rounded-xl border border-border bg-card p-4">
 							<h3 className="font-bold">1. Verify ownership</h3>
 							<p className="my-2 text-sm">
 								Add this TXT record at your DNS provider. Keep it in place while
@@ -95,7 +95,7 @@ function DomainPage() {
 								<dd className="break-all font-mono">{domain.proofValue}</dd>
 							</dl>
 						</div>
-						<div className="rounded-xl border border-black/20 bg-white p-4">
+						<div className="rounded-xl border border-border bg-card p-4">
 							<h3 className="font-bold">2. Connect hosting</h3>
 							{!hostingConfigured ? (
 								<p className="mt-2 text-sm">
@@ -119,7 +119,7 @@ function DomainPage() {
 										{domain.hosting.dnsRecords.map((r) => (
 											<div
 												key={`${r.fqdn}-${r.recordType}-${r.requiredValue}`}
-												className="rounded-lg border border-black/15 p-3 text-xs"
+												className="rounded-lg border border-border p-3 text-xs"
 											>
 												<strong>
 													{r.recordType} · {r.status}
@@ -133,7 +133,7 @@ function DomainPage() {
 											</div>
 										))}
 										{domain.hosting.verificationToken && (
-											<div className="rounded-lg border border-black/15 p-3 text-xs">
+											<div className="rounded-lg border border-border p-3 text-xs">
 												<strong>Hosting verification TXT</strong>
 												<p className="mt-1 break-all font-mono">
 													{domain.hosting.verificationDnsHost ||

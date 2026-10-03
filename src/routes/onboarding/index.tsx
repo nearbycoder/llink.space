@@ -87,10 +87,10 @@ function OnboardingPage() {
 					<a href="/" className="inline-block mb-6">
 						<SiteBrand size="lg" />
 					</a>
-					<h1 className="text-2xl font-semibold text-[#11110F]">
+					<h1 className="text-2xl font-semibold text-foreground">
 						Claim your username
 					</h1>
-					<p className="text-[#4B4B45] mt-2 text-sm">
+					<p className="text-muted-foreground mt-2 text-sm">
 						This will be your public profile URL
 					</p>
 				</div>
@@ -98,7 +98,7 @@ function OnboardingPage() {
 				<div className="kinetic-panel p-6">
 					<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 						{createProfile.error && (
-							<p className="text-sm text-[#7E1612] bg-[#FFD9CF] border border-border rounded-xl px-3 py-2">
+							<p className="text-sm text-destructive bg-destructive/10 border border-border rounded-xl px-3 py-2">
 								{createProfile.error.message}
 							</p>
 						)}
@@ -106,10 +106,10 @@ function OnboardingPage() {
 						<div className="space-y-1.5">
 							<Label htmlFor={usernameId}>Username</Label>
 							<div className="relative">
-								<span className="absolute left-3 top-1/2 hidden -translate-y-1/2 text-[#4B4B45] text-sm sm:block">
+								<span className="absolute left-3 top-1/2 hidden -translate-y-1/2 text-muted-foreground text-sm sm:block">
 									llink.space/u/
 								</span>
-								<span className="mb-1 block text-xs text-[#6A675C] sm:hidden">
+								<span className="mb-1 block text-xs text-muted-foreground sm:hidden">
 									llink.space/u/
 								</span>
 								<Input
@@ -130,25 +130,29 @@ function OnboardingPage() {
 									<CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
 								)}
 								{isTaken && (
-									<XCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B42318]" />
+									<XCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
 								)}
 							</div>
 							{errors.username && (
-								<p className="text-xs text-[#B42318]">
+								<p className="text-xs text-destructive">
 									{errors.username.message}
 								</p>
 							)}
 							{isTaken && (
-								<p className="text-xs text-[#B42318]">Username already taken</p>
+								<p className="text-xs text-destructive">
+									Username already taken
+								</p>
 							)}
 							{isAvailable && (
 								<p className="text-xs text-[#0B7A42]">Username available!</p>
 							)}
 							{isCheckingUsername && (
-								<p className="text-xs text-[#6A675C]">Checking availability…</p>
+								<p className="text-xs text-muted-foreground">
+									Checking availability…
+								</p>
 							)}
 							{usernameCheck.isError && isCurrentCheck && (
-								<p className="text-xs text-[#B42318]">
+								<p className="text-xs text-destructive">
 									Could not check this username. Try again.
 								</p>
 							)}
@@ -163,7 +167,7 @@ function OnboardingPage() {
 								{...register("displayName")}
 							/>
 							{errors.displayName && (
-								<p className="text-xs text-[#B42318]">
+								<p className="text-xs text-destructive">
 									{errors.displayName.message}
 								</p>
 							)}

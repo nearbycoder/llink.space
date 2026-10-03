@@ -3,6 +3,11 @@ import { and, asc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "#/db";
 import { customDomains, linkSections, links, profiles } from "#/db/schema";
+import {
+	batchOperationSchema,
+	previewBatchLinks,
+} from "#/lib/batch-link-tools";
+import { parseLinkCatalog } from "#/lib/link-catalog";
 import { LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import { MAX_IMPORT_LINKS, parseLinkImport } from "#/lib/link-import";
 import { validSchedule } from "#/lib/link-publishing";
@@ -157,6 +162,187 @@ async function fetchProfileLayout(input: {
 }
 
 export const linksRouter = createTRPCRouter({
+	batchEdit: protectedProcedure
+		.input(
+			z.object({
+				selection: z
+					.array(
+						z.object({
+							id: z.string().uuid(),
+							updatedAt: z.string().datetime().nullable(),
+						}),
+					)
+					.min(1)
+					.max(50)
+					.refine((v) => new Set(v.map((l) => l.id)).size === v.length),
+				operation: batchOperationSchema,
+			}),
+		)
+		.mutation(async ({ ctx, input }) =>
+			db.transaction(async (tx) => {
+				const [profile] = await tx
+					.select()
+					.from(profiles)
+					.where(eq(profiles.userId, ctx.userId))
+					.for("update");
+				if (!profile)
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Profile not found",
+					});
+				const owned = await tx
+					.select()
+					.from(links)
+					.where(
+						and(
+							eq(links.profileId, profile.id),
+							inArray(
+								links.id,
+								input.selection.map((l) => l.id),
+							),
+						),
+					)
+					.for("update");
+				if (owned.length !== input.selection.length)
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "One of these links no longer exists",
+					});
+				const versions = new Map(
+					input.selection.map((l) => [l.id, l.updatedAt]),
+				);
+				if (
+					owned.some(
+						(l) => (l.updatedAt?.toISOString() ?? null) !== versions.get(l.id),
+					)
+				)
+					throw new TRPCError({
+						code: "CONFLICT",
+						message:
+							"These links changed. Close this tool, refresh, and review them again.",
+					});
+				let preview: ReturnType<
+					typeof previewBatchLinks<(typeof owned)[number]>
+				>;
+				try {
+					preview = previewBatchLinks(owned, input.operation).filter(
+						(l) => l.changed,
+					);
+				} catch (error) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message:
+							error instanceof Error ? error.message : "Invalid batch changes",
+					});
+				}
+				if (input.operation.kind === "duplicate") {
+					const positions = await tx
+						.select({
+							sectionId: links.sectionId,
+							max: sql<number>`coalesce(max(${links.sortOrder}), -1)::int`,
+						})
+						.from(links)
+						.where(eq(links.profileId, profile.id))
+						.groupBy(links.sectionId);
+					const next = new Map(positions.map((p) => [p.sectionId, p.max + 1]));
+					await tx.insert(links).values(
+						preview.map(({ before: l, patch }) => {
+							const sortOrder = next.get(l.sectionId) ?? 0;
+							next.set(l.sectionId, sortOrder + 1);
+							return {
+								profileId: profile.id,
+								sectionId: l.sectionId,
+								title: patch.title ?? l.title,
+								url: l.url,
+								description: l.description,
+								iconUrl: l.iconUrl,
+								iconBgColor: l.iconBgColor,
+								featureImageUrl: l.featureImageUrl,
+								ctaLabel: l.ctaLabel,
+								isActive: false,
+								featured: false,
+								sortOrder,
+							};
+						}),
+					);
+				} else {
+					await Promise.all(
+						preview.map(({ before, patch }) =>
+							tx
+								.update(links)
+								.set({
+									...patch,
+									...(patch.url && patch.url !== before.url
+										? {
+												healthState: null,
+												healthStatusCode: null,
+												healthFinalUrl: null,
+												healthCheckedAt: null,
+											}
+										: {}),
+									updatedAt: new Date(),
+								})
+								.where(
+									and(eq(links.id, before.id), eq(links.profileId, profile.id)),
+								),
+						),
+					);
+				}
+				return { count: preview.length };
+			}),
+		),
+	importCatalog: protectedProcedure
+		.input(z.object({ text: z.string().min(1).max(256_000) }))
+		.mutation(async ({ ctx, input }) =>
+			db.transaction(async (tx) => {
+				const [profile] = await tx
+					.select()
+					.from(profiles)
+					.where(eq(profiles.userId, ctx.userId))
+					.for("update");
+				if (!profile)
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Profile not found",
+					});
+				const existing = await tx
+					.select({ url: links.url })
+					.from(links)
+					.where(eq(links.profileId, profile.id));
+				let parsed: ReturnType<typeof parseLinkCatalog>;
+				try {
+					parsed = parseLinkCatalog(
+						input.text,
+						existing.map((l) => l.url),
+					);
+				} catch (error) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: error instanceof Error ? error.message : "Invalid catalog",
+					});
+				}
+				if (parsed.links.length) {
+					const [position] = await tx
+						.select({
+							max: sql<number>`coalesce(max(${links.sortOrder}), -1)::int`,
+						})
+						.from(links)
+						.where(
+							and(eq(links.profileId, profile.id), isNull(links.sectionId)),
+						);
+					await tx.insert(links).values(
+						parsed.links.map((l, index) => ({
+							...l,
+							iconBgColor: l.iconBgColor ?? "#F5FF7B",
+							profileId: profile.id,
+							isActive: false,
+							sortOrder: position.max + index + 1,
+						})),
+					);
+				}
+				return { count: parsed.links.length, duplicates: parsed.duplicates };
+			}),
+		),
 	list: protectedProcedure.query(async ({ ctx }) => {
 		const profile = await requireProfileByUserId(ctx.userId);
 		return fetchProfileLayout({

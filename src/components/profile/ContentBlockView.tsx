@@ -1,6 +1,7 @@
 import { type ContentBlock, videoEmbedUrl } from "#/lib/page-design";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
 import { EventBlock } from "./EventBlock";
+import { ExtendedBlockView } from "./ExtendedBlockView";
 export function ContentBlockView({
 	block,
 	preview = false,
@@ -8,6 +9,12 @@ export function ContentBlockView({
 	block: ContentBlock;
 	preview?: boolean;
 }) {
+	if (
+		["audio", "button", "divider", "code", "checklist", "hours"].includes(
+			block.type,
+		)
+	)
+		return <ExtendedBlockView block={block} />;
 	if (block.type === "faq")
 		return (
 			<details

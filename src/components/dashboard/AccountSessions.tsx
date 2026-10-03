@@ -135,7 +135,7 @@ export function AccountSessions() {
 							<p className="text-sm font-semibold">
 								{sessionLabel(session.userAgent)}
 								{session.id === currentId && (
-									<span className="ml-2 rounded-full bg-[#F5FF7B] px-2 py-1 text-xs">
+									<span className="ml-2 rounded-full bg-accent px-2 py-1 text-xs">
 										This session
 									</span>
 								)}

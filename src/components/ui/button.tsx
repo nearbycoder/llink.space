@@ -5,21 +5,21 @@ import type * as React from "react";
 import { cn } from "#/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-[color,background-color,border-color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-black/30",
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-[color,background-color,border-color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
 	{
 		variants: {
 			variant: {
 				default:
-					"border border-transparent bg-[#263B25] text-white shadow-sm hover:bg-[#344D31]",
+					"border border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
 				destructive:
-					"border border-transparent bg-[#B42318] text-white shadow-sm hover:bg-[#912018]",
+					"border border-transparent bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
 				outline:
-					"border border-border bg-card text-[#11110F] shadow-sm hover:bg-[#F8F8F4]",
+					"border border-border bg-card text-foreground shadow-sm hover:bg-muted",
 				secondary:
-					"border border-transparent bg-accent text-[#273B1D] shadow-none hover:bg-[#E2EBCF]",
+					"border border-transparent bg-accent text-primary shadow-none hover:bg-accent",
 				ghost:
-					"border border-transparent text-[#11110F] shadow-none hover:bg-black/10",
-				link: "text-[#11110F] underline-offset-4 hover:underline shadow-none",
+					"border border-transparent text-foreground shadow-none hover:bg-muted",
+				link: "text-foreground underline-offset-4 hover:underline shadow-none",
 			},
 			size: {
 				default: "h-9 px-4 py-2 has-[>svg]:px-3",

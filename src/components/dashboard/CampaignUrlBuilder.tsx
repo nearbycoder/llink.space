@@ -22,7 +22,7 @@ export function CampaignUrlBuilder({
 		error = (e as Error).message;
 	}
 	return (
-		<div className="rounded-xl border border-black/20 p-3">
+		<div className="rounded-xl border border-border p-3">
 			<button
 				type="button"
 				aria-expanded={expanded}
@@ -45,7 +45,7 @@ export function CampaignUrlBuilder({
 							<label key={key} className="text-sm capitalize">
 								{`Campaign ${key}`}
 								<input
-									className="mt-1 w-full rounded-lg border border-black/30 bg-white p-2 text-base"
+									className="mt-1 w-full rounded-lg border border-border bg-card p-2 text-base"
 									value={values[key]}
 									maxLength={200}
 									onChange={(e) =>

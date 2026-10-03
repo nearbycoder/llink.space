@@ -16,6 +16,7 @@ import {
 } from "#/lib/click-protection-server";
 import { publishedLinkFilter } from "#/lib/link-publishing-server";
 import { normalizeHttpUrl } from "#/lib/security";
+import { fillClickHeatmap, summarizeDevices } from "#/lib/traffic-insights";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 export const analyticsRouter = createTRPCRouter({
@@ -108,86 +109,112 @@ export const analyticsRouter = createTRPCRouter({
 
 			const referrerSourceExpr = sql<string>`coalesce(nullif(split_part(split_part(split_part(regexp_replace(${clickEvents.referrer}, '^https?://(www\\.)?', ''), '/', 1), '?', 1), '#', 1), ''), 'Direct')`;
 			const dayExpr = sql`date_trunc('day', ${clickEvents.clickedAt})`;
+			const weekdayExpr = sql<number>`extract(isodow from ${clickEvents.clickedAt})::int`;
+			const hourExpr = sql<number>`extract(hour from ${clickEvents.clickedAt})::int`;
+			const deviceExpr = sql<string>`case when nullif(btrim(${clickEvents.userAgent}), '') is null then 'Unknown' when ${clickEvents.userAgent} ~* '(ipad|tablet|silk|kindle)' or (${clickEvents.userAgent} ~* 'android' and ${clickEvents.userAgent} !~* 'mobile') then 'Tablet' when ${clickEvents.userAgent} ~* '(mobile|iphone|ipod|android)' then 'Mobile' else 'Desktop' end`;
 
 			// One aggregate scan replaces six sequential count queries. The remaining
 			// independent, range-scoped queries can use the profile/date index.
-			const [totals, clicksByLink, topReferrers, clicksByDay, recentClicks] =
-				await Promise.all([
-					db
-						.select({
-							totalClicks: sql<number>`count(*)::int`,
-							clicksLast24h: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 86400000)})::int`,
-							clicksLast7d: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 7 * 86400000)})::int`,
-							previousPeriodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${previousStart} and ${clickEvents.clickedAt} < ${rangeStart})::int`,
-							periodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
-							uniqueReferrers: sql<number>`count(distinct ${referrerSourceExpr}) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is not null)::int`,
-							directClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is null)::int`,
-						})
-						.from(clickEvents)
-						.where(eq(clickEvents.profileId, profile.id)),
-					db
-						.select({
-							linkId: clickEvents.linkId,
-							previousCount: sql<number>`count(*) filter (where ${clickEvents.clickedAt} < ${rangeStart})::int`,
-							count: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
-							title: links.title,
-							url: links.url,
-						})
-						.from(clickEvents)
-						.leftJoin(links, eq(clickEvents.linkId, links.id))
-						.where(
-							and(
-								eq(clickEvents.profileId, profile.id),
-								gte(clickEvents.clickedAt, previousStart),
-							),
-						)
-						.groupBy(clickEvents.linkId, links.title, links.url)
-						.orderBy(
-							desc(
-								sql`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})`,
-							),
+			const [
+				totals,
+				clicksByLink,
+				topReferrers,
+				clicksByDay,
+				recentClicks,
+				deviceRows,
+				heatmapRows,
+			] = await Promise.all([
+				db
+					.select({
+						totalClicks: sql<number>`count(*)::int`,
+						clicksLast24h: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 86400000)})::int`,
+						clicksLast7d: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 7 * 86400000)})::int`,
+						previousPeriodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${previousStart} and ${clickEvents.clickedAt} < ${rangeStart})::int`,
+						periodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
+						uniqueReferrers: sql<number>`count(distinct ${referrerSourceExpr}) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is not null)::int`,
+						directClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is null)::int`,
+					})
+					.from(clickEvents)
+					.where(eq(clickEvents.profileId, profile.id)),
+				db
+					.select({
+						linkId: clickEvents.linkId,
+						previousCount: sql<number>`count(*) filter (where ${clickEvents.clickedAt} < ${rangeStart})::int`,
+						count: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
+						title: links.title,
+						url: links.url,
+					})
+					.from(clickEvents)
+					.leftJoin(links, eq(clickEvents.linkId, links.id))
+					.where(
+						and(
+							eq(clickEvents.profileId, profile.id),
+							gte(clickEvents.clickedAt, previousStart),
 						),
+					)
+					.groupBy(clickEvents.linkId, links.title, links.url)
+					.orderBy(
+						desc(
+							sql`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})`,
+						),
+					),
 
-					db
-						.select({
-							source: referrerSourceExpr,
-							count: sql<number>`count(*)::int`,
-						})
-						.from(clickEvents)
-						.where(rangeWhere)
-						.groupBy(referrerSourceExpr)
-						.orderBy(desc(sql`count(*)`))
-						.limit(8),
+				db
+					.select({
+						source: referrerSourceExpr,
+						count: sql<number>`count(*)::int`,
+					})
+					.from(clickEvents)
+					.where(rangeWhere)
+					.groupBy(referrerSourceExpr)
+					.orderBy(desc(sql`count(*)`))
+					.limit(8),
 
-					db
-						.select({
-							day: sql<string>`to_char(${dayExpr}, 'YYYY-MM-DD')`,
-							count: sql<number>`count(*)::int`,
-						})
-						.from(clickEvents)
-						.where(rangeWhere)
-						.groupBy(dayExpr)
-						.orderBy(asc(dayExpr)),
+				db
+					.select({
+						day: sql<string>`to_char(${dayExpr}, 'YYYY-MM-DD')`,
+						count: sql<number>`count(*)::int`,
+					})
+					.from(clickEvents)
+					.where(rangeWhere)
+					.groupBy(dayExpr)
+					.orderBy(asc(dayExpr)),
 
-					db
-						.select({
-							id: clickEvents.id,
-							linkId: clickEvents.linkId,
-							referrer: clickEvents.referrer,
-							userAgent: clickEvents.userAgent,
-							country: clickEvents.country,
-							clickedAt: clickEvents.clickedAt,
-							linkTitle: links.title,
-							linkUrl: links.url,
-						})
-						.from(clickEvents)
-						.leftJoin(links, eq(clickEvents.linkId, links.id))
-						.where(rangeWhere)
-						.orderBy(desc(clickEvents.clickedAt))
-						.limit(12),
-				]);
+				db
+					.select({
+						id: clickEvents.id,
+						linkId: clickEvents.linkId,
+						referrer: clickEvents.referrer,
+						userAgent: clickEvents.userAgent,
+						country: clickEvents.country,
+						clickedAt: clickEvents.clickedAt,
+						linkTitle: links.title,
+						linkUrl: links.url,
+					})
+					.from(clickEvents)
+					.leftJoin(links, eq(clickEvents.linkId, links.id))
+					.where(rangeWhere)
+					.orderBy(desc(clickEvents.clickedAt))
+					.limit(12),
+				db
+					.select({ device: deviceExpr, count: sql<number>`count(*)::int` })
+					.from(clickEvents)
+					.where(rangeWhere)
+					.groupBy(deviceExpr),
+				db
+					.select({
+						weekday: weekdayExpr,
+						hour: hourExpr,
+						count: sql<number>`count(*)::int`,
+					})
+					.from(clickEvents)
+					.where(rangeWhere)
+					.groupBy(weekdayExpr, hourExpr),
+			]);
 
 			return {
+				devices: summarizeDevices(deviceRows),
+				clickHeatmap: fillClickHeatmap(heatmapRows),
 				rangeDays: input.days,
 				previousPeriodClicks: totals[0]?.previousPeriodClicks ?? 0,
 				previousRangeStart: previousStart.toISOString().slice(0, 10),

@@ -24,6 +24,7 @@ import {
 	YAxis,
 } from "recharts";
 import { AnalyticsLoadingState } from "#/components/dashboard/DashboardLoading";
+import { TrafficInsights } from "#/components/dashboard/TrafficInsights";
 import { Button } from "#/components/ui/button";
 import { useTRPC } from "#/integrations/trpc/react";
 import { comparisonLabel } from "#/lib/analytics-tools";
@@ -147,16 +148,16 @@ function AnalyticsPage() {
 	};
 
 	return (
-		<div className="max-w-4xl px-4 py-5 sm:px-6 md:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
 			<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 				<div>
 					<h1
-						className="text-2xl text-[#11110F]"
+						className="text-2xl text-foreground"
 						style={{ fontFamily: "'Work Sans', sans-serif" }}
 					>
 						Analytics
 					</h1>
-					<p className="text-sm text-[#4B4B45] mt-1">
+					<p className="text-sm text-muted-foreground mt-1">
 						Track click volume, traffic sources, and top-performing links
 					</p>
 				</div>
@@ -171,7 +172,7 @@ function AnalyticsPage() {
 						<RefreshCw className="h-4 w-4" aria-hidden="true" />
 					</Button>
 					<fieldset
-						className="inline-flex rounded-xl border border-border bg-white p-1 shadow-sm"
+						className="inline-flex rounded-xl border border-border bg-card p-1 shadow-sm"
 						aria-label="Analytics date range"
 					>
 						{([7, 30, 90] as const).map((days) => (
@@ -180,7 +181,7 @@ function AnalyticsPage() {
 								type="button"
 								onClick={() => void navigate({ search: { days } })}
 								aria-pressed={rangeDays === days}
-								className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${rangeDays === days ? "bg-[#11110F] text-[#F5FF7B]" : "text-[#4B4B45] hover:bg-accent"}`}
+								className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${rangeDays === days ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
 							>
 								{days}d
 							</button>
@@ -201,7 +202,7 @@ function AnalyticsPage() {
 			{isError && (
 				<p
 					role="alert"
-					className="mb-4 rounded-xl border-2 border-[#B42318] bg-white p-3 text-sm text-[#B42318]"
+					className="mb-4 rounded-xl border-2 border-destructive bg-card p-3 text-sm text-destructive"
 				>
 					Analytics could not refresh. Showing the last available data. Use
 					Refresh analytics to try again.
@@ -211,36 +212,38 @@ function AnalyticsPage() {
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<div className="kinetic-panel p-5 bg-card">
 						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-[#F5FF7B] p-1">
-								<MousePointerClick className="h-3.5 w-3.5 text-[#11110F]" />
+							<span className="inline-flex items-center justify-center rounded-md border border-border bg-accent p-1">
+								<MousePointerClick className="h-3.5 w-3.5 text-foreground" />
 							</span>
-							<span className="text-sm text-[#4B4B45]">Total clicks</span>
+							<span className="text-sm text-muted-foreground">
+								Total clicks
+							</span>
 						</div>
-						<p className="text-3xl font-bold text-[#11110F]">{totalClicks}</p>
+						<p className="text-3xl font-bold text-foreground">{totalClicks}</p>
 					</div>
 
 					<div className="kinetic-panel p-5 bg-card">
 						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-[#8AE1E7] p-1">
-								<Clock3 className="h-3.5 w-3.5 text-[#11110F]" />
+							<span className="inline-flex items-center justify-center rounded-md border border-border bg-info/10 p-1">
+								<Clock3 className="h-3.5 w-3.5 text-foreground" />
 							</span>
-							<span className="text-sm text-[#4B4B45]">Last 24h</span>
+							<span className="text-sm text-muted-foreground">Last 24h</span>
 						</div>
-						<p className="text-3xl font-bold text-[#11110F]">
+						<p className="text-3xl font-bold text-foreground">
 							{summary?.clicksLast24h ?? 0}
 						</p>
 					</div>
 
 					<div className="kinetic-panel p-5 bg-card">
 						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-[#F2B7E2] p-1">
-								<TrendingUp className="h-3.5 w-3.5 text-[#11110F]" />
+							<span className="inline-flex items-center justify-center rounded-md border border-border bg-muted p-1">
+								<TrendingUp className="h-3.5 w-3.5 text-foreground" />
 							</span>
-							<span className="text-sm text-[#4B4B45]">
+							<span className="text-sm text-muted-foreground">
 								Last {displayRangeDays} days
 							</span>
 						</div>
-						<p className="text-3xl font-bold text-[#11110F]">{periodClicks}</p>
+						<p className="text-3xl font-bold text-foreground">{periodClicks}</p>
 						<p className="mt-2 text-xs font-semibold">
 							{comparisonLabel(
 								periodClicks,
@@ -253,40 +256,48 @@ function AnalyticsPage() {
 
 					<div className="kinetic-panel p-5 bg-card">
 						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-[#7CC6FF] p-1">
-								<Globe2 className="h-3.5 w-3.5 text-[#11110F]" />
+							<span className="inline-flex items-center justify-center rounded-md border border-border bg-info/10 p-1">
+								<Globe2 className="h-3.5 w-3.5 text-foreground" />
 							</span>
-							<span className="text-sm text-[#4B4B45]">Traffic sources</span>
+							<span className="text-sm text-muted-foreground">
+								Traffic sources
+							</span>
 						</div>
-						<p className="text-3xl font-bold text-[#11110F]">
+						<p className="text-3xl font-bold text-foreground">
 							{summary?.uniqueReferrers ?? 0}
 						</p>
-						<p className="mt-1 text-xs text-[#6A675C]">
+						<p className="mt-1 text-xs text-muted-foreground">
 							{directClicks} direct ({directPercent}%)
 						</p>
 					</div>
 				</div>
 
+				<TrafficInsights
+					devices={summary.devices}
+					heatmap={summary.clickHeatmap}
+					days={displayRangeDays}
+				/>
+
 				{summary && chartData.length > 0 && (
 					<div className="kinetic-panel p-5">
 						<div className="mb-4 flex flex-wrap items-end justify-between gap-2">
 							<div>
-								<h2 className="text-sm font-medium text-[#11110F]">
+								<h2 className="text-sm font-medium text-foreground">
 									Clicks by link
 								</h2>
-								<p className="mt-1 text-xs text-[#6A675C]">
+								<p className="mt-1 text-xs text-muted-foreground">
 									Top 20 performing links in the last {displayRangeDays} days
 								</p>
 							</div>
 							{topLink ? (
-								<div className="rounded-lg border border-black/15 bg-white px-2.5 py-1 text-xs">
+								<div className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs">
 									Top link:{" "}
 									<span className="font-semibold">{topLink.label}</span> (
 									{topLink.count})
 								</div>
 							) : null}
 						</div>
-						<div className="rounded-xl border border-border/15 bg-white px-2 py-3">
+						<div className="rounded-xl border border-border/15 bg-card px-2 py-3">
 							<ResponsiveContainer width="100%" height={220}>
 								<BarChart
 									data={chartData}
@@ -351,14 +362,14 @@ function AnalyticsPage() {
 				<div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
 					<div className="kinetic-panel p-5 xl:col-span-3">
 						<div className="mb-4">
-							<h2 className="text-sm font-medium text-[#11110F]">
+							<h2 className="text-sm font-medium text-foreground">
 								Clicks trend ({displayRangeDays} days)
 							</h2>
-							<p className="mt-1 text-xs text-[#6A675C]">
+							<p className="mt-1 text-xs text-muted-foreground">
 								Daily click volume in the selected window (UTC)
 							</p>
 						</div>
-						<div className="rounded-xl border border-border/15 bg-white px-2 py-3">
+						<div className="rounded-xl border border-border/15 bg-card px-2 py-3">
 							<ResponsiveContainer width="100%" height={210}>
 								<AreaChart
 									data={trendData}
@@ -431,10 +442,10 @@ function AnalyticsPage() {
 
 					<div className="kinetic-panel p-5 xl:col-span-2">
 						<div className="mb-4">
-							<h2 className="text-sm font-medium text-[#11110F]">
+							<h2 className="text-sm font-medium text-foreground">
 								Referrer sources
 							</h2>
-							<p className="mt-1 text-xs text-[#6A675C]">
+							<p className="mt-1 text-xs text-muted-foreground">
 								Where click traffic comes from
 							</p>
 						</div>
@@ -446,19 +457,19 @@ function AnalyticsPage() {
 								return (
 									<div
 										key={item.source}
-										className="rounded-lg border border-black/15 bg-white px-3 py-2"
+										className="rounded-lg border border-border bg-card px-3 py-2"
 									>
 										<div className="mb-1 flex items-center justify-between gap-2">
-											<span className="truncate text-xs font-medium text-[#11110F]">
+											<span className="truncate text-xs font-medium text-foreground">
 												{item.source}
 											</span>
-											<span className="text-xs text-[#4B4B45]">
+											<span className="text-xs text-muted-foreground">
 												{item.count} ({percent}%)
 											</span>
 										</div>
 										<div className="h-1.5 rounded-full bg-[#ECE9DF]">
 											<div
-												className="h-full rounded-full bg-[#FF8A4C]"
+												className="h-full rounded-full bg-warning"
 												style={{ width: `${Math.max(percent, 3)}%` }}
 											/>
 										</div>
@@ -466,7 +477,7 @@ function AnalyticsPage() {
 								);
 							})}
 							{(summary?.topReferrers ?? []).length === 0 && (
-								<p className="rounded-lg border border-black/15 bg-white px-3 py-2 text-xs text-[#6A675C]">
+								<p className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
 									No source data yet
 								</p>
 							)}
@@ -476,7 +487,7 @@ function AnalyticsPage() {
 
 				{summary && summary.recentClicks.length > 0 && (
 					<div className="kinetic-panel p-5">
-						<h2 className="mb-4 text-sm font-medium text-[#11110F]">
+						<h2 className="mb-4 text-sm font-medium text-foreground">
 							Recent clicks
 						</h2>
 						<div className="space-y-2">
@@ -490,17 +501,17 @@ function AnalyticsPage() {
 								return (
 									<div
 										key={click.id}
-										className="flex items-start justify-between gap-3 rounded-lg border border-black/10 bg-card px-3 py-2.5"
+										className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
 									>
 										<div className="min-w-0">
-											<p className="truncate text-xs font-semibold text-[#11110F]">
+											<p className="truncate text-xs font-semibold text-foreground">
 												{linkLabel}
 											</p>
-											<p className="mt-0.5 truncate text-xs text-[#4B4B45]">
+											<p className="mt-0.5 truncate text-xs text-muted-foreground">
 												Source: {source}
 											</p>
 										</div>
-										<span className="shrink-0 text-xs text-[#6A675C]">
+										<span className="shrink-0 text-xs text-muted-foreground">
 											{click.clickedAt
 												? formatDistanceToNow(new Date(click.clickedAt), {
 														addSuffix: true,
@@ -532,7 +543,7 @@ function AnalyticsPage() {
 							</thead>
 							<tbody>
 								{(summary?.clicksByLink ?? []).slice(0, 20).map((l) => (
-									<tr key={l.linkId} className="border-t border-black/15">
+									<tr key={l.linkId} className="border-t border-border">
 										<th className="max-w-48 truncate py-3 font-medium">
 											{l.title || "Deleted link"}
 										</th>
@@ -550,11 +561,11 @@ function AnalyticsPage() {
 				</section>
 				{periodClicks === 0 && (
 					<div className="kinetic-panel py-16 text-center">
-						<Activity className="mx-auto mb-3 h-8 w-8 text-[#6A675C]" />
-						<p className="text-sm text-[#4B4B45]">
+						<Activity className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+						<p className="text-sm text-muted-foreground">
 							No clicks in the last {displayRangeDays} days
 						</p>
-						<p className="mt-1 text-xs text-[#6A675C]">
+						<p className="mt-1 text-xs text-muted-foreground">
 							Share your profile link to start collecting analytics
 						</p>
 					</div>

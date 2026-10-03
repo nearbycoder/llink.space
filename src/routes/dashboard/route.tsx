@@ -165,10 +165,10 @@ function DashboardLayout() {
 							<button
 								type="button"
 								onClick={openCommandPalette}
-								className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/35 bg-white px-2 text-xs font-semibold text-[#11110F] transition-colors hover:bg-accent"
+								className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
 							>
 								<Command className="h-4 w-4" />
-								<span className="leading-none text-xs font-semibold text-[#11110F]">
+								<span className="leading-none text-xs font-semibold text-foreground">
 									K
 								</span>
 								<span className="sr-only">Open command palette</span>
@@ -184,13 +184,14 @@ function DashboardLayout() {
 							return (
 								<Link
 									key={item.to}
+									activeOptions={{ exact: item.exact }}
 									aria-current={active ? "page" : undefined}
 									to={item.to}
 									className={cn(
 										"dashboard-nav-link flex min-h-11 items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors border border-transparent",
 										active
-											? "bg-accent text-[#273B1D]"
-											: "text-[#4B4B45] hover:bg-accent hover:text-[#11110F] hover:border-foreground/25",
+											? "bg-accent text-primary"
+											: "text-muted-foreground hover:bg-accent hover:text-foreground hover:border-foreground/25",
 									)}
 								>
 									<item.icon className="w-4 h-4" />
@@ -206,7 +207,7 @@ function DashboardLayout() {
 								href={`/u/${profile.username}`}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#4B4B45] border-2 border-transparent hover:bg-accent hover:text-[#11110F] hover:border-foreground/25 transition-colors"
+								className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-muted-foreground border-2 border-transparent hover:bg-accent hover:text-foreground hover:border-foreground/25 transition-colors"
 							>
 								<ExternalLink className="w-4 h-4" />
 								View public page
@@ -215,7 +216,7 @@ function DashboardLayout() {
 						<button
 							type="button"
 							onClick={handleSignOut}
-							className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#4B4B45] border-2 border-transparent hover:bg-[#FFD9CF] hover:text-[#11110F] hover:border-foreground/25 transition-colors w-full text-left"
+							className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-muted-foreground border-2 border-transparent hover:bg-destructive/10 hover:text-foreground hover:border-foreground/25 transition-colors w-full text-left"
 						>
 							<LogOut className="w-4 h-4" />
 							Sign out
@@ -228,7 +229,7 @@ function DashboardLayout() {
 						<a href="/">
 							<SiteBrand size="sm" />
 						</a>
-						<span className="truncate text-xs font-semibold text-[#4B4B45]">
+						<span className="truncate text-xs font-semibold text-muted-foreground">
 							{
 								navItems.find((item) =>
 									item.exact

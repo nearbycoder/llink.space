@@ -34,7 +34,7 @@ export function StaticLinkList({
 				>
 					<span
 						aria-hidden="true"
-						className="text-[#6A675C] cursor-default touch-none"
+						className="text-muted-foreground cursor-default touch-none"
 					>
 						<GripVertical className="h-4 w-4" />
 					</span>
@@ -44,7 +44,7 @@ export function StaticLinkList({
 							<LinkIcon iconUrl={link.iconUrl} iconBgColor={link.iconBgColor} />
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2">
-									<span className="truncate text-sm font-medium text-[#11110F]">
+									<span className="truncate text-sm font-medium text-foreground">
 										{link.title}
 									</span>
 									{!link.isActive && (
@@ -53,11 +53,11 @@ export function StaticLinkList({
 										</Badge>
 									)}
 								</div>
-								<span className="block truncate text-xs text-[#4B4B45]">
+								<span className="block truncate text-xs text-muted-foreground">
 									{link.url}
 								</span>
 								{link.description && (
-									<span className="mt-0.5 block truncate text-xs text-[#6A675C]">
+									<span className="mt-0.5 block truncate text-xs text-muted-foreground">
 										{link.description}
 									</span>
 								)}
@@ -77,7 +77,7 @@ export function StaticLinkList({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-8 w-8 p-0 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
+							className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
 							onClick={() => onDelete(link.id)}
 						>
 							<Trash2 className="h-3.5 w-3.5" />
