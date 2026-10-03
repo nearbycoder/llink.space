@@ -1,6 +1,6 @@
 # Twenty additional features and shared styling
 
-This batch extends the existing toolkit with twenty additional features. Existing public routes, link IDs, authentication, ownership, and database schema remain compatible. It introduces no dependencies or migrations.
+This batch extends the existing toolkit with twenty additional features. Existing public routes, link IDs, authentication, ownership, and database schema remain compatible. It introduces no new dependencies or migrations. Integration also pins the existing transitive DOMPurify dependency to its patched 3.4.16 release.
 
 | # | Feature | Where to use it |
 |---|---|---|
@@ -45,6 +45,7 @@ Validation uses disposable databases on local PostgreSQL port 55432, isolated fr
 
 | Gate | Final result |
 |---|---|
+| Dependency audit | Passed after the targeted DOMPurify patch; 656 packages checked, no findings |
 | Unit tests | 163 passed across 47 files |
 | Browser journeys | 83 passed, 0 failed, 0 not run; Chromium project, 3 workers, same final candidate |
 | TypeScript | Passed |
@@ -53,7 +54,7 @@ Validation uses disposable databases on local PostgreSQL port 55432, isolated fr
 | Existing migrations on fresh isolated databases | Passed; schema unchanged by this batch |
 | Mocked provider/database workflows | Passed |
 | Local production CSP/audio browser check | Passed; HTTPS audio plays only after requested, with actual response CSP |
-| Diff whitespace and compatibility review | Passed; no dependency, migration, or route-tree changes |
+| Diff whitespace and compatibility review | Passed; no migration or route-tree changes; only DOMPurify receives a targeted patch update |
 | Desktop/mobile visual review | Inspected batch dialogs, badge dialog, public blocks, and analytics screenshots |
 
 Production media support adds only `media-src 'self' https:` to the existing CSP. Existing script, connection, frame, and other policies remain intact. A local production build served on loopback port 3180 was checked with an isolated HTTPS audio fixture and mocked remote media; external analytics/font requests were blocked during that test. The temporary production test server was stopped afterward. The review server on port 3080 remains available.
@@ -62,6 +63,6 @@ Earlier attempts are separate from the final pass: the initial browser launch di
 
 Screenshots and the production playback trace are preserved at `/home/nearby/.t3/scratch/2026-10-03-you-are-going-to-be-bcecbacc/llink-expansion-evidence`. This also retains the earlier production failure context and gate accounting. Earlier development attempts had no retry trace enabled; their known failures are documented rather than represented as passing runs.
 
-Remaining release prerequisite: review and the normal release workflow. The review branch for this batch is `codex/feature-expansion-2026-10`. No PR, merge, or deployment is part of this handoff. No new environment variable, dependency, or migration is required by this batch.
+Integration is tracked in [PR #51](https://github.com/nearbycoder/llink.space/pull/51). The review branch is `codex/feature-expansion-2026-10`; the user subsequently authorized merging it into main. The first remote unit job stopped at the dependency audit because the existing PostHog dependency resolved DOMPurify 3.4.15, affected by [GHSA-p98j-92pf-mc4p](https://github.com/advisories/GHSA-p98j-92pf-mc4p). A precise 3.4.16 override updates that single resolved package and keeps the fail-closed audit unchanged. Subsequent CI results are attached to the PR. No new environment variable, dependency, or migration is required.
 
 Local review: [dashboard](http://100.69.136.40:3080/dashboard), [public fixture](http://100.69.136.40:3080/u/studiomuruoht0). The local fixture account is `studiomuruoht0@example.test`, password `ExpansionPreview123!`; it belongs only to the disposable database. Loopback access is available at `http://127.0.0.1:3080`. No production release or infrastructure changes were performed. The review server must remain running for these URLs to work.
