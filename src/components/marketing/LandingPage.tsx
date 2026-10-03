@@ -122,7 +122,7 @@ export function LandingPage() {
 					<div className="marketing-section-heading">
 						<div>
 							<p className="marketing-eyebrow">
-								The new collection / {count} features, available now
+								Your toolkit / {count} features, available now
 							</p>
 							<h2 id="features-title">
 								Small details.
@@ -131,15 +131,12 @@ export function LandingPage() {
 							</h2>
 						</div>
 						<p>
-							Every new feature, right here.
+							Useful tools, right here.
 							<br />
 							Built into the app, ready when you are.
 						</p>
 					</div>
-					<fieldset
-						className="marketing-filters"
-						aria-label="Filter new features"
-					>
+					<fieldset className="marketing-filters" aria-label="Filter features">
 						<button
 							type="button"
 							aria-pressed={filter === "all"}
@@ -164,7 +161,7 @@ export function LandingPage() {
 							? count
 							: featureGroups.find((group) => group.id === filter)?.features
 									.length}{" "}
-						new features
+						features
 					</p>
 					<div className="marketing-feature-groups">
 						{featureGroups
@@ -249,11 +246,10 @@ export function LandingPage() {
 				>
 					<h2>A few useful details.</h2>
 					<details>
-						<summary>What do I need to use the new features?</summary>
+						<summary>What do I need to use these tools?</summary>
 						<p>
 							They work with your existing llink.space account and browser. You
-							do not need to connect an additional service to use these 20
-							tools.
+							do not need to connect an additional service to use these tools.
 						</p>
 					</details>
 					<details>

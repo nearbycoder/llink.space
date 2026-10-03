@@ -81,7 +81,7 @@ function SignUpPage() {
 		<Card className="border-0 bg-transparent py-0 shadow-none">
 			<CardHeader className="space-y-1 px-0">
 				<CardTitle className="text-xl font-semibold">Create account</CardTitle>
-				<CardDescription className="text-[#4B4B45]">
+				<CardDescription className="text-muted-foreground">
 					Get your link in bio in seconds
 				</CardDescription>
 			</CardHeader>
@@ -94,7 +94,7 @@ function SignUpPage() {
 					{error && (
 						<p
 							role="alert"
-							className="text-sm text-[#7E1612] bg-[#FFD9CF] border border-border rounded-xl px-3 py-2"
+							className="text-sm text-destructive bg-destructive/10 border border-border rounded-xl px-3 py-2"
 						>
 							{error}
 						</p>
@@ -110,7 +110,7 @@ function SignUpPage() {
 							{...register("name")}
 						/>
 						{errors.name && (
-							<p className="text-xs text-[#B42318]">{errors.name.message}</p>
+							<p className="text-xs text-destructive">{errors.name.message}</p>
 						)}
 					</div>
 					<div className="space-y-1.5">
@@ -124,7 +124,7 @@ function SignUpPage() {
 							{...register("email")}
 						/>
 						{errors.email && (
-							<p className="text-xs text-[#B42318]">{errors.email.message}</p>
+							<p className="text-xs text-destructive">{errors.email.message}</p>
 						)}
 					</div>
 					<div className="space-y-1.5">
@@ -138,7 +138,7 @@ function SignUpPage() {
 							{...register("password")}
 						/>
 						{errors.password && (
-							<p className="text-xs text-[#B42318]">
+							<p className="text-xs text-destructive">
 								{errors.password.message}
 							</p>
 						)}
@@ -155,11 +155,11 @@ function SignUpPage() {
 								: "Create account"}
 					</Button>
 				</form>
-				<p className="text-sm text-center text-[#4B4B45] mt-4">
+				<p className="text-sm text-center text-muted-foreground mt-4">
 					Already have an account?{" "}
 					<Link
 						to="/sign-in"
-						className="text-[#11110F] font-medium underline-offset-2 hover:underline"
+						className="text-foreground font-medium underline-offset-2 hover:underline"
 					>
 						Sign in
 					</Link>

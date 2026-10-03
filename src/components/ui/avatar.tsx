@@ -48,7 +48,7 @@ function AvatarFallback({
 			data-slot="avatar-fallback"
 			delayMs={delayMs}
 			className={cn(
-				"flex size-full items-center justify-center rounded-full border border-black bg-[#F5FF7B] text-[#11110F] text-sm group-data-[size=sm]/avatar:text-xs",
+				"flex size-full items-center justify-center rounded-full border border-border bg-accent text-foreground text-sm group-data-[size=sm]/avatar:text-xs",
 				className,
 			)}
 			{...props}

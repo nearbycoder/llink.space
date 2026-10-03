@@ -49,7 +49,7 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 		>
 			<button
 				type="button"
-				className="text-[#6A675C] hover:text-[#11110F] cursor-grab active:cursor-grabbing touch-none"
+				className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
 				{...attributes}
 				{...listeners}
 			>
@@ -61,7 +61,7 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 					<LinkIcon iconUrl={link.iconUrl} iconBgColor={link.iconBgColor} />
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
-							<span className="font-medium text-sm text-[#11110F] truncate">
+							<span className="font-medium text-sm text-foreground truncate">
 								{link.title}
 							</span>
 							{!link.isActive && (
@@ -70,11 +70,11 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 								</Badge>
 							)}
 						</div>
-						<span className="text-xs text-[#4B4B45] truncate block">
+						<span className="text-xs text-muted-foreground truncate block">
 							{link.url}
 						</span>
 						{link.description && (
-							<span className="text-xs text-[#6A675C] truncate block mt-0.5">
+							<span className="text-xs text-muted-foreground truncate block mt-0.5">
 								{link.description}
 							</span>
 						)}
@@ -94,7 +94,7 @@ export function LinkItem({ link, onEdit, onDelete }: LinkItemProps) {
 				<Button
 					variant="ghost"
 					size="sm"
-					className="h-8 w-8 p-0 text-[#B42318] hover:text-[#7E1612] hover:bg-[#FFD9CF]"
+					className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
 					onClick={() => onDelete(link.id)}
 				>
 					<Trash2 className="w-3.5 h-3.5" />

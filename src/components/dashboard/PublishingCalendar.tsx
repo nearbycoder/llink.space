@@ -48,10 +48,7 @@ export function PublishingCalendar({
 					{entries.length ? (
 						<ol className="space-y-3">
 							{entries.map((e) => (
-								<li
-									key={e.id}
-									className="rounded-xl border border-black/20 p-3"
-								>
+								<li key={e.id} className="rounded-xl border border-border p-3">
 									<p className="text-sm font-bold">{e.title}</p>
 									<time dateTime={e.start} className="text-xs">
 										{new Date(e.start).toLocaleString()}

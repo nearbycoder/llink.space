@@ -291,7 +291,7 @@ function LinkRow({
 			className={cn(
 				"group grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 sm:flex sm:gap-3 rounded-xl border border-border bg-card p-4 shadow-sm",
 				isDragging && "opacity-50",
-				isSelected && "bg-[#E6FAFC] shadow-sm",
+				isSelected && "bg-info/10 shadow-sm",
 			)}
 		>
 			{selectionMode ? (
@@ -306,9 +306,9 @@ function LinkRow({
 				<button
 					type="button"
 					className={cn(
-						"touch-none text-[#6A675C]",
+						"touch-none text-muted-foreground",
 						enableDrag &&
-							"cursor-grab hover:text-[#11110F] active:cursor-grabbing",
+							"cursor-grab hover:text-foreground active:cursor-grabbing",
 					)}
 					aria-label={`Drag ${link.title}`}
 					disabled={!enableDrag}
@@ -324,7 +324,7 @@ function LinkRow({
 					<LinkIcon iconUrl={link.iconUrl} iconBgColor={link.iconBgColor} />
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
-							<span className="truncate text-sm font-medium text-[#11110F]">
+							<span className="truncate text-sm font-medium text-foreground">
 								{link.title}
 							</span>
 							{publishingStatus(link) !== "Live" && (
@@ -333,11 +333,11 @@ function LinkRow({
 								</Badge>
 							)}
 						</div>
-						<span className="block truncate text-xs text-[#4B4B45]">
+						<span className="block truncate text-xs text-muted-foreground">
 							{link.url}
 						</span>
 						{link.description && (
-							<span className="mt-0.5 block truncate text-xs text-[#6A675C]">
+							<span className="mt-0.5 block truncate text-xs text-muted-foreground">
 								{link.description}
 							</span>
 						)}
@@ -346,7 +346,7 @@ function LinkRow({
 			</div>
 
 			{!selectionMode && (
-				<div className="col-span-2 flex justify-end gap-1 border-t border-black/10 pt-2 sm:border-0 sm:pt-0">
+				<div className="col-span-2 flex justify-end gap-1 border-t border-border pt-2 sm:border-0 sm:pt-0">
 					<Button
 						variant="ghost"
 						size="sm"
@@ -387,7 +387,7 @@ function LinkRow({
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-11 w-11 p-0 sm:h-9 sm:w-9 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
+						className="h-11 w-11 p-0 sm:h-9 sm:w-9 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 text-destructive hover:bg-destructive/10 hover:text-destructive"
 						onClick={() => onDelete(link.id)}
 						disabled={isBusy}
 						aria-label={`Delete ${link.title}`}
@@ -408,12 +408,12 @@ interface InsertionRailProps {
 function InsertionRail({ onClick }: InsertionRailProps) {
 	return (
 		<div className="group/rail relative py-2">
-			<div className="border-t border-dashed border-black/30" />
+			<div className="border-t border-dashed border-border" />
 			<button
 				type="button"
 				onClick={onClick}
 				aria-label="Create a section at this position"
-				className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-black bg-accent px-2 py-0.5 text-[10px] font-semibold text-[#11110F] opacity-0 shadow-sm transition-all hover:-translate-y-[55%] group-hover/rail:opacity-100 focus-visible:opacity-100"
+				className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-border bg-accent px-2 py-0.5 text-[10px] font-semibold text-foreground opacity-0 shadow-sm transition-all hover:-translate-y-[55%] group-hover/rail:opacity-100 focus-visible:opacity-100"
 			>
 				<Plus className="h-3 w-3" />
 				Create section here
@@ -469,7 +469,7 @@ function SectionColumn({
 		<section
 			ref={setNodeRef}
 			className={cn(
-				"rounded-2xl border border-border bg-[#F1F4ED] p-4 shadow-sm transition-colors",
+				"rounded-2xl border border-border bg-muted p-4 shadow-sm transition-colors",
 				isOver && enableDrag && "bg-accent",
 			)}
 		>
@@ -480,10 +480,10 @@ function SectionColumn({
 				)}
 			>
 				<div>
-					<h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[#11110F]">
+					<h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
 						{title}
 					</h3>
-					<p className="text-xs text-[#5B5648]">{description}</p>
+					<p className="text-xs text-muted-foreground">{description}</p>
 				</div>
 				<div className="flex gap-1">
 					<Button
@@ -523,7 +523,7 @@ function SectionColumn({
 								type="button"
 								variant="ghost"
 								size="sm"
-								className="h-7 w-7 p-0 text-[#B42318] hover:bg-[#FFD9CF] hover:text-[#7E1612]"
+								className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
 								onClick={onDeleteSection}
 								aria-label={`Delete ${title} section`}
 								title={`Delete ${title} section`}
@@ -569,7 +569,7 @@ function SectionColumn({
 								))}
 							</div>
 						) : (
-							<div className="rounded-xl border-2 border-dashed border-black/30 bg-white/80 px-3 py-4 text-center text-xs text-[#5B5648]">
+							<div className="rounded-xl border-2 border-dashed border-border bg-card/80 px-3 py-4 text-center text-xs text-muted-foreground">
 								{enableDrag
 									? "Drop links here"
 									: "No links in this section yet"}
@@ -791,7 +791,10 @@ export function SectionedLinkBoard({
 				{activeLink ? (
 					<div className="w-full max-w-[680px] rounded-xl border border-border bg-card p-4 shadow-sm">
 						<div className="flex items-center gap-3">
-							<span aria-hidden="true" className="touch-none text-[#6A675C]">
+							<span
+								aria-hidden="true"
+								className="touch-none text-muted-foreground"
+							>
 								<GripVertical className="h-4 w-4" />
 							</span>
 							<div className="min-w-0 flex-1">
@@ -802,7 +805,7 @@ export function SectionedLinkBoard({
 									/>
 									<div className="min-w-0 flex-1">
 										<div className="flex items-center gap-2">
-											<span className="truncate text-sm font-medium text-[#11110F]">
+											<span className="truncate text-sm font-medium text-foreground">
 												{activeLink.title}
 											</span>
 											{!activeLink.isActive && (
@@ -811,11 +814,11 @@ export function SectionedLinkBoard({
 												</Badge>
 											)}
 										</div>
-										<span className="block truncate text-xs text-[#4B4B45]">
+										<span className="block truncate text-xs text-muted-foreground">
 											{activeLink.url}
 										</span>
 										{activeLink.description && (
-											<span className="mt-0.5 block truncate text-xs text-[#6A675C]">
+											<span className="mt-0.5 block truncate text-xs text-muted-foreground">
 												{activeLink.description}
 											</span>
 										)}

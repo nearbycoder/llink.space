@@ -152,7 +152,7 @@ export function PublicLinkCommandBar({
 							<Command className="h-4 w-4" />
 							Quick jump
 						</DialogTitle>
-						<DialogDescription className="text-[#5B5648]">
+						<DialogDescription className="text-muted-foreground">
 							Find a link instantly and open it in a new tab.
 						</DialogDescription>
 					</DialogHeader>
@@ -206,8 +206,8 @@ export function PublicLinkCommandBar({
 										onClick={() => openLink(link)}
 										className={`w-full rounded-xl border-2 px-3 py-2 text-left transition-colors ${
 											index === selectedIndex
-												? "border-black bg-[#11110F] text-[#F5FF7B]"
-												: "border-black/80 bg-card text-[#11110F] hover:bg-[#F8F8F4]"
+												? "border-border bg-primary text-primary-foreground"
+												: "border-border bg-card text-foreground hover:bg-muted"
 										}`}
 									>
 										<div className="flex items-start justify-between gap-2">
@@ -218,8 +218,8 @@ export function PublicLinkCommandBar({
 												<span
 													className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${
 														index === selectedIndex
-															? "border-[#F5FF7B]/70 text-[#F5FF7B]"
-															: "border-black/35 bg-[#F5FF7B]/55 text-[#4F4A00]"
+															? "border-primary-foreground/70 text-primary-foreground"
+															: "border-border bg-accent/55 text-primary"
 													}`}
 												>
 													{link.sectionTitle}
@@ -229,8 +229,8 @@ export function PublicLinkCommandBar({
 										<p
 											className={`truncate text-xs ${
 												index === selectedIndex
-													? "text-[#DDFBFD]"
-													: "text-[#5B5648]"
+													? "text-primary-foreground/80"
+													: "text-muted-foreground"
 											}`}
 										>
 											{link.description?.trim() || hostFromUrl(link.url)}
@@ -238,18 +238,18 @@ export function PublicLinkCommandBar({
 									</button>
 								))
 							) : (
-								<div className="rounded-xl border-2 border-dashed border-black/40 bg-white/70 p-4 text-center">
-									<p className="text-sm font-medium text-[#11110F]">
+								<div className="rounded-xl border-2 border-dashed border-border bg-card/70 p-4 text-center">
+									<p className="text-sm font-medium text-foreground">
 										No matching links
 									</p>
-									<p className="mt-1 text-xs text-[#5B5648]">
+									<p className="mt-1 text-xs text-muted-foreground">
 										Try a different keyword.
 									</p>
 								</div>
 							)}
 						</div>
 
-						<div className="flex items-center justify-between border-t border-black/15 pt-2 text-xs text-[#5B5648]">
+						<div className="flex items-center justify-between border-t border-border pt-2 text-xs text-muted-foreground">
 							<span>
 								Use {isApplePlatform ? "Command" : "Ctrl"} + K to open anytime
 							</span>

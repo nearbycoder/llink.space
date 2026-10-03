@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { AccountSessions } from "#/components/dashboard/AccountSessions";
 import { ProfileLoadingState } from "#/components/dashboard/DashboardLoading";
+import { ProfileBadge } from "#/components/dashboard/ProfileBadge";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
@@ -438,7 +439,7 @@ function ProfilePage() {
 	};
 
 	return (
-		<div className="max-w-2xl px-4 py-5 sm:px-6 md:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
 			<UnsavedChangesGuard
 				when={
 					isDirty ||
@@ -451,12 +452,12 @@ function ProfilePage() {
 			/>
 			<div className="mb-6">
 				<h1
-					className="text-2xl text-[#11110F]"
+					className="text-2xl text-foreground"
 					style={{ fontFamily: "'Work Sans', sans-serif" }}
 				>
 					Profile
 				</h1>
-				<p className="mt-1 text-sm text-[#4B4B45]">
+				<p className="mt-1 text-sm text-muted-foreground">
 					Your public profile information
 				</p>
 			</div>
@@ -469,7 +470,7 @@ function ProfilePage() {
 							alt={`${profile.displayName ?? profile.username} avatar`}
 							decoding="async"
 						/>
-						<AvatarFallback className="bg-[#F5FF7B] font-medium text-[#11110F]">
+						<AvatarFallback className="bg-accent font-medium text-foreground">
 							{(
 								profile.displayName?.charAt(0) ??
 								profile.username.charAt(0) ??
@@ -478,10 +479,10 @@ function ProfilePage() {
 						</AvatarFallback>
 					</Avatar>
 					<div>
-						<p className="text-sm font-medium text-[#11110F]">
+						<p className="text-sm font-medium text-foreground">
 							@{profile.username}
 						</p>
-						<p className="text-xs text-[#4B4B45]">
+						<p className="text-xs text-muted-foreground">
 							{`llink.space/u/${profile.username}`}
 						</p>
 					</div>
@@ -504,7 +505,7 @@ function ProfilePage() {
 							{...register("displayName")}
 						/>
 						{errors.displayName && (
-							<p className="text-xs text-[#B42318]">
+							<p className="text-xs text-destructive">
 								{errors.displayName.message}
 							</p>
 						)}
@@ -520,18 +521,18 @@ function ProfilePage() {
 							{...register("bio")}
 						/>
 						<div className="flex items-center justify-between gap-3">
-							<p className="text-xs text-[#6A675C]">
+							<p className="text-xs text-muted-foreground">
 								Keep it concise and memorable.
 							</p>
 							<p
-								className={`text-xs font-semibold ${bioValue.length > 270 ? "text-[#B42318]" : "text-[#6A675C]"}`}
+								className={`text-xs font-semibold ${bioValue.length > 270 ? "text-destructive" : "text-muted-foreground"}`}
 								aria-live="polite"
 							>
 								{bioValue.length}/300
 							</p>
 						</div>
 						{errors.bio && (
-							<p className="text-xs text-[#B42318]">{errors.bio.message}</p>
+							<p className="text-xs text-destructive">{errors.bio.message}</p>
 						)}
 					</div>
 
@@ -571,29 +572,29 @@ function ProfilePage() {
 							)}
 						</div>
 						{avatarUploadError && (
-							<p className="text-xs text-[#B42318]">{avatarUploadError}</p>
+							<p className="text-xs text-destructive">{avatarUploadError}</p>
 						)}
-						<p className="text-xs text-[#6A675C]">
+						<p className="text-xs text-muted-foreground">
 							Upload an image and we handle the storage URL automatically. In
 							local dev, files are stored in `public/uploads`.
 						</p>
 						<input type="hidden" {...register("avatarUrl")} />
 						{errors.avatarUrl && (
-							<p className="text-xs text-[#B42318]">
+							<p className="text-xs text-destructive">
 								{errors.avatarUrl.message}
 							</p>
 						)}
 					</div>
 
-					<div className="space-y-3 rounded-xl border border-border/80 bg-[#F1F4ED] p-4">
+					<div className="space-y-3 rounded-xl border border-border/80 bg-muted p-4">
 						<div>
 							<Label
 								htmlFor={backgroundUploadId}
-								className="text-sm font-semibold text-[#11110F]"
+								className="text-sm font-semibold text-foreground"
 							>
 								Page background
 							</Label>
-							<p className="mt-1 text-xs text-[#6A675C]">
+							<p className="mt-1 text-xs text-muted-foreground">
 								Choose a solid color, gradient, or upload your own image.
 							</p>
 						</div>
@@ -614,8 +615,8 @@ function ProfilePage() {
 										}
 										className={`rounded-xl border-2 px-3 py-2 text-sm font-semibold transition ${
 											isSelected
-												? "border-black bg-[#F5FF7B] text-[#11110F]"
-												: "border-black/40 bg-white text-[#11110F]"
+												? "border-border bg-accent text-foreground"
+												: "border-border bg-card text-foreground"
 										}`}
 									>
 										{BACKGROUND_TYPE_LABELS[type]}
@@ -640,9 +641,7 @@ function ProfilePage() {
 												})
 											}
 											className={`h-10 rounded-lg border-2 transition ${
-												isSelected
-													? "border-black shadow-sm"
-													: "border-black/35"
+												isSelected ? "border-border shadow-sm" : "border-border"
 											}`}
 											style={{ background: option.value }}
 											aria-label={`Use ${option.label} background`}
@@ -668,14 +667,12 @@ function ProfilePage() {
 													shouldValidate: true,
 												})
 											}
-											className={`h-14 rounded-xl border-2 px-3 text-left text-xs font-semibold text-[#11110F] ${
-												isSelected
-													? "border-black shadow-sm"
-													: "border-black/35"
+											className={`h-14 rounded-xl border-2 px-3 text-left text-xs font-semibold text-foreground ${
+												isSelected ? "border-border shadow-sm" : "border-border"
 											}`}
 											style={{ background: option.value }}
 										>
-											<span className="rounded bg-white/85 px-2 py-1">
+											<span className="rounded bg-card/85 px-2 py-1">
 												{option.label}
 											</span>
 										</button>
@@ -719,7 +716,7 @@ function ProfilePage() {
 										</Button>
 									)}
 								</div>
-								<p className="text-xs text-[#6A675C]">
+								<p className="text-xs text-muted-foreground">
 									Custom background images use the same storage pipeline as
 									avatars.
 								</p>
@@ -730,16 +727,18 @@ function ProfilePage() {
 							className="relative h-32 overflow-hidden rounded-xl border border-border"
 							style={previewBackgroundStyle}
 						>
-							<div className="absolute left-2 top-2 rounded-md bg-white/85 px-2 py-1 text-[11px] font-semibold text-[#11110F]">
+							<div className="absolute left-2 top-2 rounded-md bg-card/85 px-2 py-1 text-[11px] font-semibold text-foreground">
 								Live preview
 							</div>
 						</div>
 
 						{backgroundUploadError && (
-							<p className="text-xs text-[#B42318]">{backgroundUploadError}</p>
+							<p className="text-xs text-destructive">
+								{backgroundUploadError}
+							</p>
 						)}
 						{errors.pageBackgroundImageUrl && (
-							<p className="text-xs text-[#B42318]">
+							<p className="text-xs text-destructive">
 								{errors.pageBackgroundImageUrl.message}
 							</p>
 						)}
@@ -752,7 +751,7 @@ function ProfilePage() {
 					<div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex items-center gap-2">
 							{isDirty && (
-								<span className="rounded-full border border-black/25 bg-accent px-2.5 py-1 text-xs font-semibold text-[#5B5648]">
+								<span className="rounded-full border border-border bg-accent px-2.5 py-1 text-xs font-semibold text-muted-foreground">
 									Unsaved changes
 								</span>
 							)}
@@ -778,8 +777,8 @@ function ProfilePage() {
 			</div>
 
 			<div className="kinetic-panel mt-4 p-6">
-				<h2 className="text-base font-semibold text-[#11110F]">Security</h2>
-				<p className="mt-1 text-xs text-[#6A675C]">
+				<h2 className="text-base font-semibold text-foreground">Security</h2>
+				<p className="mt-1 text-xs text-muted-foreground">
 					Update your password to keep your account secure.
 				</p>
 
@@ -790,7 +789,7 @@ function ProfilePage() {
 					inert={!isHydrated}
 				>
 					{passwordUpdateError && (
-						<p className="rounded-xl border border-border bg-[#FFD9CF] px-3 py-2 text-sm text-[#7E1612]">
+						<p className="rounded-xl border border-border bg-destructive/10 px-3 py-2 text-sm text-destructive">
 							{passwordUpdateError}
 						</p>
 					)}
@@ -810,7 +809,7 @@ function ProfilePage() {
 							{...registerPassword("currentPassword")}
 						/>
 						{passwordFormErrors.currentPassword && (
-							<p className="text-xs text-[#B42318]">
+							<p className="text-xs text-destructive">
 								{passwordFormErrors.currentPassword.message}
 							</p>
 						)}
@@ -826,7 +825,7 @@ function ProfilePage() {
 							{...registerPassword("newPassword")}
 						/>
 						{passwordFormErrors.newPassword && (
-							<p className="text-xs text-[#B42318]">
+							<p className="text-xs text-destructive">
 								{passwordFormErrors.newPassword.message}
 							</p>
 						)}
@@ -842,7 +841,7 @@ function ProfilePage() {
 							{...registerPassword("confirmNewPassword")}
 						/>
 						{passwordFormErrors.confirmNewPassword && (
-							<p className="text-xs text-[#B42318]">
+							<p className="text-xs text-destructive">
 								{passwordFormErrors.confirmNewPassword.message}
 							</p>
 						)}
@@ -858,6 +857,7 @@ function ProfilePage() {
 				</form>
 			</div>
 			<AccountSessions />
+			<ProfileBadge username={profile.username} />
 		</div>
 	);
 }

@@ -232,13 +232,13 @@ export function LinkForm({
 					{...register("title")}
 				/>
 				<p
-					className="text-right text-[11px] font-semibold text-[#6A675C]"
+					className="text-right text-[11px] font-semibold text-muted-foreground"
 					aria-live="polite"
 				>
 					{titleValue.length}/100
 				</p>
 				{errors.title && (
-					<p className="text-xs text-[#B42318]">{errors.title.message}</p>
+					<p className="text-xs text-destructive">{errors.title.message}</p>
 				)}
 			</div>
 
@@ -254,11 +254,11 @@ export function LinkForm({
 					placeholder="example.com"
 					{...register("url")}
 				/>
-				<p className="text-[11px] text-[#6A675C]">
+				<p className="text-[11px] text-muted-foreground">
 					HTTPS is added automatically when you omit it.
 				</p>
 				{errors.url && (
-					<p className="text-xs text-[#B42318]">{errors.url.message}</p>
+					<p className="text-xs text-destructive">{errors.url.message}</p>
 				)}
 			</div>
 
@@ -307,12 +307,12 @@ export function LinkForm({
 							}}
 							aria-expanded={isSectionDropdownOpen}
 							aria-haspopup="listbox"
-							className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm text-[#11110F] shadow-sm outline-none transition-[color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-black/25"
+							className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm outline-none transition-[color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-ring/25"
 						>
 							<span className="truncate">{selectedSectionTitle}</span>
 							<ChevronDown
 								className={cn(
-									"h-4 w-4 shrink-0 text-[#5B5648] transition-transform",
+									"h-4 w-4 shrink-0 text-muted-foreground transition-transform",
 									isSectionDropdownOpen && "rotate-180",
 								)}
 							/>
@@ -335,8 +335,8 @@ export function LinkForm({
 									className={cn(
 										"flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors",
 										!selectedSectionId
-											? "bg-[#11110F] text-[#F5FF7B]"
-											: "text-[#11110F] hover:bg-[#F8F8F4]",
+											? "bg-primary text-primary-foreground"
+											: "text-foreground hover:bg-muted",
 									)}
 								>
 									Unsectioned
@@ -360,8 +360,8 @@ export function LinkForm({
 											className={cn(
 												"flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors",
 												isSelected
-													? "bg-[#11110F] text-[#F5FF7B]"
-													: "text-[#11110F] hover:bg-[#F8F8F4]",
+													? "bg-primary text-primary-foreground"
+													: "text-foreground hover:bg-muted",
 											)}
 										>
 											<span className="truncate">{section.title}</span>
@@ -372,7 +372,9 @@ export function LinkForm({
 						)}
 					</div>
 					{errors.sectionId && (
-						<p className="text-xs text-[#B42318]">{errors.sectionId.message}</p>
+						<p className="text-xs text-destructive">
+							{errors.sectionId.message}
+						</p>
 					)}
 				</div>
 			)}
@@ -397,8 +399,8 @@ export function LinkForm({
 								className={cn(
 									"flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-2 text-[10px] font-medium transition-all",
 									isSelected
-										? "border-black shadow-sm"
-										: "border-black/20 bg-white text-[#4B4B45] hover:border-foreground/25 hover:bg-card",
+										? "border-border shadow-sm"
+										: "border-border bg-card text-muted-foreground hover:border-foreground/25 hover:bg-card",
 								)}
 								style={
 									isSelected
@@ -417,12 +419,12 @@ export function LinkForm({
 					})}
 				</div>
 				{errors.iconUrl && (
-					<p className="text-xs text-[#B42318]">{errors.iconUrl.message}</p>
+					<p className="text-xs text-destructive">{errors.iconUrl.message}</p>
 				)}
 				{selectedIcon && (
-					<p className="text-xs text-[#6A675C]">
+					<p className="text-xs text-muted-foreground">
 						Selected icon:{" "}
-						<span className="font-semibold text-[#11110F]">
+						<span className="font-semibold text-foreground">
 							{
 								LINK_ICON_OPTIONS.find((option) => option.key === selectedIcon)
 									?.label
@@ -468,7 +470,7 @@ export function LinkForm({
 								shouldValidate: true,
 							})
 						}
-						className="h-10 w-12 cursor-pointer rounded-xl border border-border bg-white p-1 shadow-sm"
+						className="h-10 w-12 cursor-pointer rounded-xl border border-border bg-card p-1 shadow-sm"
 					/>
 					<Input
 						value={selectedIconBgColor}
@@ -491,7 +493,9 @@ export function LinkForm({
 					/>
 				</div>
 				{errors.iconBgColor && (
-					<p className="text-xs text-[#B42318]">{errors.iconBgColor.message}</p>
+					<p className="text-xs text-destructive">
+						{errors.iconBgColor.message}
+					</p>
 				)}
 			</div>
 
@@ -506,24 +510,26 @@ export function LinkForm({
 					{...register("description")}
 				/>
 				<p
-					className="text-right text-[11px] font-semibold text-[#6A675C]"
+					className="text-right text-[11px] font-semibold text-muted-foreground"
 					aria-live="polite"
 				>
 					{descriptionValue.length}/200
 				</p>
 				{errors.description && (
-					<p className="text-xs text-[#B42318]">{errors.description.message}</p>
+					<p className="text-xs text-destructive">
+						{errors.description.message}
+					</p>
 				)}
 			</div>
 
 			<details
-				className="rounded-xl border border-black/20 p-3"
+				className="rounded-xl border border-border p-3"
 				onToggle={(event) => setPreviewOpen(event.currentTarget.open)}
 			>
 				<summary className="cursor-pointer text-sm font-semibold">
 					Preview link card
 				</summary>
-				<p className="my-2 text-xs text-[#4B4B45]">
+				<p className="my-2 text-xs text-muted-foreground">
 					Live content preview. Your page’s theme applies when published.
 				</p>
 				{previewOpen && (
@@ -598,7 +604,7 @@ export function LinkForm({
 					Schedule shortcut
 					<select
 						value=""
-						className="mt-1 block w-full rounded-xl border border-border bg-white p-2 text-base"
+						className="mt-1 block w-full rounded-xl border border-border bg-card p-2 text-base"
 						onChange={(event) => {
 							const next = publishingPreset(
 								event.target.value as PublishingPreset,
@@ -618,7 +624,7 @@ export function LinkForm({
 						<option value="none">No schedule</option>
 					</select>
 				</label>
-				<p className="text-xs text-[#4B4B45]">
+				<p className="text-xs text-muted-foreground">
 					Shortcuts replace both dates below. Hidden links stay hidden until you
 					activate them.
 				</p>
@@ -640,13 +646,13 @@ export function LinkForm({
 						/>
 					</label>
 				</div>
-				<p className="text-xs text-[#4B4B45]">
+				<p className="text-xs text-muted-foreground">
 					Times use your device’s timezone. Leave blank for no schedule. Paused
 					links stay hidden.
 				</p>
 				{errors.expireAt && <p role="alert">{errors.expireAt.message}</p>}
 			</fieldset>
-			<div className="sticky -bottom-6 z-10 -mx-1 flex flex-col-reverse gap-2 border-t border-black/15 bg-card px-1 py-4 sm:flex-row">
+			<div className="sticky -bottom-6 z-10 -mx-1 flex flex-col-reverse gap-2 border-t border-border bg-card px-1 py-4 sm:flex-row">
 				<Button
 					type="submit"
 					disabled={isSubmitting}

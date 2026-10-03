@@ -14,11 +14,11 @@ export default function Header() {
 
 				<nav className="flex items-center gap-4">
 					{isPending ? (
-						<div className="h-8 w-28 bg-[#F5FF7B] border border-border rounded-lg animate-pulse" />
+						<div className="h-8 w-28 bg-muted border border-border rounded-lg animate-pulse" />
 					) : session?.user ? (
 						<Link
 							to="/dashboard"
-							className="text-sm font-semibold text-[#11110F] hover:underline"
+							className="text-sm font-semibold text-foreground hover:underline"
 						>
 							Dashboard
 						</Link>
@@ -26,13 +26,13 @@ export default function Header() {
 						<>
 							<Link
 								to="/sign-in"
-								className="text-sm font-semibold text-[#4B4B45] hover:text-[#11110F] transition-colors"
+								className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
 							>
 								Sign in
 							</Link>
 							<Link
 								to="/sign-up"
-								className="text-sm font-semibold border border-border bg-[#11110F] text-[#F5FF7B] px-4 py-2 rounded-lg shadow-sm hover:brightness-95 transition-transform"
+								className="text-sm font-semibold border border-border bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-sm hover:brightness-95 transition-transform"
 							>
 								Get started
 							</Link>

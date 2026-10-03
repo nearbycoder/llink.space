@@ -25,11 +25,11 @@ export interface DashboardNavItem {
 	exact: boolean;
 }
 const dockClass =
-	"flex h-14 items-center rounded-2xl border border-border bg-[#11110F] p-1 text-[#FFFCEF] shadow-[0_8px_32px_rgba(17,17,15,0.18)]";
+	"flex h-14 items-center rounded-2xl border border-border bg-primary p-1 text-primary-foreground shadow-[0_8px_32px_rgba(17,17,15,0.18)]";
 const findClass =
-	"inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold hover:bg-white/10 focus-visible:outline-[#F5FF7B]";
+	"inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold hover:bg-card/10 focus-visible:outline-[#F5FF7B]";
 const toggleClass =
-	"inline-flex h-11 w-12 items-center justify-center rounded-xl text-[#F5FF7B] hover:bg-white/10 focus-visible:outline-[#F5FF7B]";
+	"inline-flex h-11 w-12 items-center justify-center rounded-xl text-primary-foreground hover:bg-card/10 focus-visible:outline-[#F5FF7B]";
 const bottom = "calc(env(safe-area-inset-bottom, 0px) + 1rem)";
 
 export function MobileDashboardNav({
@@ -113,7 +113,7 @@ export function MobileDashboardNav({
 							<Search className="size-4" aria-hidden="true" />
 							Find
 						</button>
-						<span className="mx-1 h-6 w-px bg-white/20" aria-hidden="true" />
+						<span className="mx-1 h-6 w-px bg-card/20" aria-hidden="true" />
 						<Popover.Trigger asChild>
 							<button
 								type="button"
@@ -142,7 +142,7 @@ export function MobileDashboardNav({
 						collisionPadding={16}
 						aria-labelledby={titleId}
 						aria-describedby={descriptionId}
-						className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-2 text-[#11110F] shadow-sm outline-none md:hidden"
+						className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-2 text-foreground shadow-sm outline-none md:hidden"
 						style={{
 							maxHeight: "var(--radix-popover-content-available-height)",
 							transformOrigin: "var(--radix-popover-content-transform-origin)",
@@ -163,13 +163,13 @@ export function MobileDashboardNav({
 							}
 						}}
 					>
-						<div className="border-b border-black/15 px-3 pb-3 pt-2">
+						<div className="border-b border-border px-3 pb-3 pt-2">
 							<h2 id={titleId} className="text-base font-bold">
 								Your dashboard
 							</h2>
 							<p
 								id={descriptionId}
-								className="mt-1 truncate text-xs text-[#6A675C]"
+								className="mt-1 truncate text-xs text-muted-foreground"
 							>
 								{username ? `@${username}` : "Pages and account"}
 							</p>
@@ -189,8 +189,8 @@ export function MobileDashboardNav({
 										className={cn(
 											"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
 											active
-												? "bg-accent text-[#273B1D]"
-												: "text-[#4B4B45] hover:bg-accent",
+												? "bg-accent text-primary"
+												: "text-muted-foreground hover:bg-accent",
 										)}
 									>
 										<item.icon className="size-4 shrink-0" aria-hidden="true" />
@@ -200,7 +200,7 @@ export function MobileDashboardNav({
 								);
 							})}
 						</nav>
-						<div className="border-t border-black/15 pt-2">
+						<div className="border-t border-border pt-2">
 							{username && (
 								<a
 									href={`/u/${username}`}
@@ -216,7 +216,7 @@ export function MobileDashboardNav({
 							<button
 								type="button"
 								onClick={() => void onSignOut()}
-								className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold hover:bg-[#FFD9CF]"
+								className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold hover:bg-destructive/10"
 							>
 								<LogOut className="size-4" aria-hidden="true" />
 								Sign out

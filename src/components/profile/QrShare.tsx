@@ -55,7 +55,7 @@ export function QrShare({
 			<button
 				type="button"
 				disabled={!ready}
-				className="rounded-full border border-border bg-white px-3 py-2 text-xs font-bold text-[#11110F]"
+				className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground"
 				onClick={() =>
 					setUrl(
 						customDomain
@@ -83,7 +83,7 @@ export function QrShare({
 						<img
 							src={image.png}
 							alt={`QR code for @${username}`}
-							className="mx-auto aspect-square w-60 max-w-full rounded-xl bg-white"
+							className="mx-auto aspect-square w-60 max-w-full rounded-xl bg-card"
 						/>
 					) : (
 						<p role="status">

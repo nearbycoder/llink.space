@@ -13,6 +13,8 @@ It lets users:
 
 ## Latest Updates
 
+The [October feature expansion](docs/FEATURE_EXPANSION_2026-10.md) adds twenty tools for batch editing, catalog exchange, public content blocks, traffic insights, and website badges, with a shared dashboard and dialog style cleanup. This batch requires no new database migration or dependency.
+
 The creator expansion adds ten features, delivered in five chunks:
 
 | Chunk | Features | Where |

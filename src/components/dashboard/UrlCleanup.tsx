@@ -11,7 +11,7 @@ export function UrlCleanup({
 	const cleaned = cleanLinkUrl(url);
 	if (!cleaned?.removed.length) return null;
 	return (
-		<details className="rounded-xl border border-black/20 p-3 text-sm">
+		<details className="rounded-xl border border-border p-3 text-sm">
 			<summary className="cursor-pointer font-semibold">
 				Remove tracking parameters
 			</summary>
@@ -19,7 +19,7 @@ export function UrlCleanup({
 				Optional: removes {cleaned.removed.join(", ")}. Keep these if you need
 				campaign attribution.
 			</p>
-			<p className="mb-3 break-all rounded-lg bg-white p-2 text-xs">
+			<p className="mb-3 break-all rounded-lg bg-card p-2 text-xs">
 				{cleaned.url}
 			</p>
 			<Button
