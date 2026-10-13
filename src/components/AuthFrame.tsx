@@ -12,12 +12,12 @@ export function AuthFrame({ children }: { children: ReactNode }) {
 	return (
 		<div className="auth-workspace grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
 			<aside
-				className="relative hidden overflow-hidden bg-ink p-10 text-[#faf8f3] lg:flex lg:flex-col"
+				className="relative hidden overflow-hidden bg-ink p-10 text-[#faf8f3] lg:flex lg:flex-col dark:border-r dark:border-border dark:bg-[#0c0b09]"
 				aria-hidden="true"
 			>
 				<SiteBrand
 					size="md"
-					className="text-[#faf8f3] [&_svg>rect:first-child]:fill-[#2b2820]"
+					className="text-[#faf8f3] [--brand-stroke:#faf8f3] [--brand-tile:#2b2820]"
 				/>
 				<div className="relative z-10 mt-auto max-w-md">
 					<p className="font-display text-[2.75rem] leading-[1.02] font-semibold tracking-[-0.035em]">
@@ -37,15 +37,13 @@ export function AuthFrame({ children }: { children: ReactNode }) {
 						<p className="mt-3 font-display text-lg font-semibold">
 							Studio Field
 						</p>
-						<p className="font-mono text-[11px] text-muted-foreground">
-							@studiofield
-						</p>
+						<p className="font-mono text-[11px] text-[#67625a]">@studiofield</p>
 					</div>
 					<div className="mt-4 space-y-2">
 						{previewLinks.map((link) => (
 							<div
 								key={link.title}
-								className="flex items-center gap-3 rounded-2xl border border-border px-3 py-2.5 text-sm font-semibold"
+								className="flex items-center gap-3 rounded-2xl border border-black/10 px-3 py-2.5 text-sm font-semibold"
 							>
 								<span
 									className="size-7 rounded-lg"

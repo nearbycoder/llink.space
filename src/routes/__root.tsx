@@ -12,6 +12,7 @@ import { SiteBrand } from "#/components/SiteBrand";
 import { Toaster } from "#/components/ui/sonner";
 import type { TRPCRouter } from "#/integrations/trpc/router";
 import { toAbsoluteUrl } from "#/lib/site-url";
+import { themeInitScript } from "#/lib/theme";
 import PostHogProvider from "../integrations/posthog/provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
@@ -40,7 +41,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 					name: "robots",
 					content: "index, follow, max-image-preview:large, max-snippet:-1",
 				},
-				{ name: "theme-color", content: "#F5F3EE" },
+				{
+					name: "theme-color",
+					content: "#F5F3EE",
+					media: "(prefers-color-scheme: light)",
+				},
+				{
+					name: "theme-color",
+					content: "#121110",
+					media: "(prefers-color-scheme: dark)",
+				},
 				{ property: "og:site_name", content: "llink.space" },
 				{ property: "og:image", content: defaultOgImage },
 				{ property: "og:image:width", content: "1200" },
@@ -108,8 +118,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
+				{/* Applies the saved color theme before first paint. */}
+				<script
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: static first-party theme script
+					dangerouslySetInnerHTML={{ __html: themeInitScript }}
+				/>
 				<HeadContent />
 				<script
 					defer

@@ -32,6 +32,7 @@ import {
 } from "#/components/dashboard/MobileDashboardNav";
 import { NavigationGuardContext } from "#/components/dashboard/UnsavedChangesGuard";
 import { SiteBrand } from "#/components/SiteBrand";
+import { ThemeSwitcher } from "#/components/ThemeToggle";
 import { useTRPC } from "#/integrations/trpc/react";
 import { authClient } from "#/lib/auth-client";
 import { checkDashboardAccess } from "#/lib/auth-server";
@@ -259,6 +260,7 @@ function DashboardLayout() {
 								/>
 							</a>
 						)}
+						<ThemeSwitcher className="mt-2" />
 						<button
 							type="button"
 							onClick={handleSignOut}
