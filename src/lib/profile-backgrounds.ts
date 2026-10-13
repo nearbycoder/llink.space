@@ -13,43 +13,43 @@ export const DEFAULT_PROFILE_BACKGROUND_COLOR_ID = "sun-cream";
 export const DEFAULT_PROFILE_BACKGROUND_GRADIENT_ID = "kinetic-neon";
 
 export const PROFILE_BACKGROUND_COLOR_OPTIONS = [
-	{ id: "sun-cream", label: "Sun Cream", value: "#FFF6D6" },
-	{ id: "paper-white", label: "Paper White", value: "#FDFCF8" },
-	{ id: "mint-pop", label: "Mint Pop", value: "#DDF8E8" },
-	{ id: "sky-note", label: "Sky Note", value: "#DDEFFF" },
-	{ id: "peach-glow", label: "Peach Glow", value: "#FFE3D2" },
-	{ id: "rose-fog", label: "Rose Fog", value: "#FADFF0" },
-	{ id: "ink-night", label: "Ink Night", value: "#1C1B25" },
-	{ id: "forest-deep", label: "Forest Deep", value: "#1C2B2A" },
+	{ id: "sun-cream", label: "Sun Cream", value: "#FBF1DA" },
+	{ id: "paper-white", label: "Paper", value: "#F5F3EE" },
+	{ id: "mint-pop", label: "Sage", value: "#DCE8DA" },
+	{ id: "sky-note", label: "Sky", value: "#DCE5F7" },
+	{ id: "peach-glow", label: "Peach", value: "#FFE2D2" },
+	{ id: "rose-fog", label: "Rose", value: "#F5DFE6" },
+	{ id: "ink-night", label: "Ink", value: "#16140F" },
+	{ id: "forest-deep", label: "Forest", value: "#1B2B25" },
 ] as const;
 
 export const PROFILE_BACKGROUND_GRADIENT_OPTIONS = [
 	{
 		id: "kinetic-neon",
-		label: "Kinetic Neon",
+		label: "Signal Glow",
 		value:
-			"linear-gradient(128deg, #F5FF7B 0%, #8AE1E7 34%, #F2B7E2 68%, #FF8A4C 100%)",
+			"radial-gradient(120% 70% at 0% 0%, #FFC4A3 0%, rgba(255,196,163,0) 60%), radial-gradient(110% 70% at 100% 100%, #C7D2FF 0%, rgba(199,210,255,0) 60%), #F5F3EE",
 	},
 	{
 		id: "dawn-sky",
-		label: "Dawn Sky",
-		value: "linear-gradient(140deg, #FEE7C8 0%, #F7B7D7 42%, #8FCBFF 100%)",
+		label: "Dawn",
+		value: "linear-gradient(160deg, #FDE3CF 0%, #F6CDD8 45%, #CCD9F8 100%)",
 	},
 	{
 		id: "mint-sunrise",
-		label: "Mint Sunrise",
-		value: "linear-gradient(140deg, #D8FBE5 0%, #FFF1AE 45%, #FFD4B8 100%)",
+		label: "Meadow",
+		value: "linear-gradient(160deg, #E3EEDC 0%, #F6EFD2 50%, #F9D9C4 100%)",
 	},
 	{
 		id: "retro-pop",
-		label: "Retro Pop",
+		label: "Citrus",
 		value:
-			"linear-gradient(135deg, #F8FF75 0%, #FDC15C 33%, #F5788E 66%, #71D7F7 100%)",
+			"linear-gradient(135deg, #FFE27A 0%, #FFAE6B 40%, #FF7E6B 70%, #F6B6C8 100%)",
 	},
 	{
 		id: "twilight-wave",
-		label: "Twilight Wave",
-		value: "linear-gradient(150deg, #1F1C3C 0%, #5E3A87 48%, #D77DBE 100%)",
+		label: "Nightfall",
+		value: "linear-gradient(160deg, #16140F 0%, #2A2140 55%, #6B3A3A 100%)",
 	},
 ] as const;
 

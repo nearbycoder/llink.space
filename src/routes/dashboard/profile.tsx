@@ -1,13 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { RotateCcw } from "lucide-react";
+import { ArrowUpRight, RotateCcw } from "lucide-react";
 import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { AccountSessions } from "#/components/dashboard/AccountSessions";
 import { ProfileLoadingState } from "#/components/dashboard/DashboardLoading";
+import { PageHeader } from "#/components/dashboard/PageHeader";
 import { ProfileBadge } from "#/components/dashboard/ProfileBadge";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
@@ -439,7 +440,7 @@ function ProfilePage() {
 	};
 
 	return (
-		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:px-10">
 			<UnsavedChangesGuard
 				when={
 					isDirty ||
@@ -450,262 +451,125 @@ function ProfilePage() {
 					isUpdatingPassword
 				}
 			/>
-			<div className="mb-6">
-				<h1
-					className="text-2xl text-foreground"
-					style={{ fontFamily: "'Work Sans', sans-serif" }}
-				>
-					Profile
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Your public profile information
-				</p>
-			</div>
+			<PageHeader
+				eyebrow="Build"
+				title="Profile"
+				description="Your public profile information"
+			/>
 
-			<div className="kinetic-panel mb-4 p-6">
-				<div className="mb-2 flex items-center gap-3">
-					<Avatar className="h-10 w-10">
-						<AvatarImage
-							src={previewAvatarUrl}
-							alt={`${profile.displayName ?? profile.username} avatar`}
-							decoding="async"
-						/>
-						<AvatarFallback className="bg-accent font-medium text-foreground">
-							{(
-								profile.displayName?.charAt(0) ??
-								profile.username.charAt(0) ??
-								"?"
-							).toUpperCase()}
-						</AvatarFallback>
-					</Avatar>
-					<div>
+			<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+				<aside className="surface overflow-hidden lg:sticky lg:top-8 lg:order-last">
+					<div className="h-16 bg-[radial-gradient(120%_120%_at_0%_0%,#ffc4a3,transparent_60%),radial-gradient(120%_120%_at_100%_100%,#c7d2ff,transparent_60%)]" />
+					<div className="-mt-9 px-5 pb-5">
+						<Avatar className="size-[4.5rem] border-4 border-card">
+							<AvatarImage
+								src={previewAvatarUrl}
+								alt={`${profile.displayName ?? profile.username} avatar`}
+								decoding="async"
+							/>
+							<AvatarFallback className="bg-signal font-display text-2xl font-semibold text-ink">
+								{(
+									profile.displayName?.charAt(0) ??
+									profile.username.charAt(0) ??
+									"?"
+								).toUpperCase()}
+							</AvatarFallback>
+						</Avatar>
+						<p className="mt-3 font-display text-xl font-semibold text-foreground">
+							{profile.displayName || `@${profile.username}`}
+						</p>
 						<p className="text-sm font-medium text-foreground">
 							@{profile.username}
 						</p>
-						<p className="text-xs text-muted-foreground">
+						<p className="mt-1 truncate font-mono text-xs text-muted-foreground">
 							{`llink.space/u/${profile.username}`}
 						</p>
+						<a
+							href={`/u/${profile.username}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="mt-4 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-full border border-border-strong text-sm font-medium transition-colors hover:bg-accent"
+						>
+							Open public page
+							<ArrowUpRight className="size-4" aria-hidden="true" />
+						</a>
 					</div>
-				</div>
-			</div>
+				</aside>
+				<div className="min-w-0">
+					<div className="surface p-6">
+						<form
+							onSubmit={handleSubmit(onSubmit)}
+							className="space-y-5"
+							data-testid="profile-form"
+							aria-busy={!isHydrated}
+							inert={!isHydrated}
+						>
+							<div className="space-y-1.5">
+								<Label htmlFor={displayNameId}>Display name</Label>
+								<Input
+									id={displayNameId}
+									placeholder="Your name"
+									{...register("displayName")}
+								/>
+								{errors.displayName && (
+									<p className="text-xs text-destructive">
+										{errors.displayName.message}
+									</p>
+								)}
+							</div>
 
-			<div className="kinetic-panel p-6">
-				<form
-					onSubmit={handleSubmit(onSubmit)}
-					className="space-y-5"
-					data-testid="profile-form"
-					aria-busy={!isHydrated}
-					inert={!isHydrated}
-				>
-					<div className="space-y-1.5">
-						<Label htmlFor={displayNameId}>Display name</Label>
-						<Input
-							id={displayNameId}
-							placeholder="Your name"
-							{...register("displayName")}
-						/>
-						{errors.displayName && (
-							<p className="text-xs text-destructive">
-								{errors.displayName.message}
-							</p>
-						)}
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor={bioId}>Bio</Label>
-						<Textarea
-							id={bioId}
-							placeholder="A short bio about yourself"
-							className="resize-none"
-							rows={3}
-							{...register("bio")}
-						/>
-						<div className="flex items-center justify-between gap-3">
-							<p className="text-xs text-muted-foreground">
-								Keep it concise and memorable.
-							</p>
-							<p
-								className={`text-xs font-semibold ${bioValue.length > 270 ? "text-destructive" : "text-muted-foreground"}`}
-								aria-live="polite"
-							>
-								{bioValue.length}/300
-							</p>
-						</div>
-						{errors.bio && (
-							<p className="text-xs text-destructive">{errors.bio.message}</p>
-						)}
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor={avatarUploadId}>Avatar</Label>
-						<input
-							ref={avatarFileInputRef}
-							id={avatarUploadId}
-							type="file"
-							accept="image/jpeg,image/png,image/webp,image/gif"
-							onChange={handleAvatarUpload}
-							className="hidden"
-						/>
-						<div className="flex flex-wrap gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => avatarFileInputRef.current?.click()}
-								disabled={isUploadingAvatar}
-							>
-								{isUploadingAvatar ? "Uploading…" : "Upload image"}
-							</Button>
-							{avatarUrl && (
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() =>
-										setValue("avatarUrl", "", {
-											shouldDirty: true,
-											shouldTouch: true,
-											shouldValidate: true,
-										})
-									}
-								>
-									Remove image
-								</Button>
-							)}
-						</div>
-						{avatarUploadError && (
-							<p className="text-xs text-destructive">{avatarUploadError}</p>
-						)}
-						<p className="text-xs text-muted-foreground">
-							Upload an image and we handle the storage URL automatically. In
-							local dev, files are stored in `public/uploads`.
-						</p>
-						<input type="hidden" {...register("avatarUrl")} />
-						{errors.avatarUrl && (
-							<p className="text-xs text-destructive">
-								{errors.avatarUrl.message}
-							</p>
-						)}
-					</div>
-
-					<div className="space-y-3 rounded-xl border border-border/80 bg-muted p-4">
-						<div>
-							<Label
-								htmlFor={backgroundUploadId}
-								className="text-sm font-semibold text-foreground"
-							>
-								Page background
-							</Label>
-							<p className="mt-1 text-xs text-muted-foreground">
-								Choose a solid color, gradient, or upload your own image.
-							</p>
-						</div>
-
-						<div className="grid gap-2 sm:grid-cols-3">
-							{PROFILE_BACKGROUND_TYPES.map((type) => {
-								const isSelected = pageBackgroundType === type;
-								return (
-									<button
-										key={type}
-										type="button"
-										onClick={() =>
-											setValue("pageBackgroundType", type, {
-												shouldDirty: true,
-												shouldTouch: true,
-												shouldValidate: true,
-											})
-										}
-										className={`rounded-xl border-2 px-3 py-2 text-sm font-semibold transition ${
-											isSelected
-												? "border-border bg-accent text-foreground"
-												: "border-border bg-card text-foreground"
-										}`}
+							<div className="space-y-1.5">
+								<Label htmlFor={bioId}>Bio</Label>
+								<Textarea
+									id={bioId}
+									placeholder="A short bio about yourself"
+									className="resize-none"
+									rows={3}
+									{...register("bio")}
+								/>
+								<div className="flex items-center justify-between gap-3">
+									<p className="text-xs text-muted-foreground">
+										Keep it concise and memorable.
+									</p>
+									<p
+										className={`text-xs font-semibold ${bioValue.length > 270 ? "text-destructive" : "text-muted-foreground"}`}
+										aria-live="polite"
 									>
-										{BACKGROUND_TYPE_LABELS[type]}
-									</button>
-								);
-							})}
-						</div>
-
-						{pageBackgroundType === "color" && (
-							<div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-								{PROFILE_BACKGROUND_COLOR_OPTIONS.map((option) => {
-									const isSelected = pageBackgroundColor === option.id;
-									return (
-										<button
-											key={option.id}
-											type="button"
-											onClick={() =>
-												setValue("pageBackgroundColor", option.id, {
-													shouldDirty: true,
-													shouldTouch: true,
-													shouldValidate: true,
-												})
-											}
-											className={`h-10 rounded-lg border-2 transition ${
-												isSelected ? "border-border shadow-sm" : "border-border"
-											}`}
-											style={{ background: option.value }}
-											aria-label={`Use ${option.label} background`}
-											title={`Use ${option.label} background`}
-										/>
-									);
-								})}
+										{bioValue.length}/300
+									</p>
+								</div>
+								{errors.bio && (
+									<p className="text-xs text-destructive">
+										{errors.bio.message}
+									</p>
+								)}
 							</div>
-						)}
 
-						{pageBackgroundType === "gradient" && (
-							<div className="grid gap-2 sm:grid-cols-2">
-								{PROFILE_BACKGROUND_GRADIENT_OPTIONS.map((option) => {
-									const isSelected = pageBackgroundGradient === option.id;
-									return (
-										<button
-											key={option.id}
-											type="button"
-											onClick={() =>
-												setValue("pageBackgroundGradient", option.id, {
-													shouldDirty: true,
-													shouldTouch: true,
-													shouldValidate: true,
-												})
-											}
-											className={`h-14 rounded-xl border-2 px-3 text-left text-xs font-semibold text-foreground ${
-												isSelected ? "border-border shadow-sm" : "border-border"
-											}`}
-											style={{ background: option.value }}
-										>
-											<span className="rounded bg-card/85 px-2 py-1">
-												{option.label}
-											</span>
-										</button>
-									);
-								})}
-							</div>
-						)}
-
-						{pageBackgroundType === "image" && (
-							<div className="space-y-2">
+							<div className="space-y-1.5">
+								<Label htmlFor={avatarUploadId}>Avatar</Label>
 								<input
-									ref={backgroundFileInputRef}
-									id={backgroundUploadId}
+									ref={avatarFileInputRef}
+									id={avatarUploadId}
 									type="file"
 									accept="image/jpeg,image/png,image/webp,image/gif"
-									onChange={handleBackgroundUpload}
+									onChange={handleAvatarUpload}
 									className="hidden"
 								/>
 								<div className="flex flex-wrap gap-2">
 									<Button
 										type="button"
 										variant="outline"
-										onClick={() => backgroundFileInputRef.current?.click()}
-										disabled={isUploadingBackground}
+										onClick={() => avatarFileInputRef.current?.click()}
+										disabled={isUploadingAvatar}
 									>
-										{isUploadingBackground ? "Uploading…" : "Upload background"}
+										{isUploadingAvatar ? "Uploading…" : "Upload image"}
 									</Button>
-									{previewBackgroundImageUrl && (
+									{avatarUrl && (
 										<Button
 											type="button"
 											variant="outline"
 											onClick={() =>
-												setValue("pageBackgroundImageUrl", "", {
+												setValue("avatarUrl", "", {
 													shouldDirty: true,
 													shouldTouch: true,
 													shouldValidate: true,
@@ -716,148 +580,310 @@ function ProfilePage() {
 										</Button>
 									)}
 								</div>
+								{avatarUploadError && (
+									<p className="text-xs text-destructive">
+										{avatarUploadError}
+									</p>
+								)}
 								<p className="text-xs text-muted-foreground">
-									Custom background images use the same storage pipeline as
-									avatars.
+									Upload an image and we handle the storage URL automatically.
+									In local dev, files are stored in `public/uploads`.
 								</p>
+								<input type="hidden" {...register("avatarUrl")} />
+								{errors.avatarUrl && (
+									<p className="text-xs text-destructive">
+										{errors.avatarUrl.message}
+									</p>
+								)}
 							</div>
-						)}
 
-						<div
-							className="relative h-32 overflow-hidden rounded-xl border border-border"
-							style={previewBackgroundStyle}
-						>
-							<div className="absolute left-2 top-2 rounded-md bg-card/85 px-2 py-1 text-[11px] font-semibold text-foreground">
-								Live preview
+							<div className="space-y-3 rounded-xl border border-border/80 bg-muted p-4">
+								<div>
+									<Label
+										htmlFor={backgroundUploadId}
+										className="text-sm font-semibold text-foreground"
+									>
+										Page background
+									</Label>
+									<p className="mt-1 text-xs text-muted-foreground">
+										Choose a solid color, gradient, or upload your own image.
+									</p>
+								</div>
+
+								<div className="grid gap-2 sm:grid-cols-3">
+									{PROFILE_BACKGROUND_TYPES.map((type) => {
+										const isSelected = pageBackgroundType === type;
+										return (
+											<button
+												key={type}
+												type="button"
+												onClick={() =>
+													setValue("pageBackgroundType", type, {
+														shouldDirty: true,
+														shouldTouch: true,
+														shouldValidate: true,
+													})
+												}
+												aria-pressed={isSelected}
+												className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+													isSelected
+														? "border-foreground bg-primary text-primary-foreground"
+														: "border-border bg-card text-foreground hover:border-border-strong"
+												}`}
+											>
+												{BACKGROUND_TYPE_LABELS[type]}
+											</button>
+										);
+									})}
+								</div>
+
+								{pageBackgroundType === "color" && (
+									<div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+										{PROFILE_BACKGROUND_COLOR_OPTIONS.map((option) => {
+											const isSelected = pageBackgroundColor === option.id;
+											return (
+												<button
+													key={option.id}
+													type="button"
+													onClick={() =>
+														setValue("pageBackgroundColor", option.id, {
+															shouldDirty: true,
+															shouldTouch: true,
+															shouldValidate: true,
+														})
+													}
+													aria-pressed={isSelected}
+													className={`h-10 rounded-xl border border-black/10 transition-shadow ${
+														isSelected
+															? "ring-2 ring-foreground ring-offset-2 ring-offset-card"
+															: "hover:ring-2 hover:ring-border-strong hover:ring-offset-2 hover:ring-offset-card"
+													}`}
+													style={{ background: option.value }}
+													aria-label={`Use ${option.label} background`}
+													title={`Use ${option.label} background`}
+												/>
+											);
+										})}
+									</div>
+								)}
+
+								{pageBackgroundType === "gradient" && (
+									<div className="grid gap-2 sm:grid-cols-2">
+										{PROFILE_BACKGROUND_GRADIENT_OPTIONS.map((option) => {
+											const isSelected = pageBackgroundGradient === option.id;
+											return (
+												<button
+													key={option.id}
+													type="button"
+													onClick={() =>
+														setValue("pageBackgroundGradient", option.id, {
+															shouldDirty: true,
+															shouldTouch: true,
+															shouldValidate: true,
+														})
+													}
+													aria-pressed={isSelected}
+													className={`h-16 rounded-xl border border-black/10 px-3 text-left text-xs font-semibold text-foreground transition-shadow ${
+														isSelected
+															? "ring-2 ring-foreground ring-offset-2 ring-offset-card"
+															: "hover:ring-2 hover:ring-border-strong hover:ring-offset-2 hover:ring-offset-card"
+													}`}
+													style={{ background: option.value }}
+												>
+													<span className="rounded-full bg-card/90 px-2.5 py-1">
+														{option.label}
+													</span>
+												</button>
+											);
+										})}
+									</div>
+								)}
+
+								{pageBackgroundType === "image" && (
+									<div className="space-y-2">
+										<input
+											ref={backgroundFileInputRef}
+											id={backgroundUploadId}
+											type="file"
+											accept="image/jpeg,image/png,image/webp,image/gif"
+											onChange={handleBackgroundUpload}
+											className="hidden"
+										/>
+										<div className="flex flex-wrap gap-2">
+											<Button
+												type="button"
+												variant="outline"
+												onClick={() => backgroundFileInputRef.current?.click()}
+												disabled={isUploadingBackground}
+											>
+												{isUploadingBackground
+													? "Uploading…"
+													: "Upload background"}
+											</Button>
+											{previewBackgroundImageUrl && (
+												<Button
+													type="button"
+													variant="outline"
+													onClick={() =>
+														setValue("pageBackgroundImageUrl", "", {
+															shouldDirty: true,
+															shouldTouch: true,
+															shouldValidate: true,
+														})
+													}
+												>
+													Remove image
+												</Button>
+											)}
+										</div>
+										<p className="text-xs text-muted-foreground">
+											Custom background images use the same storage pipeline as
+											avatars.
+										</p>
+									</div>
+								)}
+
+								<div
+									className="relative h-32 overflow-hidden rounded-xl border border-border"
+									style={previewBackgroundStyle}
+								>
+									<div className="absolute left-2 top-2 rounded-md bg-card/85 px-2 py-1 text-[11px] font-semibold text-foreground">
+										Live preview
+									</div>
+								</div>
+
+								{backgroundUploadError && (
+									<p className="text-xs text-destructive">
+										{backgroundUploadError}
+									</p>
+								)}
+								{errors.pageBackgroundImageUrl && (
+									<p className="text-xs text-destructive">
+										{errors.pageBackgroundImageUrl.message}
+									</p>
+								)}
+								<input type="hidden" {...register("pageBackgroundType")} />
+								<input type="hidden" {...register("pageBackgroundColor")} />
+								<input type="hidden" {...register("pageBackgroundGradient")} />
+								<input type="hidden" {...register("pageBackgroundImageUrl")} />
 							</div>
-						</div>
 
-						{backgroundUploadError && (
-							<p className="text-xs text-destructive">
-								{backgroundUploadError}
-							</p>
-						)}
-						{errors.pageBackgroundImageUrl && (
-							<p className="text-xs text-destructive">
-								{errors.pageBackgroundImageUrl.message}
-							</p>
-						)}
-						<input type="hidden" {...register("pageBackgroundType")} />
-						<input type="hidden" {...register("pageBackgroundColor")} />
-						<input type="hidden" {...register("pageBackgroundGradient")} />
-						<input type="hidden" {...register("pageBackgroundImageUrl")} />
+							<div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div className="flex items-center gap-2">
+									{isDirty && (
+										<span className="rounded-full bg-signal-soft px-2.5 py-1 text-xs font-semibold text-signal-strong">
+											Unsaved changes
+										</span>
+									)}
+									<Button
+										type="button"
+										variant="ghost"
+										disabled={isSubmitting || !isDirty}
+										onClick={handleDiscardChanges}
+									>
+										<RotateCcw className="h-4 w-4" />
+										Discard changes
+									</Button>
+								</div>
+								<Button
+									type="submit"
+									disabled={isSubmitting || !isDirty}
+									className="w-full sm:w-auto"
+								>
+									{isSubmitting ? "Saving…" : "Save changes"}
+								</Button>
+							</div>
+						</form>
 					</div>
 
-					<div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<div className="flex items-center gap-2">
-							{isDirty && (
-								<span className="rounded-full border border-border bg-accent px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-									Unsaved changes
-								</span>
+					<div className="surface mt-4 p-6">
+						<h2 className="font-display text-xl font-semibold text-foreground">
+							Security
+						</h2>
+						<p className="mt-1 text-xs text-muted-foreground">
+							Update your password to keep your account secure.
+						</p>
+
+						<form
+							onSubmit={handlePasswordSubmit(onPasswordSubmit)}
+							className="mt-4 space-y-4"
+							aria-busy={!isHydrated}
+							inert={!isHydrated}
+						>
+							{passwordUpdateError && (
+								<p className="rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+									{passwordUpdateError}
+								</p>
 							)}
+							{passwordUpdateSuccess && (
+								<p className="rounded-xl border border-success/25 bg-success/10 px-3 py-2 text-sm text-success">
+									{passwordUpdateSuccess}
+								</p>
+							)}
+
+							<div className="space-y-1.5">
+								<Label htmlFor={currentPasswordId}>Current password</Label>
+								<Input
+									id={currentPasswordId}
+									type="password"
+									placeholder="Current password"
+									autoComplete="current-password"
+									{...registerPassword("currentPassword")}
+								/>
+								{passwordFormErrors.currentPassword && (
+									<p className="text-xs text-destructive">
+										{passwordFormErrors.currentPassword.message}
+									</p>
+								)}
+							</div>
+
+							<div className="space-y-1.5">
+								<Label htmlFor={newPasswordId}>New password</Label>
+								<Input
+									id={newPasswordId}
+									type="password"
+									placeholder="New password"
+									autoComplete="new-password"
+									{...registerPassword("newPassword")}
+								/>
+								{passwordFormErrors.newPassword && (
+									<p className="text-xs text-destructive">
+										{passwordFormErrors.newPassword.message}
+									</p>
+								)}
+							</div>
+
+							<div className="space-y-1.5">
+								<Label htmlFor={confirmNewPasswordId}>
+									Confirm new password
+								</Label>
+								<Input
+									id={confirmNewPasswordId}
+									type="password"
+									placeholder="Confirm new password"
+									autoComplete="new-password"
+									{...registerPassword("confirmNewPassword")}
+								/>
+								{passwordFormErrors.confirmNewPassword && (
+									<p className="text-xs text-destructive">
+										{passwordFormErrors.confirmNewPassword.message}
+									</p>
+								)}
+							</div>
+
 							<Button
-								type="button"
-								variant="ghost"
-								disabled={isSubmitting || !isDirty}
-								onClick={handleDiscardChanges}
+								type="submit"
+								disabled={isUpdatingPassword || !isPasswordFormDirty}
+								className="w-full sm:w-auto"
 							>
-								<RotateCcw className="mr-1.5 h-4 w-4" />
-								Discard changes
+								{isUpdatingPassword ? "Updating…" : "Update password"}
 							</Button>
-						</div>
-						<Button
-							type="submit"
-							disabled={isSubmitting || !isDirty}
-							className="w-full sm:w-auto"
-						>
-							{isSubmitting ? "Saving…" : "Save changes"}
-						</Button>
+						</form>
 					</div>
-				</form>
+					<AccountSessions />
+					<ProfileBadge username={profile.username} />
+				</div>
 			</div>
-
-			<div className="kinetic-panel mt-4 p-6">
-				<h2 className="text-base font-semibold text-foreground">Security</h2>
-				<p className="mt-1 text-xs text-muted-foreground">
-					Update your password to keep your account secure.
-				</p>
-
-				<form
-					onSubmit={handlePasswordSubmit(onPasswordSubmit)}
-					className="mt-4 space-y-4"
-					aria-busy={!isHydrated}
-					inert={!isHydrated}
-				>
-					{passwordUpdateError && (
-						<p className="rounded-xl border border-border bg-destructive/10 px-3 py-2 text-sm text-destructive">
-							{passwordUpdateError}
-						</p>
-					)}
-					{passwordUpdateSuccess && (
-						<p className="rounded-xl border border-border bg-[#DBF9E6] px-3 py-2 text-sm text-[#0B7A42]">
-							{passwordUpdateSuccess}
-						</p>
-					)}
-
-					<div className="space-y-1.5">
-						<Label htmlFor={currentPasswordId}>Current password</Label>
-						<Input
-							id={currentPasswordId}
-							type="password"
-							placeholder="Current password"
-							autoComplete="current-password"
-							{...registerPassword("currentPassword")}
-						/>
-						{passwordFormErrors.currentPassword && (
-							<p className="text-xs text-destructive">
-								{passwordFormErrors.currentPassword.message}
-							</p>
-						)}
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor={newPasswordId}>New password</Label>
-						<Input
-							id={newPasswordId}
-							type="password"
-							placeholder="New password"
-							autoComplete="new-password"
-							{...registerPassword("newPassword")}
-						/>
-						{passwordFormErrors.newPassword && (
-							<p className="text-xs text-destructive">
-								{passwordFormErrors.newPassword.message}
-							</p>
-						)}
-					</div>
-
-					<div className="space-y-1.5">
-						<Label htmlFor={confirmNewPasswordId}>Confirm new password</Label>
-						<Input
-							id={confirmNewPasswordId}
-							type="password"
-							placeholder="Confirm new password"
-							autoComplete="new-password"
-							{...registerPassword("confirmNewPassword")}
-						/>
-						{passwordFormErrors.confirmNewPassword && (
-							<p className="text-xs text-destructive">
-								{passwordFormErrors.confirmNewPassword.message}
-							</p>
-						)}
-					</div>
-
-					<Button
-						type="submit"
-						disabled={isUpdatingPassword || !isPasswordFormDirty}
-						className="w-full sm:w-auto"
-					>
-						{isUpdatingPassword ? "Updating…" : "Update password"}
-					</Button>
-				</form>
-			</div>
-			<AccountSessions />
-			<ProfileBadge username={profile.username} />
 		</div>
 	);
 }

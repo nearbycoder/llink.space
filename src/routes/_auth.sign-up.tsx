@@ -78,10 +78,13 @@ function SignUpPage() {
 	};
 
 	return (
-		<Card className="border-0 bg-transparent py-0 shadow-none">
-			<CardHeader className="space-y-1 px-0">
-				<CardTitle className="text-xl font-semibold">Create account</CardTitle>
-				<CardDescription className="text-muted-foreground">
+		<Card className="gap-8 border-0 bg-transparent py-0 shadow-none">
+			<CardHeader className="gap-2 px-0">
+				<p className="eyebrow">Create account</p>
+				<CardTitle className="font-display text-[2.5rem] leading-[1.02] font-semibold tracking-[-0.035em]">
+					Start your page
+				</CardTitle>
+				<CardDescription className="text-[15px] text-muted-foreground">
 					Get your link in bio in seconds
 				</CardDescription>
 			</CardHeader>
@@ -94,7 +97,7 @@ function SignUpPage() {
 					{error && (
 						<p
 							role="alert"
-							className="text-sm text-destructive bg-destructive/10 border border-border rounded-xl px-3 py-2"
+							className="rounded-xl border border-destructive/20 bg-destructive/8 px-3.5 py-2.5 text-sm text-destructive"
 						>
 							{error}
 						</p>
@@ -145,6 +148,8 @@ function SignUpPage() {
 					</div>
 					<Button
 						type="submit"
+						size="lg"
+						variant="brand"
 						className="w-full"
 						disabled={!isHydrated || isSubmitting}
 					>
@@ -155,11 +160,11 @@ function SignUpPage() {
 								: "Create account"}
 					</Button>
 				</form>
-				<p className="text-sm text-center text-muted-foreground mt-4">
+				<p className="mt-6 text-sm text-muted-foreground">
 					Already have an account?{" "}
 					<Link
 						to="/sign-in"
-						className="text-foreground font-medium underline-offset-2 hover:underline"
+						className="font-semibold text-foreground underline decoration-signal decoration-2 underline-offset-4"
 					>
 						Sign in
 					</Link>

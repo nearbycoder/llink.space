@@ -25,11 +25,11 @@ export interface DashboardNavItem {
 	exact: boolean;
 }
 const dockClass =
-	"flex h-14 items-center rounded-2xl border border-border bg-primary p-1 text-primary-foreground shadow-[0_8px_32px_rgba(17,17,15,0.18)]";
+	"flex h-14 items-center rounded-full bg-primary p-1.5 text-primary-foreground shadow-[0_18px_40px_-12px_rgb(22_20_15/0.55)]";
 const findClass =
-	"inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold hover:bg-card/10 focus-visible:outline-[#F5FF7B]";
+	"inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold hover:bg-white/10 focus-visible:outline-signal";
 const toggleClass =
-	"inline-flex h-11 w-12 items-center justify-center rounded-xl text-primary-foreground hover:bg-card/10 focus-visible:outline-[#F5FF7B]";
+	"inline-flex h-11 w-12 items-center justify-center rounded-full bg-signal text-ink hover:bg-[#ff7a45] focus-visible:outline-signal";
 const bottom = "calc(env(safe-area-inset-bottom, 0px) + 1rem)";
 
 export function MobileDashboardNav({
@@ -91,7 +91,7 @@ export function MobileDashboardNav({
 			<div
 				aria-hidden="true"
 				data-state={open ? "open" : "closed"}
-				className="mobile-nav-scrim fixed inset-0 z-30 touch-none bg-black/40 md:hidden"
+				className="mobile-nav-scrim fixed inset-0 z-30 touch-none bg-ink/40 backdrop-blur-[2px] md:hidden"
 			/>
 			<Popover.Anchor asChild>
 				<nav
@@ -113,7 +113,7 @@ export function MobileDashboardNav({
 							<Search className="size-4" aria-hidden="true" />
 							Find
 						</button>
-						<span className="mx-1 h-6 w-px bg-card/20" aria-hidden="true" />
+						<span className="mx-1 h-6 w-px bg-white/15" aria-hidden="true" />
 						<Popover.Trigger asChild>
 							<button
 								type="button"
@@ -142,7 +142,7 @@ export function MobileDashboardNav({
 						collisionPadding={16}
 						aria-labelledby={titleId}
 						aria-describedby={descriptionId}
-						className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-2 text-foreground shadow-sm outline-none md:hidden"
+						className="mobile-nav-panel z-40 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto overscroll-contain rounded-[1.375rem] border border-border bg-card p-2 text-foreground shadow-[0_24px_64px_-16px_rgb(22_20_15/0.4)] outline-none md:hidden"
 						style={{
 							maxHeight: "var(--radix-popover-content-available-height)",
 							transformOrigin: "var(--radix-popover-content-transform-origin)",
@@ -164,12 +164,12 @@ export function MobileDashboardNav({
 						}}
 					>
 						<div className="border-b border-border px-3 pb-3 pt-2">
-							<h2 id={titleId} className="text-base font-bold">
+							<h2 id={titleId} className="font-display text-lg font-semibold">
 								Your dashboard
 							</h2>
 							<p
 								id={descriptionId}
-								className="mt-1 truncate text-xs text-muted-foreground"
+								className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
 							>
 								{username ? `@${username}` : "Pages and account"}
 							</p>
@@ -189,13 +189,18 @@ export function MobileDashboardNav({
 										className={cn(
 											"flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
 											active
-												? "bg-accent text-primary"
-												: "text-muted-foreground hover:bg-accent",
+												? "bg-primary text-primary-foreground"
+												: "text-foreground/75 hover:bg-accent",
 										)}
 									>
 										<item.icon className="size-4 shrink-0" aria-hidden="true" />
 										<span className="flex-1">{item.label}</span>
-										{active && <Check className="size-4" aria-hidden="true" />}
+										{active && (
+											<Check
+												className="size-4 text-signal"
+												aria-hidden="true"
+											/>
+										)}
 									</Link>
 								);
 							})}

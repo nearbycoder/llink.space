@@ -78,7 +78,7 @@ export function AccountSessions() {
 		}
 	}
 	return (
-		<section className="kinetic-panel mt-6 p-5">
+		<section className="surface mt-6 p-5">
 			<button
 				type="button"
 				className="min-h-11 text-left text-lg font-bold"
@@ -98,7 +98,7 @@ export function AccountSessions() {
 					information.
 				</p>
 				{error && (
-					<p role="alert" className="mb-3 text-sm text-red-700">
+					<p role="alert" className="mb-3 text-sm text-destructive">
 						{error}
 					</p>
 				)}
@@ -162,7 +162,7 @@ export function AccountSessions() {
 							</DialogDescription>
 						</DialogHeader>
 						{error && (
-							<p role="alert" className="text-sm text-red-700">
+							<p role="alert" className="text-sm text-destructive">
 								{error}
 							</p>
 						)}

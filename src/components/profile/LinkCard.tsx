@@ -1,4 +1,4 @@
-import { Bookmark, ExternalLink } from "lucide-react";
+import { ArrowUpRight, Bookmark } from "lucide-react";
 import "./public-profile.css";
 import { LinkIcon } from "#/components/links/LinkIcon";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
@@ -39,9 +39,9 @@ export function LinkCard({
 	iconUrl,
 	iconBgColor,
 	cardBg = "#FFFFFF",
-	cardBorder = "#11110F",
-	textColor = "#11110F",
-	mutedTextColor = "#4B4B45",
+	cardBorder = "#16140F",
+	textColor = "#16140F",
+	mutedTextColor = "#5F5A51",
 	onClickRecord,
 }: LinkCardProps) {
 	const handleClick = () => {
@@ -68,12 +68,12 @@ export function LinkCard({
 					}
 					handleClick();
 				}}
-				className="group block w-full rounded-xl border px-4 py-3.5 shadow-sm"
+				className="group block w-full border px-3 py-3"
 				style={{
 					backgroundColor: cardBg,
 					borderRadius:
-						buttonStyle === "pill" ? 32 : buttonStyle === "square" ? 0 : 12,
-					borderColor: `color-mix(in srgb, ${cardBorder} 28%, transparent)`,
+						buttonStyle === "pill" ? 999 : buttonStyle === "square" ? 0 : 16,
+					borderColor: `color-mix(in srgb, ${cardBorder} 16%, transparent)`,
 				}}
 			>
 				{featured && (
@@ -82,14 +82,18 @@ export function LinkCard({
 							<img
 								src={featureImageUrl}
 								alt=""
-								className="aspect-video w-full rounded-lg object-cover"
+								className="aspect-video w-full rounded-xl object-cover"
 								loading="lazy"
 							/>
 						)}
 						<span
-							className="text-[10px] font-bold uppercase tracking-[0.2em]"
+							className="inline-flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
 							style={{ color: mutedTextColor }}
 						>
+							<span
+								aria-hidden="true"
+								className="size-1.5 rounded-full bg-[#FF5F1F]"
+							/>
 							In the spotlight
 						</span>
 					</div>
@@ -97,18 +101,23 @@ export function LinkCard({
 				<div
 					className={`flex items-center justify-between ${onToggleSave ? "pr-10" : ""}`}
 				>
-					<div className="min-w-0 flex items-center gap-3">
-						<LinkIcon iconUrl={iconUrl} iconBgColor={iconBgColor} />
+					<div className="min-w-0 flex items-center gap-3.5">
+						<LinkIcon
+							iconUrl={iconUrl}
+							iconBgColor={iconBgColor}
+							className="size-10 rounded-xl"
+							glyphClassName="size-[1.1rem]"
+						/>
 						<div className="min-w-0">
 							<p
-								className="font-medium text-sm truncate"
+								className="truncate text-[15px] font-semibold tracking-[-0.01em]"
 								style={{ color: textColor }}
 							>
 								{title}
 							</p>
 							{description && (
 								<p
-									className="text-xs mt-0.5 truncate"
+									className="mt-0.5 truncate text-[13px]"
 									style={{ color: mutedTextColor }}
 								>
 									{description}
@@ -117,19 +126,23 @@ export function LinkCard({
 						</div>
 					</div>
 					{!onToggleSave && (
-						<ExternalLink
+						<ArrowUpRight
 							aria-hidden="true"
-							className="w-3.5 h-3.5 ml-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+							className="public-link-arrow ml-3 size-4 shrink-0"
 							style={{ color: mutedTextColor }}
 						/>
 					)}
 				</div>
 				{featured && (
 					<p
-						className="mt-4 pr-10 text-sm font-bold"
-						style={{ color: textColor }}
+						className="mt-4 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold"
+						style={{
+							color: cardBg,
+							backgroundColor: textColor,
+						}}
 					>
-						{ctaLabel || "Explore more"} ↗
+						{ctaLabel || "Explore more"}
+						<ArrowUpRight aria-hidden="true" className="size-4" />
 					</p>
 				)}
 			</a>

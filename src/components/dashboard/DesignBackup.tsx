@@ -51,8 +51,10 @@ export function DesignBackup({
 		);
 	};
 	return (
-		<details className="kinetic-panel bg-card p-5">
-			<summary className="cursor-pointer font-bold">Style backups</summary>
+		<details className="surface bg-card p-5">
+			<summary className="cursor-pointer text-[15px] font-semibold">
+				Style backups
+			</summary>
 			<p className="my-3 text-xs">
 				Back up your theme, typography, button style, accent, and content
 				blocks. Profile details, background photos, and links stay separate.
@@ -89,7 +91,7 @@ export function DesignBackup({
 				</label>
 			</div>
 			{error && (
-				<p role="alert" className="mt-3 text-sm text-red-700">
+				<p role="alert" className="mt-3 text-sm text-destructive">
 					{error}
 				</p>
 			)}

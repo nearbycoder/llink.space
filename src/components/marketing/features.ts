@@ -3,7 +3,7 @@ export const featureGroups = [
 		id: "design",
 		label: "Make it yours",
 		eyebrow: "01 / Create",
-		color: "#E9EDB5",
+		color: "#FFE2D2",
 		intro:
 			"A page with your personality. Room to experiment before anything goes live.",
 		features: [
@@ -73,7 +73,7 @@ export const featureGroups = [
 		id: "manage",
 		label: "Keep it together",
 		eyebrow: "02 / Organize",
-		color: "#C5E6E9",
+		color: "#DDE4F7",
 		intro:
 			"Less hunting through links. More control over what goes out, and when.",
 		features: [
@@ -167,7 +167,7 @@ export const featureGroups = [
 		id: "share",
 		label: "Take it everywhere",
 		eyebrow: "03 / Share",
-		color: "#F1D0BF",
+		color: "#F4EBC8",
 		intro:
 			"On a poster, in a document, or in someone’s contacts. Your page travels well.",
 		features: [
@@ -207,7 +207,7 @@ export const featureGroups = [
 		id: "explore",
 		label: "Make yourself easy to find",
 		eyebrow: "04 / Explore",
-		color: "#DCD4EC",
+		color: "#ECE2F1",
 		intro:
 			"A little less scrolling. A reason to come back. A page that works beyond the screen.",
 		features: [
@@ -232,7 +232,7 @@ export const featureGroups = [
 		id: "insights",
 		label: "Understand your audience",
 		eyebrow: "05 / Insights",
-		color: "#DAE5D3",
+		color: "#DDE9DA",
 		intro: "See which devices people use and when your links get attention.",
 		features: [
 			{

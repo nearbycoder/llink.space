@@ -102,7 +102,7 @@ export function SavedLinkViews({
 				</p>
 			)}
 			{error && (
-				<p role="alert" className="mt-2 text-sm text-red-700">
+				<p role="alert" className="mt-2 text-sm text-destructive">
 					{error}
 				</p>
 			)}

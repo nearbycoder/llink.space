@@ -8,6 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { useEffect, useState } from "react";
+import { SiteBrand } from "#/components/SiteBrand";
 import { Toaster } from "#/components/ui/sonner";
 import type { TRPCRouter } from "#/integrations/trpc/router";
 import { toAbsoluteUrl } from "#/lib/site-url";
@@ -39,7 +40,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 					name: "robots",
 					content: "index, follow, max-image-preview:large, max-snippet:-1",
 				},
-				{ name: "theme-color", content: "#11110F" },
+				{ name: "theme-color", content: "#F5F3EE" },
 				{ property: "og:site_name", content: "llink.space" },
 				{ property: "og:image", content: defaultOgImage },
 				{ property: "og:image:width", content: "1200" },
@@ -64,7 +65,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				},
 				{
 					rel: "stylesheet",
-					href: "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&display=swap",
+					href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Geist+Mono:wght@400..600&family=Geist:wght@400..700&display=swap",
 				},
 			],
 		};
@@ -157,23 +158,33 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 
 function RootNotFound() {
 	return (
-		<div className="kinetic-gradient min-h-screen flex items-center justify-center px-4">
-			<div className="kinetic-shell max-w-md p-8 text-center">
-				<h1
-					className="text-4xl text-[#11110F]"
-					style={{ fontFamily: "'Archivo Black', sans-serif" }}
-				>
-					Page not found
+		<div className="auth-workspace flex min-h-screen flex-col px-5 py-6">
+			<a href="/" className="w-fit" aria-label="llink.space home">
+				<SiteBrand size="md" />
+			</a>
+			<div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center py-16">
+				<p className="eyebrow">Error 404</p>
+				<h1 className="font-display mt-3 text-5xl font-semibold leading-[1.02] sm:text-6xl">
+					This page drifted <em className="text-signal-strong">off the map.</em>
 				</h1>
-				<p className="mt-3 text-sm text-[#4B4B45]">
-					The page you requested does not exist.
+				<p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
+					The address may be mistyped, or the page may have moved. Head back
+					home and start again.
 				</p>
-				<a
-					href="/"
-					className="mt-5 inline-flex rounded-xl border border-border bg-[#11110F] px-4 py-2 text-sm font-semibold text-[#F5FF7B] shadow-sm transition-transform hover:brightness-95"
-				>
-					Go home
-				</a>
+				<div className="mt-8 flex flex-wrap gap-3">
+					<a
+						href="/"
+						className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85"
+					>
+						Go home
+					</a>
+					<a
+						href="/sign-up"
+						className="inline-flex h-11 items-center rounded-full border border-border-strong bg-card px-5 text-sm font-semibold transition-colors hover:bg-accent"
+					>
+						Create your page
+					</a>
+				</div>
 			</div>
 		</div>
 	);

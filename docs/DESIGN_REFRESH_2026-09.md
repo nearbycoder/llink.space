@@ -1,5 +1,7 @@
 # September styling refresh
 
+> Superseded by the [October UI rework](DESIGN_REWORK_2026-10.md).
+
 Reference review used Mobbin MCP searches and inspected the returned screenshots:
 
 - [Linktree link management](https://mobbin.com/screens/aa28e968-6be1-4860-af72-d1ffff38408e): quiet navigation, white editing surfaces, and a clear distinction between management tools and the creator's page.

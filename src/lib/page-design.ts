@@ -7,9 +7,9 @@ import {
 } from "./extended-blocks";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "./security";
 export const FONT_OPTIONS = {
-	work: "'Work Sans', sans-serif",
-	editorial: "Georgia, serif",
-	mono: "'Courier New', monospace",
+	work: "'Geist', ui-sans-serif, system-ui, sans-serif",
+	editorial: "'Fraunces', Georgia, serif",
+	mono: "'Geist Mono', ui-monospace, monospace",
 };
 export const BUTTON_STYLES = ["rounded", "pill", "square"] as const;
 export const BLOCK_TYPES = [

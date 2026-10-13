@@ -1,13 +1,13 @@
 # Homepage product walkthrough
 
-The homepage uses a real screen recording of llink.space, captured on September 19, 2026 with a fictional Studio Field profile in an isolated local database. The sample links and `studiofield.example` domain are demonstration fixtures, not live destinations. A cursor highlight was added to make interactions easier to follow. No customer account, email, or analytics data appears in the recording.
+The homepage uses a real screen recording of llink.space, captured on October 12, 2026 with a fictional Studio Field profile (`@studiofield`) in an isolated local database. The sample links and `studiofield.example` domain are demonstration fixtures, not live destinations. A cursor highlight was added to make interactions easier to follow. No customer account, email, or analytics data appears in the recording.
 
 ## Assets
 
 - `public/demo/product-tour.mp4`: silent H.264 walkthrough, 1280 × 800, optimized for progressive playback.
 - `public/demo/product-tour.vtt`: English captions.
 - `public/demo/product-tour-poster.webp`: still from the recorded Design studio.
-- `public/demo/profile-preview.webp`: refreshed September 19, 2026 for the styling update; real mobile screenshot of the fictional profile, captured at 3× pixel density and encoded losslessly to keep borders and type clear.
+- `public/demo/profile-preview.webp`: refreshed October 12, 2026 for the paper, ink & signal redesign; real mobile screenshot of the fictional profile, captured by the recorder at 3× pixel density and encoded losslessly to keep borders and type clear.
 - `src/components/marketing/demo-chapters.json`: chapter times and the written walkthrough.
 - `src/components/marketing/features.ts`: the 20-feature marketing inventory.
 
@@ -33,11 +33,11 @@ The player streams the bundled MP4 through `/api/demo-video`, which supports byt
 Start the app against a migrated, isolated local database, then run:
 
 ```sh
-DEMO_BASE_URL=http://127.0.0.1:3069 \
-DATABASE_URL=postgres://postgres@127.0.0.1:55559/lean_features_review \
+DEMO_BASE_URL=http://127.0.0.1:3000 \
+DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/llink_demo \
 node scripts/record-marketing-demo.mjs
 ```
 
-The recorder requires Chromium (`npx playwright install chromium`), `ffmpeg`, and `ffprobe`. It accepts only loopback app/database hosts. It creates a new fictional account, three links, an FAQ, and a reserved `studiofield.example` domain fixture directly in that local database; it does not call a DNS or hosting provider. These fixtures remain in the disposable database. Raw clips and the sample SVG download stay in a temporary directory printed at completion.
+The recorder requires Chromium (`npx playwright install chromium`), `ffmpeg`, and `ffprobe`. It accepts only loopback app/database hosts. It creates a new fictional account with the `studiofield` handle, three links, an FAQ, and a reserved `studiofield.example` domain fixture directly in that local database, so use a database where that handle and domain are unused; it does not call a DNS or hosting provider. These fixtures remain in the disposable database. Raw clips and the sample SVG download stay in a temporary directory printed at completion.
 
-The script trims setup/loading frames from four real browser recordings, joins them, and regenerates the MP4, poster, caption cues, chapter times, and content-hash version together. Review the finished recording before committing. The content hash versions all three media URLs so returning visitors fetch the updated assets together. The September 19 recording is 46.08 seconds, 1280 × 800 at 25 fps, approximately 1.72 MB, with no audio track.
+The script captures the homepage phone image, trims setup/loading frames from four real browser recordings, joins them, and regenerates the MP4, poster, caption cues, chapter times, and content-hash version together. Review the finished recording before committing. The content hash versions all three media URLs so returning visitors fetch the updated assets together. The October 12 recording is 46.04 seconds, 1280 × 800 at 25 fps, approximately 2.0 MB, with no audio track.

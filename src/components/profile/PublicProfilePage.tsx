@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { ChevronDown } from "lucide-react";
-import { Fragment } from "react";
+import { type CSSProperties, Fragment } from "react";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
 import type { TRPCRouter } from "#/integrations/trpc/router";
@@ -50,8 +50,8 @@ function resolveProfileBackgroundStyle(
 		isAllowedBackgroundImageUrl(profile.pageBackgroundImageUrl)
 	) {
 		return {
-			backgroundColor: "#11110F",
-			backgroundImage: `linear-gradient(130deg, rgba(17,17,15,0.45), rgba(17,17,15,0.2)), ${toCssBackgroundImageUrl(profile.pageBackgroundImageUrl)}`,
+			backgroundColor: "#16140F",
+			backgroundImage: `linear-gradient(180deg, rgba(22,20,15,0.35), rgba(22,20,15,0.15)), ${toCssBackgroundImageUrl(profile.pageBackgroundImageUrl)}`,
 			backgroundPosition: "center",
 			backgroundSize: "cover",
 		};
@@ -148,12 +148,15 @@ function PublicLinkGroup({
 			{visibleLinks.map(renderLink)}
 			{remainingLinks.length > 0 && (
 				<details className="group space-y-2.5">
-					<summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border bg-card/80 px-4 py-2.5 text-xs font-semibold text-foreground transition-colors hover:border-foreground/25 hover:bg-accent [&::-webkit-details-marker]:hidden">
+					<summary className="public-profile-more [&::-webkit-details-marker]:hidden">
 						<span className="group-open:hidden">
 							Show {remainingLinks.length} more
 						</span>
 						<span className="hidden group-open:inline">Show fewer</span>
-						<ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+						<ChevronDown
+							aria-hidden="true"
+							className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
+						/>
 					</summary>
 					<div className="space-y-2.5">{remainingLinks.map(renderLink)}</div>
 				</details>
@@ -208,6 +211,8 @@ export function PublicProfilePage({
 		});
 	};
 
+	const displayName = profile.displayName?.trim() || `@${profile.username}`;
+
 	return (
 		<div
 			data-public-profile={!preview || undefined}
@@ -221,20 +226,21 @@ export function PublicProfilePage({
 				color: theme.text,
 			}}
 		>
-			<div className="mx-auto max-w-lg px-4 py-6 sm:py-10">
+			<div className="mx-auto max-w-[34rem] px-3 py-4 sm:px-4 sm:py-12">
 				<div
-					className="public-profile-surface rounded-3xl border p-5 sm:p-7"
-					style={{
-						backgroundColor: theme.cardBg,
-						borderColor: `color-mix(in srgb, ${theme.cardBorder} 20%, transparent)`,
-					}}
+					className="public-profile-surface rounded-[1.75rem] border px-5 pt-4 pb-7 sm:px-8 sm:pt-5 sm:pb-9"
+					style={
+						{
+							backgroundColor: theme.cardBg,
+							borderColor: `color-mix(in srgb, ${theme.cardBorder} 14%, transparent)`,
+							"--public-card-bg": theme.cardBg,
+						} as CSSProperties
+					}
 				>
 					{!preview && (
 						<PublicProfileShare
 							customDomain={data.customDomain}
-							displayName={
-								profile.displayName?.trim() || `@${profile.username}`
-							}
+							displayName={displayName}
 							username={profile.username}
 						/>
 					)}
@@ -249,7 +255,7 @@ export function PublicProfilePage({
 					/>
 					<div
 						data-print-hidden
-						className="mb-5 flex flex-wrap items-start gap-2"
+						className="mb-6 flex flex-wrap items-start gap-2"
 					>
 						<PublicLinkCommandBar
 							links={commandLinks}
@@ -272,17 +278,20 @@ export function PublicProfilePage({
 						<nav
 							aria-label="Jump to section"
 							data-print-hidden
-							className="mb-6 rounded-xl border border-current/20 p-3"
+							className="-mx-1 mb-7"
 						>
-							<p className="mb-2 text-xs font-semibold uppercase tracking-wider">
+							<p
+								className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em]"
+								style={{ color: theme.mutedText }}
+							>
 								On this page
 							</p>
-							<div className="flex flex-wrap gap-2">
+							<div className="flex flex-wrap gap-1.5">
 								{sections.map((section) => (
 									<a
 										key={section.id}
 										href={`#section-${section.id}`}
-										className="inline-flex min-h-11 max-w-full items-center [overflow-wrap:anywhere] rounded-full border border-current/30 px-3 py-2 text-sm underline-offset-4 hover:underline"
+										className="public-profile-chip"
 									>
 										{section.title}
 									</a>
@@ -296,7 +305,7 @@ export function PublicProfilePage({
 							<ContentBlockView key={b.id} block={b} preview={preview} />
 						))}
 					{links.length > 0 ? (
-						<div className="space-y-6">
+						<div className="space-y-8">
 							{unsectionedLinks.length > 0 && (
 								<PublicLinkGroup
 									savedIds={reading.ids}
@@ -321,17 +330,27 @@ export function PublicProfilePage({
 									aria-label={section.title}
 									className="scroll-mt-6 space-y-3"
 								>
-									<div className="relative py-1">
-										<div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-border/20" />
+									<div className="flex items-center gap-3">
 										<h2
-											className="relative w-fit max-w-full break-words pr-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]"
-											style={{
-												color: theme.mutedText,
-												backgroundColor: theme.cardBg,
-											}}
+											className="max-w-full shrink-0 break-words text-[11px] font-semibold uppercase tracking-[0.14em]"
+											style={{ color: theme.mutedText }}
 										>
 											{section.title}
 										</h2>
+										<span
+											aria-hidden="true"
+											className="h-px flex-1"
+											style={{
+												backgroundColor: `color-mix(in srgb, ${theme.cardBorder} 14%, transparent)`,
+											}}
+										/>
+										<span
+											aria-hidden="true"
+											className="text-[11px] tabular-nums"
+											style={{ color: theme.mutedText }}
+										>
+											{section.links.length}
+										</span>
 									</div>
 									<PublicLinkGroup
 										savedIds={reading.ids}
@@ -352,8 +371,11 @@ export function PublicProfilePage({
 						</div>
 					) : (
 						<p
-							className="text-center text-sm"
-							style={{ color: theme.mutedText, backgroundColor: theme.cardBg }}
+							className="rounded-2xl border border-dashed px-4 py-8 text-center text-sm"
+							style={{
+								color: theme.mutedText,
+								borderColor: `color-mix(in srgb, ${theme.cardBorder} 22%, transparent)`,
+							}}
 						>
 							No links yet
 						</p>
@@ -369,11 +391,11 @@ export function PublicProfilePage({
 							/>
 						</div>
 					)}
-					<div className="mt-12 text-center">
+					<footer className="mt-12 flex flex-col items-center gap-5">
 						{!preview && (
 							<div
 								data-print-hidden
-								className="mb-5 flex flex-wrap justify-center gap-2"
+								className="flex flex-wrap justify-center gap-2"
 							>
 								<PublicPrint />
 								<ContactDownload
@@ -384,21 +406,11 @@ export function PublicProfilePage({
 								/>
 							</div>
 						)}
-						<a
-							href="https://llink.space/"
-							className="inline-flex items-center gap-1.5 text-xs hover:underline"
-						>
-							<span
-								style={{
-									color: theme.mutedText,
-									backgroundColor: theme.cardBg,
-								}}
-							>
-								Powered by
-							</span>
+						<a href="https://llink.space/" className="public-profile-badge">
+							<span style={{ color: theme.mutedText }}>Made with</span>
 							<SiteBrand size="sm" textClassName="text-xs !text-current" />
 						</a>
-					</div>
+					</footer>
 				</div>
 			</div>
 		</div>

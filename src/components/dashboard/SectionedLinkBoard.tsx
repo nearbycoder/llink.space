@@ -289,9 +289,9 @@ function LinkRow({
 			ref={setNodeRef}
 			style={style}
 			className={cn(
-				"group grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 sm:flex sm:gap-3 rounded-xl border border-border bg-card p-4 shadow-sm",
+				"group grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 rounded-[0.875rem] border border-border/80 bg-card px-3.5 py-3 transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-[0_6px_20px_-14px_rgb(22_20_15/0.35)] sm:flex sm:gap-3",
 				isDragging && "opacity-50",
-				isSelected && "bg-info/10 shadow-sm",
+				isSelected && "border-signal/50 bg-signal-soft/40",
 			)}
 		>
 			{selectionMode ? (
@@ -300,13 +300,13 @@ function LinkRow({
 					checked={isSelected}
 					onChange={() => onToggleSelection(link.id)}
 					aria-label={`Select ${link.title}`}
-					className="h-5 w-5 shrink-0 cursor-pointer accent-[#11110F]"
+					className="h-5 w-5 shrink-0 cursor-pointer accent-[#16140F]"
 				/>
 			) : (
 				<button
 					type="button"
 					className={cn(
-						"touch-none text-muted-foreground",
+						"touch-none text-muted-foreground/60",
 						enableDrag &&
 							"cursor-grab hover:text-foreground active:cursor-grabbing",
 					)}
@@ -321,19 +321,23 @@ function LinkRow({
 
 			<div className="min-w-0 flex-1">
 				<div className="flex items-start gap-3">
-					<LinkIcon iconUrl={link.iconUrl} iconBgColor={link.iconBgColor} />
+					<LinkIcon
+						iconUrl={link.iconUrl}
+						iconBgColor={link.iconBgColor}
+						className="size-9 rounded-[0.7rem]"
+					/>
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
-							<span className="truncate text-sm font-medium text-foreground">
+							<span className="truncate text-sm font-semibold text-foreground">
 								{link.title}
 							</span>
 							{publishingStatus(link) !== "Live" && (
-								<Badge variant="secondary" className="shrink-0 text-xs">
+								<Badge variant="secondary" className="shrink-0">
 									{publishingStatus(link)}
 								</Badge>
 							)}
 						</div>
-						<span className="block truncate text-xs text-muted-foreground">
+						<span className="block truncate font-mono text-[11.5px] text-muted-foreground">
 							{link.url}
 						</span>
 						{link.description && (
@@ -346,7 +350,7 @@ function LinkRow({
 			</div>
 
 			{!selectionMode && (
-				<div className="col-span-2 flex justify-end gap-1 border-t border-border pt-2 sm:border-0 sm:pt-0">
+				<div className="col-span-2 flex justify-end gap-0.5 border-t border-border pt-2 transition-opacity sm:border-0 sm:pt-0 sm:opacity-70 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
 					<Button
 						variant="ghost"
 						size="sm"
@@ -407,13 +411,13 @@ interface InsertionRailProps {
 
 function InsertionRail({ onClick }: InsertionRailProps) {
 	return (
-		<div className="group/rail relative py-2">
-			<div className="border-t border-dashed border-border" />
+		<div className="group/rail relative py-1.5">
+			<div className="border-t border-dashed border-transparent transition-colors group-hover/rail:border-border-strong" />
 			<button
 				type="button"
 				onClick={onClick}
 				aria-label="Create a section at this position"
-				className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-border bg-accent px-2 py-0.5 text-[10px] font-semibold text-foreground opacity-0 shadow-sm transition-all hover:-translate-y-[55%] group-hover/rail:opacity-100 focus-visible:opacity-100"
+				className="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground opacity-0 transition-opacity group-hover/rail:opacity-100 focus-visible:opacity-100"
 			>
 				<Plus className="h-3 w-3" />
 				Create section here
@@ -469,21 +473,23 @@ function SectionColumn({
 		<section
 			ref={setNodeRef}
 			className={cn(
-				"rounded-2xl border border-border bg-muted p-4 shadow-sm transition-colors",
-				isOver && enableDrag && "bg-accent",
+				"rounded-[1.125rem] border border-border bg-[#efece5]/70 p-2 transition-colors sm:p-2.5",
+				isOver && enableDrag && "border-signal/40 bg-signal-soft/50",
 			)}
 		>
 			<div
 				className={cn(
-					"flex items-start justify-between gap-3",
-					!isCollapsed && "mb-3",
+					"flex items-center justify-between gap-3 px-2 pt-1.5",
+					isCollapsed ? "pb-1.5" : "pb-3",
 				)}
 			>
-				<div>
-					<h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-foreground">
+				<div className="flex min-w-0 items-baseline gap-2.5">
+					<h3 className="truncate text-sm font-semibold text-foreground">
 						{title}
 					</h3>
-					<p className="text-xs text-muted-foreground">{description}</p>
+					<p className="shrink-0 font-mono text-[11px] text-muted-foreground">
+						{description}
+					</p>
 				</div>
 				<div className="flex gap-1">
 					<Button
@@ -569,7 +575,7 @@ function SectionColumn({
 								))}
 							</div>
 						) : (
-							<div className="rounded-xl border-2 border-dashed border-border bg-card/80 px-3 py-4 text-center text-xs text-muted-foreground">
+							<div className="rounded-[0.875rem] border border-dashed border-border-strong bg-card/60 px-3 py-5 text-center text-xs text-muted-foreground">
 								{enableDrag
 									? "Drop links here"
 									: "No links in this section yet"}
@@ -789,7 +795,7 @@ export function SectionedLinkBoard({
 			{content}
 			<DragOverlay>
 				{activeLink ? (
-					<div className="w-full max-w-[680px] rounded-xl border border-border bg-card p-4 shadow-sm">
+					<div className="w-full max-w-[680px] rounded-[0.875rem] border border-border-strong bg-card px-3.5 py-3 shadow-[0_18px_40px_-16px_rgb(22_20_15/0.45)]">
 						<div className="flex items-center gap-3">
 							<span
 								aria-hidden="true"

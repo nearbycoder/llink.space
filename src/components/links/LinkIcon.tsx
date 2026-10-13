@@ -1,7 +1,7 @@
 import { Link2 } from "lucide-react";
 import { useState } from "react";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
-import { cn } from "#/lib/utils";
+import { cn, DEFAULT_ICON_BG_COLOR, readableTextColor } from "#/lib/utils";
 import { LINK_ICON_OPTIONS_BY_KEY } from "./icon-options";
 
 interface LinkIconProps {
@@ -26,19 +26,23 @@ export function LinkIcon({
 	const iconOption = isIconKey
 		? LINK_ICON_OPTIONS_BY_KEY[normalizedIcon]
 		: undefined;
+	const background = iconBgColor ?? DEFAULT_ICON_BG_COLOR;
 
 	return (
 		<span
 			className={cn(
-				"inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border",
+				"inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_rgb(22_20_15/0.08)]",
 				className,
 			)}
-			style={{ backgroundColor: iconBgColor ?? "#F5FF7B" }}
+			style={{
+				backgroundColor: background,
+				color: readableTextColor(background),
+			}}
 		>
 			{iconOption ? (
 				<iconOption.Icon
 					aria-hidden="true"
-					className={cn("h-4 w-4 text-[#11110F]", glyphClassName)}
+					className={cn("h-4 w-4", glyphClassName)}
 				/>
 			) : showImage ? (
 				<img
@@ -50,10 +54,7 @@ export function LinkIcon({
 					onError={() => setIsBroken(true)}
 				/>
 			) : (
-				<Link2
-					aria-hidden="true"
-					className={cn("h-4 w-4 text-[#11110F]", glyphClassName)}
-				/>
+				<Link2 aria-hidden="true" className={cn("h-4 w-4", glyphClassName)} />
 			)}
 		</span>
 	);

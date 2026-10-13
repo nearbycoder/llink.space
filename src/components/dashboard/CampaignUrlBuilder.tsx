@@ -56,7 +56,7 @@ export function CampaignUrlBuilder({
 						))}
 					</div>
 					{error ? (
-						<p className="my-3 text-sm text-red-700" role="status">
+						<p className="my-3 text-sm text-destructive" role="status">
 							{error}
 						</p>
 					) : (

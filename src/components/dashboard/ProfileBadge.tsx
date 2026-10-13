@@ -38,7 +38,7 @@ export function ProfileBadge({ username }: { username: string }) {
 		/* The label is still being edited. */
 	}
 	return (
-		<section className="kinetic-panel mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
+		<section className="surface mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
 			<div>
 				<h2 className="text-base font-semibold">A little link to everything</h2>
 				<p className="mt-1 text-sm text-muted-foreground">

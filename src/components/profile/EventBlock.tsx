@@ -17,10 +17,14 @@ export function EventBlock({ block }: { block: ContentBlock }) {
 	return (
 		<section
 			aria-label={block.title}
-			className="my-5 space-y-3 rounded-xl border border-current/25 p-4"
+			className="my-5 space-y-3 rounded-2xl border border-current/15 p-5"
 		>
-			<p className="text-xs font-semibold uppercase tracking-wider">Event</p>
-			<h2 className="text-lg font-bold">{block.title}</h2>
+			<p className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
+				Event
+			</p>
+			<h2 className="text-lg font-semibold tracking-[-0.015em]">
+				{block.title}
+			</h2>
 			<p className="text-sm">
 				<time dateTime={block.startsAt}>{label(block.startsAt)}</time>
 				{block.endsAt && (
@@ -50,7 +54,7 @@ export function EventBlock({ block }: { block: ContentBlock }) {
 				<button
 					type="button"
 					disabled={!ready}
-					className="min-h-11 rounded-lg border border-current px-3 text-sm font-semibold"
+					className="min-h-11 rounded-full border border-current/40 px-4 text-sm font-semibold"
 					onClick={() =>
 						downloadFile(
 							buildCalendar([

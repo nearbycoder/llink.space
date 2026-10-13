@@ -136,7 +136,7 @@ export function PublicLinkCommandBar({
 			>
 				<Search size={16} aria-hidden="true" />
 				<span>Search links</span>
-				<kbd className="ml-auto hidden text-[10px] opacity-60 sm:inline">
+				<kbd className="ml-auto hidden rounded-md border border-current/15 px-1.5 py-0.5 font-mono text-[10px] opacity-60 sm:inline">
 					{isApplePlatform ? "⌘ K" : "Ctrl K"}
 				</kbd>
 			</button>
@@ -144,12 +144,12 @@ export function PublicLinkCommandBar({
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent
 					data-public-profile-dialog
-					className="max-w-xl overflow-hidden rounded-2xl p-0"
+					className="max-w-xl overflow-hidden p-0"
 					showCloseButton={false}
 				>
-					<DialogHeader className="border-b border-border bg-accent px-5 py-4">
-						<DialogTitle className="flex items-center gap-2 text-base">
-							<Command className="h-4 w-4" />
+					<DialogHeader className="border-b border-border px-5 pt-5 pb-4">
+						<DialogTitle className="flex items-center gap-2">
+							<Command className="h-4 w-4 text-signal-strong" />
 							Quick jump
 						</DialogTitle>
 						<DialogDescription className="text-muted-foreground">
@@ -204,9 +204,9 @@ export function PublicLinkCommandBar({
 										}}
 										onMouseEnter={() => setSelectedIndex(index)}
 										onClick={() => openLink(link)}
-										className={`w-full rounded-xl border-2 px-3 py-2 text-left transition-colors ${
+										className={`w-full rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
 											index === selectedIndex
-												? "border-border bg-primary text-primary-foreground"
+												? "border-transparent bg-primary text-primary-foreground"
 												: "border-border bg-card text-foreground hover:bg-muted"
 										}`}
 									>
@@ -219,7 +219,7 @@ export function PublicLinkCommandBar({
 													className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${
 														index === selectedIndex
 															? "border-primary-foreground/70 text-primary-foreground"
-															: "border-border bg-accent/55 text-primary"
+															: "border-border bg-muted text-muted-foreground"
 													}`}
 												>
 													{link.sectionTitle}
@@ -238,7 +238,7 @@ export function PublicLinkCommandBar({
 									</button>
 								))
 							) : (
-								<div className="rounded-xl border-2 border-dashed border-border bg-card/70 p-4 text-center">
+								<div className="rounded-xl border border-dashed border-border-strong p-6 text-center">
 									<p className="text-sm font-medium text-foreground">
 										No matching links
 									</p>

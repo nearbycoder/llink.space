@@ -1,5 +1,11 @@
+/* Public pages inherit every color from the creator's theme via currentColor. */
 .public-profile-surface {
-	box-shadow: 0 12px 48px #11110f0a;
+	box-shadow:
+		0 1px 0 rgb(22 20 15 / 0.03),
+		0 30px 80px -40px rgb(22 20 15 / 0.35);
+}
+.public-link-card {
+	position: relative;
 }
 .public-link-card > a {
 	min-height: 64px;
@@ -7,15 +13,27 @@
 @media (prefers-reduced-motion: no-preference) {
 	.public-link-card > a {
 		transition:
-			box-shadow 160ms ease,
-			border-color 160ms ease;
+			box-shadow 180ms ease,
+			border-color 180ms ease,
+			transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.public-link-arrow {
+		transition:
+			transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+			opacity 180ms ease;
 	}
 }
 .public-link-card > a:hover {
-	box-shadow: 0 4px 14px #11110f10;
+	border-color: color-mix(in srgb, currentColor 32%, transparent) !important;
+	box-shadow: 0 10px 28px -16px rgb(22 20 15 / 0.35);
+	transform: translateY(-1px);
 }
-.public-link-card {
-	position: relative;
+.public-link-arrow {
+	opacity: 0.55;
+}
+.public-link-card > a:hover .public-link-arrow {
+	opacity: 1;
+	transform: translate(2px, -2px);
 }
 .public-link-save {
 	position: absolute;
@@ -27,7 +45,7 @@
 	justify-content: center;
 	width: 44px;
 	height: 44px;
-	border-radius: 10px;
+	border-radius: 12px;
 	cursor: pointer;
 	opacity: 0.65;
 }
@@ -43,7 +61,10 @@
 }
 .public-link-save:focus-visible,
 .public-link-card > a:focus-visible,
-.public-profile-tool:focus-visible {
+.public-profile-tool:focus-visible,
+.public-profile-chip:focus-visible,
+.public-profile-more:focus-visible,
+.public-profile-badge:focus-visible {
 	outline: 2px solid currentColor;
 	outline-offset: 3px;
 }
@@ -53,14 +74,71 @@
 	justify-content: center;
 	gap: 8px;
 	min-height: 44px;
-	padding: 8px 12px;
-	border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-	border-radius: 10px;
-	font-size: 12px;
-	font-weight: 600;
+	padding: 8px 14px;
+	border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+	border-radius: 999px;
+	background: color-mix(in srgb, currentColor 3%, transparent);
+	font-size: 13px;
+	font-weight: 500;
 	cursor: pointer;
 }
 .public-profile-tool:hover {
+	background: color-mix(in srgb, currentColor 7%, transparent);
+	border-color: color-mix(in srgb, currentColor 28%, transparent);
+}
+.public-profile-tool:disabled {
+	cursor: default;
+	opacity: 0.6;
+}
+.public-profile-tool--icon {
+	width: 44px;
+	padding: 0;
+}
+.public-profile-chip {
+	display: inline-flex;
+	min-height: 40px;
+	max-width: 100%;
+	align-items: center;
+	overflow-wrap: anywhere;
+	border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+	border-radius: 999px;
+	padding: 6px 14px;
+	font-size: 13px;
+	font-weight: 500;
+}
+.public-profile-chip:hover {
+	background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.public-profile-more {
+	display: flex;
+	cursor: pointer;
+	list-style: none;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	border: 1px dashed color-mix(in srgb, currentColor 28%, transparent);
+	border-radius: 16px;
+	padding: 10px 16px;
+	font-size: 13px;
+	font-weight: 600;
+}
+.public-profile-more:hover {
+	background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.public-profile-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+	border-radius: 999px;
+	padding: 6px 12px 6px 10px;
+	font-size: 12px;
+}
+.public-profile-badge .site-brand {
+	color: inherit;
+}
+.public-profile-badge:hover {
 	background: color-mix(in srgb, currentColor 5%, transparent);
 }
 @media (hover: hover) and (pointer: fine) {

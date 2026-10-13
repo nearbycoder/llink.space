@@ -21,7 +21,7 @@ function Checklist({ block }: { block: ContentBlock }) {
 	return (
 		<section
 			aria-label={block.title || "Checklist"}
-			className="my-5 rounded-xl border border-current/20 p-4"
+			className="my-5 rounded-2xl border border-current/15 p-5"
 		>
 			{block.title && (
 				<h2 className="mb-3 text-lg font-semibold">{block.title}</h2>
@@ -72,7 +72,7 @@ function CodeSnippet({ block }: { block: ContentBlock }) {
 	return (
 		<section
 			aria-label={block.title || "Code snippet"}
-			className="my-5 min-w-0 rounded-xl border border-current/20 p-4"
+			className="my-5 min-w-0 rounded-2xl border border-current/15 p-5"
 		>
 			<div className="mb-3 flex items-center justify-between gap-3">
 				<h2 className="text-sm font-semibold">
@@ -81,7 +81,7 @@ function CodeSnippet({ block }: { block: ContentBlock }) {
 				<button
 					type="button"
 					disabled={!ready}
-					className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-current/25 px-3 text-xs"
+					className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-current/25 px-3.5 text-xs"
 					onClick={async () => {
 						try {
 							await navigator.clipboard.writeText(block.body);
@@ -95,7 +95,7 @@ function CodeSnippet({ block }: { block: ContentBlock }) {
 					{status === "copied" ? "Copied" : "Copy code"}
 				</button>
 			</div>
-			<pre className="max-h-80 overflow-auto rounded-lg bg-current/5 p-3 text-xs leading-relaxed">
+			<pre className="max-h-80 overflow-auto rounded-xl bg-current/5 p-3.5 font-mono text-xs leading-relaxed">
 				<code>{block.body}</code>
 			</pre>
 			{status === "error" && (
@@ -129,7 +129,7 @@ export function ExtendedBlockView({ block }: { block: ContentBlock }) {
 		return (
 			<section
 				aria-label={block.title || "Business hours"}
-				className="my-5 rounded-xl border border-current/20 p-4"
+				className="my-5 rounded-2xl border border-current/15 p-5"
 			>
 				<h2 className="mb-3 text-lg font-semibold">
 					{block.title || "Business hours"}
@@ -157,7 +157,7 @@ export function ExtendedBlockView({ block }: { block: ContentBlock }) {
 					href={url}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="inline-flex min-h-12 items-center justify-center rounded-xl border border-current bg-current/10 px-5 py-3 text-center font-semibold break-words underline-offset-4 hover:underline"
+					className="inline-flex min-h-12 items-center justify-center rounded-full border border-current/30 bg-current/[0.06] px-6 py-3 text-center font-semibold break-words transition-colors hover:bg-current/10"
 				>
 					{block.title}
 				</a>
@@ -173,7 +173,7 @@ export function ExtendedBlockView({ block }: { block: ContentBlock }) {
 		const url = audioUrl(block.url);
 		return url ? (
 			<section
-				className="my-5 flex flex-col gap-3 rounded-xl border border-current/20 p-4"
+				className="my-5 flex flex-col gap-3 rounded-2xl border border-current/15 p-5"
 				aria-label={block.title}
 			>
 				<h2 className="text-lg font-semibold">{block.title}</h2>

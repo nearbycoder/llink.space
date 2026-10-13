@@ -4,6 +4,7 @@ import type { SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DesignBackup } from "#/components/dashboard/DesignBackup";
+import { PageHeader } from "#/components/dashboard/PageHeader";
 import { PageReadiness } from "#/components/dashboard/PageReadiness";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import {
@@ -42,8 +43,13 @@ export const Route = createFileRoute("/dashboard/design")({
 	},
 	component: DesignStudio,
 });
+const FONT_LABELS = {
+	work: "Modern sans",
+	editorial: "Editorial serif",
+	mono: "Monospace",
+} as const;
 const field =
-	"mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-base sm:text-sm text-foreground";
+	"mt-1.5 w-full rounded-xl border border-input/60 bg-card px-3.5 py-2 text-base text-foreground transition-[border-color,box-shadow] outline-none hover:border-input focus-visible:border-foreground focus-visible:ring-[3px] focus-visible:ring-signal/20 sm:text-sm";
 function DesignStudio() {
 	const [ready, setReady] = useState(false);
 	useEffect(() => setReady(true), []);
@@ -159,7 +165,7 @@ function DesignStudio() {
 		}
 	};
 	return (
-		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:px-10">
 			<UnsavedChangesGuard when={dirty || save.isPending} />
 			<Dialog
 				open={selectedTemplate !== null}
@@ -177,9 +183,7 @@ function DesignStudio() {
 					{selectedTemplate && (
 						<>
 							<DialogHeader className="pr-6 text-left">
-								<DialogTitle className="text-2xl font-black">
-									Use {selectedTemplate.name}?
-								</DialogTitle>
+								<DialogTitle>Use {selectedTemplate.name}?</DialogTitle>
 								<DialogDescription className="leading-relaxed">
 									This replaces the theme and content blocks in your draft. Your
 									links and profile details stay in place.
@@ -192,7 +196,7 @@ function DesignStudio() {
 									color: themes[selectedTemplate.theme].text,
 								}}
 							>
-								<p className="text-xs font-bold uppercase tracking-widest">
+								<p className="font-mono text-[10.5px] uppercase tracking-[0.08em] opacity-75">
 									{selectedTemplate.audience}
 								</p>
 								<h3 className="mt-4 text-xl font-bold">
@@ -219,26 +223,37 @@ function DesignStudio() {
 					)}
 				</DialogContent>
 			</Dialog>
-			<header className="mb-7 flex flex-wrap items-end justify-between gap-4">
-				<div>
-					<p className="text-xs font-bold uppercase tracking-[.18em]">
-						Make it yours
-					</p>
-					<h1 className="mt-2 text-3xl font-black">Design studio</h1>
-					<p className="mt-2 text-sm">
-						Shape your page, preview every change, then publish.
-					</p>
-				</div>
-				<Button onClick={publish} disabled={!ready || !dirty || save.isPending}>
-					{save.isPending ? "Publishing…" : "Publish design"}
-				</Button>
-			</header>
+			<PageHeader
+				eyebrow="Make it yours"
+				title="Design studio"
+				description="Shape your page, preview every change, then publish."
+				actions={
+					<>
+						{dirty && (
+							<span className="inline-flex h-9 items-center gap-2 rounded-full bg-signal-soft px-3.5 text-xs font-semibold text-signal-strong">
+								<span
+									aria-hidden="true"
+									className="size-1.5 rounded-full bg-signal"
+								/>
+								Unpublished changes
+							</span>
+						)}
+						<Button
+							variant="brand"
+							onClick={publish}
+							disabled={!ready || !dirty || save.isPending}
+						>
+							{save.isPending ? "Publishing…" : "Publish design"}
+						</Button>
+					</>
+				}
+			/>
 			<div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
 				<fieldset
 					disabled={!ready || save.isPending}
 					className="min-w-0 space-y-5"
 				>
-					<div className="kinetic-panel bg-card p-4">
+					<div className="surface bg-card p-4">
 						<div className="flex gap-2">
 							<Button
 								variant="outline"
@@ -255,7 +270,7 @@ function DesignStudio() {
 								Redo change
 							</Button>
 						</div>
-						<p className="mt-2 text-xs">
+						<p className="mt-2 text-xs text-muted-foreground">
 							Undo up to 50 draft changes in this session, including templates,
 							blocks, and link edits. Publish to update your page.
 						</p>
@@ -275,9 +290,11 @@ function DesignStudio() {
 							})
 						}
 					/>
-					<section className="kinetic-panel space-y-4 bg-card p-5">
-						<h2 className="text-lg font-bold">Start with a template</h2>
-						<p className="text-xs">
+					<section className="surface space-y-4 bg-card p-5">
+						<h2 className="font-display text-xl font-semibold">
+							Start with a template
+						</h2>
+						<p className="text-xs text-muted-foreground">
 							Templates replace the theme and content blocks in your draft. Your
 							links stay in place.
 						</p>
@@ -286,7 +303,7 @@ function DesignStudio() {
 								<button
 									type="button"
 									key={t.id}
-									className="rounded-xl border border-border p-3 text-left shadow-sm"
+									className="group min-h-24 rounded-2xl border border-black/10 p-4 text-left transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-18px_rgb(22_20_15/0.5)]"
 									style={{
 										background: themes[t.theme].background,
 										color: themes[t.theme].text,
@@ -297,17 +314,21 @@ function DesignStudio() {
 										setSelectedTemplate(t);
 									}}
 								>
-									<span className="block text-xs uppercase tracking-wider">
+									<span className="block font-mono text-[10.5px] uppercase tracking-[0.08em] opacity-75">
 										{t.audience}
 									</span>
-									<strong className="mt-1 block">{t.name}</strong>
+									<strong className="mt-6 block font-display text-lg font-semibold">
+										{t.name}
+									</strong>
 								</button>
 							))}
 						</div>
 					</section>
-					<section className="kinetic-panel space-y-4 bg-card p-5">
-						<h2 className="text-lg font-bold">Identity & style</h2>
-						<label className="block text-sm">
+					<section className="surface space-y-4 bg-card p-5">
+						<h2 className="font-display text-xl font-semibold">
+							Identity & style
+						</h2>
+						<label className="block text-sm font-medium">
 							Display name
 							<input
 								className={field}
@@ -316,7 +337,7 @@ function DesignStudio() {
 								onChange={(e) => update({ displayName: e.target.value })}
 							/>
 						</label>
-						<label className="block text-sm">
+						<label className="block text-sm font-medium">
 							Bio
 							<textarea
 								className={field}
@@ -325,7 +346,7 @@ function DesignStudio() {
 								onChange={(e) => update({ bio: e.target.value })}
 							/>
 						</label>
-						<label className="block text-sm">
+						<label className="block text-sm font-medium">
 							Avatar URL
 							<input
 								className={field}
@@ -333,7 +354,7 @@ function DesignStudio() {
 								onChange={(e) => update({ avatarUrl: e.target.value || null })}
 							/>
 						</label>
-						<label className="block text-sm">
+						<label className="block text-sm font-medium">
 							Theme
 							<select
 								aria-label="Theme"
@@ -355,7 +376,7 @@ function DesignStudio() {
 							</select>
 						</label>
 						<div className="grid grid-cols-2 gap-3">
-							<label className="text-sm">
+							<label className="text-sm font-medium">
 								Typography
 								<select
 									aria-label="Typography"
@@ -365,12 +386,12 @@ function DesignStudio() {
 								>
 									{Object.keys(FONT_OPTIONS).map((f) => (
 										<option key={f} value={f}>
-											{f}
+											{FONT_LABELS[f as keyof typeof FONT_LABELS] ?? f}
 										</option>
 									))}
 								</select>
 							</label>
-							<label className="text-sm">
+							<label className="text-sm font-medium">
 								Button shape
 								<select
 									aria-label="Button shape"
@@ -379,35 +400,39 @@ function DesignStudio() {
 									onChange={(e) => update({ buttonStyle: e.target.value })}
 								>
 									{BUTTON_STYLES.map((s) => (
-										<option key={s}>{s}</option>
+										<option key={s} value={s}>
+											{s.charAt(0).toUpperCase() + s.slice(1)}
+										</option>
 									))}
 								</select>
 							</label>
 						</div>
-						<label className="block text-sm">
+						<label className="block text-sm font-medium">
 							Accent color
 							<input
 								type="color"
-								className="ml-3 h-8 w-16 align-middle"
+								className="ml-3 h-9 w-16 cursor-pointer rounded-lg border border-border bg-card p-1 align-middle"
 								value={
 									draft.accentColor ?? themes[draft.theme ?? "default"].accent
 								}
 								onChange={(e) => update({ accentColor: e.target.value })}
 							/>
 						</label>
-						<p className="text-xs">
+						<p className="text-xs text-muted-foreground">
 							Custom photo backgrounds remain available in Profile settings.
 						</p>
 					</section>
-					<section className="kinetic-panel space-y-4 bg-card p-5">
-						<h2 className="text-lg font-bold">Content blocks</h2>
-						<p className="text-xs">
+					<section className="surface space-y-4 bg-card p-5">
+						<h2 className="font-display text-xl font-semibold">
+							Content blocks
+						</h2>
+						<p className="text-xs text-muted-foreground">
 							Add context before your links or between them. Up to 30 blocks.
 						</p>
 						{draft.contentBlocks.map((b, index) => (
 							<div
 								key={b.id}
-								className="space-y-3 rounded-xl border border-border bg-card p-4"
+								className="space-y-3 rounded-2xl border border-border bg-muted/50 p-4"
 							>
 								<div className="flex flex-wrap items-center justify-between gap-2">
 									<strong className="text-sm">Block {index + 1}</strong>
@@ -459,7 +484,7 @@ function DesignStudio() {
 										</button>
 									</div>
 								</div>
-								<label className="block text-sm">
+								<label className="block text-sm font-medium">
 									Block type
 									<select
 										aria-label="Block type"
@@ -494,7 +519,7 @@ function DesignStudio() {
 									</p>
 								)}
 								{b.type === "hours" && (
-									<label className="block text-sm">
+									<label className="block text-sm font-medium">
 										Hours time zone
 										<input
 											className={field}
@@ -506,7 +531,7 @@ function DesignStudio() {
 										/>
 									</label>
 								)}
-								<label className="block text-sm">
+								<label className="block text-sm font-medium">
 									{b.type === "faq"
 										? "Question"
 										: b.type === "quote"
@@ -521,7 +546,7 @@ function DesignStudio() {
 										}
 									/>
 								</label>
-								<label className="block text-sm">
+								<label className="block text-sm font-medium">
 									{b.type === "faq"
 										? "Answer"
 										: b.type === "quote"
@@ -551,7 +576,7 @@ function DesignStudio() {
 									"audio",
 									"button",
 								].includes(b.type) && (
-									<label className="block text-sm">
+									<label className="block text-sm font-medium">
 										{b.type === "quote"
 											? "Source URL (optional)"
 											: b.type === "contact"
@@ -574,11 +599,11 @@ function DesignStudio() {
 								)}
 								{b.type === "event" && (
 									<div className="space-y-3">
-										<p className="text-xs">
+										<p className="text-xs text-muted-foreground">
 											Enter times in your local time zone. Visitors can download
 											a calendar event.
 										</p>
-										<label className="block text-sm">
+										<label className="block text-sm font-medium">
 											Event start
 											<input
 												type="datetime-local"
@@ -593,7 +618,7 @@ function DesignStudio() {
 												}
 											/>
 										</label>
-										<label className="block text-sm">
+										<label className="block text-sm font-medium">
 											Event end (optional)
 											<input
 												type="datetime-local"
@@ -608,7 +633,7 @@ function DesignStudio() {
 												}
 											/>
 										</label>
-										<label className="block text-sm">
+										<label className="block text-sm font-medium">
 											Event details URL (optional)
 											<input
 												className={field}
@@ -620,7 +645,7 @@ function DesignStudio() {
 										</label>
 									</div>
 								)}
-								<label className="block text-sm">
+								<label className="block text-sm font-medium">
 									Placement
 									<select
 										aria-label="Placement"
@@ -662,17 +687,17 @@ function DesignStudio() {
 							Add content block
 						</Button>
 					</section>
-					<details className="kinetic-panel bg-card p-5">
-						<summary className="cursor-pointer font-bold">
+					<details className="surface bg-card p-5">
+						<summary className="cursor-pointer font-display text-xl font-semibold">
 							Preview link edits
 						</summary>
-						<p className="my-3 text-xs">
+						<p className="my-3 text-xs text-muted-foreground">
 							Edit titles and destinations here. Publish saves these together
 							with the design.
 						</p>
 						{draftLinks.map((l) => (
 							<div key={l.id} className="my-4 space-y-2">
-								<label className="block text-sm">
+								<label className="block text-sm font-medium">
 									Title: {l.title}
 									<input
 										className={field}
@@ -686,7 +711,7 @@ function DesignStudio() {
 										}
 									/>
 								</label>
-								<label className="block text-sm">
+								<label className="block text-sm font-medium">
 									Destination
 									<input
 										className={field}
@@ -715,17 +740,21 @@ function DesignStudio() {
 					</Button>
 				</fieldset>
 				<aside className="min-w-0 xl:sticky xl:top-6">
-					<div className="mb-3 flex items-center justify-between">
-						<p className="text-xs font-bold uppercase tracking-widest">
+					<div className="mb-3 flex items-center justify-between gap-3">
+						<p className="eyebrow flex items-center gap-2">
+							<span
+								aria-hidden="true"
+								className={`size-1.5 rounded-full ${dirty ? "bg-signal" : "bg-success"}`}
+							/>
 							Live preview · {dirty ? "Unpublished changes" : "Published"}
 						</p>
-						<div className="flex gap-2">
+						<div className="flex rounded-full border border-border bg-card p-0.5">
 							{(["phone", "desktop"] as const).map((d) => (
 								<button
 									type="button"
 									key={d}
 									aria-pressed={device === d}
-									className="rounded-lg border border-border px-3 py-2 text-xs"
+									className="rounded-full px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors aria-pressed:bg-primary aria-pressed:text-primary-foreground"
 									onClick={() => setDevice(d)}
 								>
 									{d === "phone" ? "Phone" : "Desktop"}
@@ -734,7 +763,7 @@ function DesignStudio() {
 						</div>
 					</div>
 					<div
-						className="max-h-[80vh] overflow-auto rounded-[28px] border border-border bg-card shadow-sm"
+						className="max-h-[80vh] overflow-auto rounded-[1.75rem] border border-border bg-[radial-gradient(circle,rgb(22_20_15/0.09)_1px,transparent_1px)] bg-muted/60 [background-size:16px_16px] p-3 sm:p-5"
 						data-testid="live-preview"
 					>
 						<div
@@ -745,10 +774,12 @@ function DesignStudio() {
 								margin: "auto",
 							}}
 						>
-							<PublicProfilePage data={preview} preview />
+							<div className="overflow-hidden rounded-[1.5rem] border border-border shadow-[0_24px_60px_-30px_rgb(22_20_15/0.45)]">
+								<PublicProfilePage data={preview} preview />
+							</div>
 						</div>
 					</div>
-					<p className="mt-3 text-xs">
+					<p className="mt-3 text-xs text-muted-foreground">
 						Paused, scheduled, and expired links are excluded. Preview
 						interactions do not record clicks.
 					</p>

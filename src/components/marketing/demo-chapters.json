@@ -1,4 +1,5 @@
 {
+	"version": "6ae1134ee3cd",
 	"durationLabel": "46 sec",
 	"chapters": [
 		{
@@ -10,21 +11,20 @@
 		{
 			"title": "Organize your links",
 			"description": "Find a link with search, sort the dashboard, and open the editor to refine its title and destination. These management tools keep your public page order intact.",
-			"time": 10.96,
-			"label": "00:10"
+			"time": 11,
+			"label": "00:11"
 		},
 		{
 			"title": "Make it worth a visit",
 			"description": "Explore the published page. Save a link for later, open your saved links, and expand an FAQ answer. Saved links stay in the visitor’s browser.",
-			"time": 24.24,
+			"time": 24.16,
 			"label": "00:24"
 		},
 		{
 			"title": "Share with a scan",
 			"description": "Open the QR share kit and download an SVG for posters, packaging, or business cards. A PNG download is available too.",
-			"time": 37.08,
+			"time": 37,
 			"label": "00:37"
 		}
-	],
-	"version": "d3a9eb977cde"
+	]
 }
