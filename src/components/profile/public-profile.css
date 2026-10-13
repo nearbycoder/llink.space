@@ -157,10 +157,3 @@
 			background-color 0.15s;
 	}
 }
-
-@media print {
-	body:has([data-public-profile]) [data-slot="dialog-overlay"],
-	[data-public-profile-dialog] {
-		display: none;
-	}
-}

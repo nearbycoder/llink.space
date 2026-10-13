@@ -1,7 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { ChevronDown } from "lucide-react";
-import { type CSSProperties, Fragment } from "react";
+import { type CSSProperties, Fragment, useState } from "react";
+import { flushSync } from "react-dom";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
 import type { TRPCRouter } from "#/integrations/trpc/router";
@@ -20,6 +21,7 @@ import { LinkCard } from "./LinkCard";
 import { ProfileHeader } from "./ProfileHeader";
 import { PublicLinkCommandBar } from "./PublicLinkCommandBar";
 import { PublicPrint } from "./PublicPrint";
+import { PublicPrintSheet } from "./PublicPrintSheet";
 import { PublicProfileShare } from "./PublicProfileShare";
 import { ReadingList } from "./ReadingList";
 export type PublicPageData =
@@ -212,6 +214,26 @@ export function PublicProfilePage({
 	};
 
 	const displayName = profile.displayName?.trim() || `@${profile.username}`;
+	const [printQr, setPrintQr] = useState<string | null>(null);
+	// Only read in the browser: the print sheet renders after hydration.
+	const pageUrl = data.customDomain
+		? `https://${data.customDomain}/`
+		: `${typeof window === "undefined" ? "" : window.location.origin}/u/${encodeURIComponent(profile.username)}`;
+	const preparePrint = async () => {
+		if (printQr) return;
+		try {
+			const { default: QR } = await import("qrcode");
+			const svg = await QR.toString(pageUrl, {
+				type: "svg",
+				margin: 0,
+				errorCorrectionLevel: "M",
+				color: { dark: "#16140F", light: "#FFFFFF" },
+			});
+			flushSync(() => setPrintQr(svg));
+		} catch {
+			// The sheet still prints the page address without a code.
+		}
+	};
 
 	return (
 		<div
@@ -226,6 +248,18 @@ export function PublicProfilePage({
 				color: theme.text,
 			}}
 		>
+			{!preview && (
+				<PublicPrintSheet
+					displayName={displayName}
+					username={profile.username}
+					bio={profile.bio}
+					pageUrl={pageUrl}
+					qrSvg={printQr}
+					blocks={blocks}
+					unsectionedLinks={unsectionedLinks}
+					sections={sections}
+				/>
+			)}
 			<div className="mx-auto max-w-[34rem] px-3 py-4 sm:px-4 sm:py-12">
 				<div
 					className="public-profile-surface rounded-[1.75rem] border px-5 pt-4 pb-7 sm:px-8 sm:pt-5 sm:pb-9"
@@ -397,7 +431,7 @@ export function PublicProfilePage({
 								data-print-hidden
 								className="flex flex-wrap justify-center gap-2"
 							>
-								<PublicPrint />
+								<PublicPrint onPrepare={preparePrint} />
 								<ContactDownload
 									name={profile.displayName || profile.username}
 									bio={profile.bio}

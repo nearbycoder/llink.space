@@ -1,0 +1,239 @@
+/*
+ * Print stylesheet for public pages. On paper the interactive page is replaced
+ * by .public-print-sheet: a compact, two-column document listing every link
+ * with its destination. Creator themes are ignored so prints stay legible.
+ */
+.public-print-sheet {
+	display: none;
+}
+
+@page {
+	size: auto;
+	margin: 14mm 14mm 16mm;
+
+	@bottom-right {
+		content: counter(page) " / " counter(pages);
+		font:
+			8pt "Geist Mono",
+			ui-monospace,
+			monospace;
+		color: #67625a;
+	}
+}
+
+@media print {
+	html,
+	body {
+		background: #fff !important;
+	}
+
+	/* Only the sheet prints: hide app chrome, overlays and the interactive page. */
+	body:has([data-public-profile]) > :not(#main-content),
+	body .skip-link,
+	body [data-sonner-toaster],
+	body [data-slot="dialog-overlay"],
+	body [data-slot="dialog-content"],
+	body [data-public-profile-dialog],
+	[data-public-profile] > :not(.public-print-sheet) {
+		display: none !important;
+	}
+
+	[data-public-profile] {
+		min-height: 0 !important;
+		background: #fff !important;
+		color: #16140f !important;
+	}
+
+	.public-print-sheet {
+		display: block;
+		color: #16140f;
+		font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+		font-size: 9.5pt;
+		line-height: 1.4;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+
+	.print-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 10mm;
+		padding-bottom: 6mm;
+		margin-bottom: 6mm;
+		border-bottom: 1.5pt solid #16140f;
+		break-inside: avoid;
+	}
+
+	.print-eyebrow,
+	.print-visit-label {
+		margin: 0;
+		font-family: "Geist Mono", ui-monospace, monospace;
+		font-size: 7.5pt;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #67625a;
+	}
+
+	.print-identity h1 {
+		margin: 1.5mm 0 0;
+		font-family: "Fraunces", Georgia, serif;
+		font-size: 24pt;
+		font-weight: 600;
+		line-height: 1.05;
+		letter-spacing: -0.02em;
+	}
+
+	.print-handle {
+		margin: 1mm 0 0;
+		font-family: "Geist Mono", ui-monospace, monospace;
+		font-size: 9pt;
+		color: #67625a;
+	}
+
+	.print-bio {
+		max-width: 110mm;
+		margin: 3mm 0 0;
+		font-size: 10pt;
+		color: #3a372f;
+	}
+
+	.print-visit {
+		flex-shrink: 0;
+		width: 42mm;
+		text-align: center;
+	}
+
+	.print-qr {
+		width: 30mm;
+		height: 30mm;
+		margin: 0 auto 2mm;
+	}
+
+	.print-qr svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.print-visit-url {
+		margin: 1mm 0 0;
+		font-family: "Geist Mono", ui-monospace, monospace;
+		font-size: 7.5pt;
+		overflow-wrap: anywhere;
+	}
+
+	.print-notes {
+		margin-bottom: 6mm;
+		column-count: 2;
+		column-gap: 8mm;
+	}
+
+	.print-block {
+		margin: 0 0 3mm;
+		break-inside: avoid;
+	}
+
+	.print-block p {
+		margin: 0;
+	}
+
+	.print-block-heading {
+		margin: 0 0 2mm;
+		font-family: "Fraunces", Georgia, serif;
+		font-size: 12pt;
+		font-weight: 600;
+		break-after: avoid;
+	}
+
+	.print-block-title {
+		font-weight: 600;
+	}
+
+	.print-block-meta {
+		color: #67625a;
+	}
+
+	.print-block cite {
+		display: block;
+		margin-top: 1mm;
+		font-style: normal;
+		color: #67625a;
+	}
+
+	.print-section {
+		margin-top: 6mm;
+	}
+
+	.print-section h2 {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		margin: 0 0 3mm;
+		padding-bottom: 1.5mm;
+		border-bottom: 0.75pt solid #cfc8ba;
+		font-family: "Geist Mono", ui-monospace, monospace;
+		font-size: 8pt;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		break-after: avoid;
+	}
+
+	.print-section h2 span {
+		color: #67625a;
+	}
+
+	.print-links {
+		margin: 0;
+		padding: 0 0 0 7mm;
+		column-count: 2;
+		column-gap: 10mm;
+		list-style: decimal-leading-zero;
+	}
+
+	.print-link {
+		padding: 0 0 2.6mm;
+		break-inside: avoid;
+	}
+
+	.print-link::marker {
+		font-family: "Geist Mono", ui-monospace, monospace;
+		font-size: 7.5pt;
+		color: #c2410c;
+	}
+
+	.print-link-title {
+		display: block;
+		font-weight: 600;
+	}
+
+	.print-link-description {
+		display: block;
+		color: #3a372f;
+	}
+
+	.print-link-url {
+		display: block;
+		font-family: "Geist Mono", ui-monospace, monospace;
+		font-size: 7.5pt;
+		color: #67625a;
+		overflow-wrap: anywhere;
+	}
+
+	.print-empty {
+		color: #67625a;
+	}
+
+	.print-footer {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 8mm;
+		padding-top: 2mm;
+		border-top: 0.75pt solid #cfc8ba;
+		font-family: "Geist Mono", ui-monospace, monospace;
+		font-size: 7.5pt;
+		color: #67625a;
+		break-inside: avoid;
+	}
+}
