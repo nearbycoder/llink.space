@@ -270,7 +270,7 @@ function DashboardLayout() {
 					</div>
 				</aside>
 
-				<div className="min-w-0 flex-1 md:ml-64">
+				<div className="min-w-0 flex-1 overflow-x-clip md:ml-64">
 					<header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b border-border bg-background/90 px-4 backdrop-blur-md md:hidden">
 						<a href="/" aria-label="llink.space home">
 							<SiteBrand size="sm" />

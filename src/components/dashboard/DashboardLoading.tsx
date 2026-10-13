@@ -82,7 +82,7 @@ export function DashboardPendingShellContent({
 				</div>
 			</aside>
 
-			<div className="flex-1 md:ml-64">
+			<div className="min-w-0 flex-1 overflow-x-clip md:ml-64">
 				<header className="border-b border-border bg-background/90 md:hidden">
 					<div className="flex h-14 items-center justify-between px-4">
 						<SiteBrand size="sm" />
