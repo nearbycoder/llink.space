@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "#/components/ui/button";
 import {
 	Dialog,
@@ -7,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "#/components/ui/dialog";
+import { Select } from "#/components/ui/select";
 import { buildCalendar, publishingEntries } from "#/lib/calendar-export";
 import { downloadFile } from "#/lib/download-file";
 export function PublishingCalendar({
@@ -14,6 +15,7 @@ export function PublishingCalendar({
 }: {
 	links: Parameters<typeof publishingEntries>[0];
 }) {
+	const rangeId = useId();
 	const [open, setOpen] = useState(false),
 		[days, setDays] = useState(30);
 	const entries = publishingEntries(links, days);
@@ -31,20 +33,20 @@ export function PublishingCalendar({
 							links stay paused until you publish them.
 						</DialogDescription>
 					</DialogHeader>
-					<label className="text-sm">
-						Calendar range
-						<select
-							className="ml-2 rounded border p-2 text-base"
-							value={days}
-							onChange={(e) => setDays(Number(e.target.value))}
-						>
-							{[7, 30, 90].map((d) => (
-								<option key={d} value={d}>
-									Next {d} days
-								</option>
-							))}
-						</select>
-					</label>
+					<div className="flex items-center gap-3 text-sm font-medium">
+						<label htmlFor={`${rangeId}`}>Calendar range</label>
+						<Select
+							id={`${rangeId}`}
+							aria-label="Calendar range"
+							className="w-40"
+							value={String(days)}
+							onValueChange={(value) => setDays(Number(value))}
+							options={[7, 30, 90].map((d) => ({
+								value: String(d),
+								label: `Next ${d} days`,
+							}))}
+						/>
+					</div>
 					{entries.length ? (
 						<ol className="space-y-3">
 							{entries.map((e) => (

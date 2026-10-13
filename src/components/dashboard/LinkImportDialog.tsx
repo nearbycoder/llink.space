@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
 	DialogTitle,
 } from "#/components/ui/dialog";
 import { Label } from "#/components/ui/label";
+import { Select } from "#/components/ui/select";
 import { Textarea } from "#/components/ui/textarea";
 import { useTRPC } from "#/integrations/trpc/react";
 import { csvLinksToText } from "#/lib/csv-link-import";
@@ -26,6 +27,7 @@ export function LinkImportDialog({
 	onImported: () => Promise<void>;
 	disabled?: boolean;
 }) {
+	const formatId = useId();
 	const [open, setOpen] = useState(false);
 	const [reading, setReading] = useState(false);
 	const fileRead = useRef(0);
@@ -168,22 +170,32 @@ export function LinkImportDialog({
 							</span>
 						</label>
 						<div className="space-y-2">
-							<label className="block text-sm font-medium">
-								Paste format
-								<select
+							<div className="block text-sm font-medium">
+								<label htmlFor={`${formatId}`}>Paste format</label>
+								<Select
+									id={`${formatId}`}
 									aria-label="Import format"
 									value={format}
 									disabled={pending}
-									onChange={(e) => {
-										setFormat(e.target.value as typeof format);
+									onValueChange={(value) => {
+										setFormat(value as typeof format);
 										setText("");
 									}}
-									className="mt-2 w-full rounded-xl border border-input bg-card px-3 py-2 text-base sm:text-sm"
-								>
-									<option value="text">URLs / Markdown</option>
-									<option value="json">JSON catalog</option>
-								</select>
-							</label>
+									options={[
+										{
+											value: "text",
+											label: "URLs / Markdown",
+											description: "One link per line, or Markdown links",
+										},
+										{
+											value: "json",
+											label: "JSON catalog",
+											description: "A file exported from llink.space",
+										},
+									]}
+									className="mt-2"
+								/>
+							</div>
 							<Label htmlFor="import-links">Website URLs</Label>
 							<Textarea
 								id="import-links"

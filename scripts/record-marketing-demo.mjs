@@ -250,7 +250,8 @@ try {
 		async (p, cue) => {
 			cue("Choose a theme. See your changes in the live preview.");
 			await pause(p, 1.5);
-			await p.getByLabel("Theme", { exact: true }).selectOption("ocean");
+			await click(p, p.getByLabel("Theme", { exact: true }));
+			await click(p, p.getByRole("option", { name: "Blue Hour", exact: true }));
 			await pause(p, 2);
 			cue("Undo and redo while your changes are still a draft.");
 			await click(p, role(p, "Undo change"));
@@ -276,7 +277,8 @@ try {
 			await pause(p, 1.8);
 			await click(p, role(p, "Clear search"));
 			cue("Sort your workspace without changing the public page order.");
-			await p.getByLabel("Sort links").selectOption("az");
+			await click(p, p.getByLabel("Sort links"));
+			await click(p, p.locator('[role="option"][data-value="az"]'));
 			await pause(p, 2);
 			cue("Open a link to refine its title, destination, or description.");
 			await click(p, role(p, "Edit Notes from the studio"));

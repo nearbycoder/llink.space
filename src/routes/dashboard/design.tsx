@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import type { SetStateAction } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DesignBackup } from "#/components/dashboard/DesignBackup";
 import { PageHeader } from "#/components/dashboard/PageHeader";
@@ -20,6 +20,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "#/components/ui/dialog";
+import { Select } from "#/components/ui/select";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
 import { duplicateBlock } from "#/lib/duplicate-block";
@@ -43,6 +44,23 @@ export const Route = createFileRoute("/dashboard/design")({
 	},
 	component: DesignStudio,
 });
+const BEFORE_LINKS = "__before-links";
+const BLOCK_TYPE_LABELS: Record<(typeof BLOCK_TYPES)[number], string> = {
+	heading: "Heading",
+	text: "Text",
+	image: "Image",
+	video: "Video",
+	contact: "Contact",
+	faq: "FAQ",
+	quote: "Quote",
+	event: "Event",
+	audio: "Audio",
+	button: "Call to action",
+	divider: "Divider",
+	code: "Code snippet",
+	checklist: "Checklist",
+	hours: "Business hours",
+};
 const FONT_LABELS = {
 	work: "Modern sans",
 	editorial: "Editorial serif",
@@ -51,6 +69,7 @@ const FONT_LABELS = {
 const field =
 	"mt-1.5 w-full rounded-xl border border-input/60 bg-card px-3.5 py-2 text-base text-foreground transition-[border-color,box-shadow] outline-none hover:border-input focus-visible:border-foreground focus-visible:ring-[3px] focus-visible:ring-signal/20 sm:text-sm";
 function DesignStudio() {
+	const fieldId = useId();
 	const [ready, setReady] = useState(false);
 	useEffect(() => setReady(true), []);
 	const initial = Route.useLoaderData();
@@ -354,58 +373,77 @@ function DesignStudio() {
 								onChange={(e) => update({ avatarUrl: e.target.value || null })}
 							/>
 						</label>
-						<label className="block text-sm font-medium">
-							Theme
-							<select
+						<div className="block text-sm font-medium">
+							<label htmlFor={`${fieldId}-theme`}>Theme</label>
+							<Select
+								id={`${fieldId}-theme`}
 								aria-label="Theme"
-								className={field}
+								className="mt-1.5"
 								value={draft.theme ?? "default"}
-								onChange={(e) =>
+								onValueChange={(theme) =>
 									update({
-										theme: e.target.value,
+										theme,
 										pageBackgroundType: "theme",
 										accentColor: null,
 									})
 								}
-							>
-								{Object.values(themes).map((t) => (
-									<option key={t.id} value={t.id}>
-										{t.name}
-									</option>
-								))}
-							</select>
-						</label>
+								options={Object.values(themes).map((t) => ({
+									value: t.id,
+									label: t.name,
+									icon: (
+										<span
+											className="size-4 rounded-full border border-black/10"
+											style={{ background: t.background }}
+										/>
+									),
+								}))}
+							/>
+						</div>
 						<div className="grid grid-cols-2 gap-3">
-							<label className="text-sm font-medium">
-								Typography
-								<select
+							<div className="text-sm font-medium">
+								<label htmlFor={`${fieldId}-font`}>Typography</label>
+								<Select
+									id={`${fieldId}-font`}
 									aria-label="Typography"
-									className={field}
+									className="mt-1.5"
 									value={draft.fontFamily}
-									onChange={(e) => update({ fontFamily: e.target.value })}
-								>
-									{Object.keys(FONT_OPTIONS).map((f) => (
-										<option key={f} value={f}>
-											{FONT_LABELS[f as keyof typeof FONT_LABELS] ?? f}
-										</option>
-									))}
-								</select>
-							</label>
-							<label className="text-sm font-medium">
-								Button shape
-								<select
+									onValueChange={(fontFamily) => update({ fontFamily })}
+									options={Object.entries(FONT_OPTIONS).map(
+										([key, fontFamily]) => ({
+											value: key,
+											textValue: FONT_LABELS[key as keyof typeof FONT_LABELS],
+											label: (
+												<span style={{ fontFamily }}>
+													{FONT_LABELS[key as keyof typeof FONT_LABELS]}
+												</span>
+											),
+										}),
+									)}
+								/>
+							</div>
+							<div className="text-sm font-medium">
+								<label htmlFor={`${fieldId}-button`}>Button shape</label>
+								<Select
+									id={`${fieldId}-button`}
 									aria-label="Button shape"
-									className={field}
+									className="mt-1.5"
 									value={draft.buttonStyle}
-									onChange={(e) => update({ buttonStyle: e.target.value })}
-								>
-									{BUTTON_STYLES.map((s) => (
-										<option key={s} value={s}>
-											{s.charAt(0).toUpperCase() + s.slice(1)}
-										</option>
-									))}
-								</select>
-							</label>
+									onValueChange={(buttonStyle) => update({ buttonStyle })}
+									options={BUTTON_STYLES.map((style) => ({
+										value: style,
+										label: style.charAt(0).toUpperCase() + style.slice(1),
+										icon: (
+											<span
+												className="h-3 w-4 border-[1.5px] border-current"
+												style={{
+													borderRadius:
+														style === "pill" ? 999 : style === "square" ? 0 : 4,
+												}}
+											/>
+										),
+									}))}
+								/>
+							</div>
 						</div>
 						<label className="block text-sm font-medium">
 							Accent color
@@ -484,16 +522,21 @@ function DesignStudio() {
 										</button>
 									</div>
 								</div>
-								<label className="block text-sm font-medium">
-									Block type
-									<select
+								<div className="block text-sm font-medium">
+									<label htmlFor={`${fieldId}-${b.id}-type`}>Block type</label>
+									<Select
+										id={`${fieldId}-${b.id}-type`}
 										aria-label="Block type"
-										className={field}
+										className="mt-1.5"
 										value={b.type}
-										onChange={(e) =>
+										options={BLOCK_TYPES.map((type) => ({
+											value: type,
+											label: BLOCK_TYPE_LABELS[type],
+										}))}
+										onValueChange={(type) =>
 											updateBlock(b.id, {
-												type: e.target.value as ContentBlock["type"],
-												...(e.target.value === "hours"
+												type: type as ContentBlock["type"],
+												...(type === "hours"
 													? {
 															timeZone:
 																b.timeZone ||
@@ -503,12 +546,8 @@ function DesignStudio() {
 													: {}),
 											})
 										}
-									>
-										{BLOCK_TYPES.map((t) => (
-											<option key={t}>{t}</option>
-										))}
-									</select>
-								</label>
+									/>
+								</div>
 								{b.type in EXTENDED_BLOCK_HELP && (
 									<p className="text-xs text-muted-foreground">
 										{
@@ -645,24 +684,29 @@ function DesignStudio() {
 										</label>
 									</div>
 								)}
-								<label className="block text-sm font-medium">
-									Placement
-									<select
+								<div className="block text-sm font-medium">
+									<label htmlFor={`${fieldId}-${b.id}-placement`}>
+										Placement
+									</label>
+									<Select
+										id={`${fieldId}-${b.id}-placement`}
 										aria-label="Placement"
-										className={field}
-										value={b.afterLinkId ?? ""}
-										onChange={(e) =>
-											updateBlock(b.id, { afterLinkId: e.target.value || null })
+										className="mt-1.5"
+										value={b.afterLinkId ?? BEFORE_LINKS}
+										onValueChange={(value) =>
+											updateBlock(b.id, {
+												afterLinkId: value === BEFORE_LINKS ? null : value,
+											})
 										}
-									>
-										<option value="">Before the links</option>
-										{draftLinks.map((l) => (
-											<option key={l.id} value={l.id}>
-												After: {l.title}
-											</option>
-										))}
-									</select>
-								</label>
+										options={[
+											{ value: BEFORE_LINKS, label: "Before the links" },
+											...draftLinks.map((l) => ({
+												value: l.id,
+												label: `After: ${l.title}`,
+											})),
+										]}
+									/>
+								</div>
 							</div>
 						))}
 						<Button

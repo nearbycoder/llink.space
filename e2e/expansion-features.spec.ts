@@ -4,7 +4,7 @@ import {
 	type APIRequestContext,
 	type Page,
 } from "@playwright/test";
-import { api, setupCreator } from "./feature-helpers";
+import { api, setupCreator, chooseOption } from "./feature-helpers";
 
 async function read(request: APIRequestContext, name: string, input?: unknown) {
 	const response = await request.get(`/api/trpc/${name}`, {
@@ -45,7 +45,7 @@ test("all seven batch tools preview and save selected links", async ({
 		page.getByRole("button", { name: "Select", exact: true }),
 	).toBeEnabled();
 	let dialog = await openBatch(page);
-	await dialog.getByLabel("Action", { exact: true }).selectOption("title");
+	await chooseOption(dialog.getByLabel("Action", { exact: true }), "title");
 	await dialog.getByLabel("Find text", { exact: true }).fill("Launch");
 	await dialog.getByLabel("Replace with", { exact: true }).fill("Release");
 	expect((await read(page.request, "links.list")).links[0].title).toContain(
@@ -63,24 +63,23 @@ test("all seven batch tools preview and save selected links", async ({
 		.click();
 	await expect(dialog).toBeHidden();
 	dialog = await openBatch(page);
-	await dialog
-		.getByLabel("Action", { exact: true })
-		.selectOption("description");
+	await chooseOption(dialog
+		.getByLabel("Action", { exact: true }), "description");
 	await dialog.getByLabel("New description").fill("Updated together");
 	await dialog
 		.getByRole("button", { name: "Apply to 2 links", exact: true })
 		.click();
 	await expect(dialog).toBeHidden();
 	dialog = await openBatch(page);
-	await dialog.getByLabel("Action", { exact: true }).selectOption("style");
-	await dialog.getByLabel("Link icon").selectOption("coffee");
+	await chooseOption(dialog.getByLabel("Action", { exact: true }), "style");
+	await chooseOption(dialog.getByLabel("Link icon"), "coffee");
 	await dialog.getByLabel("Icon background").fill("#aabbcc");
 	await dialog
 		.getByRole("button", { name: "Apply to 2 links", exact: true })
 		.click();
 	await expect(dialog).toBeHidden();
 	dialog = await openBatch(page);
-	await dialog.getByLabel("Action", { exact: true }).selectOption("url");
+	await chooseOption(dialog.getByLabel("Action", { exact: true }), "url");
 	await dialog.getByLabel("Find text", { exact: true }).fill("example.com");
 	await dialog.getByLabel("Replace with", { exact: true }).fill("example.org");
 	await dialog
@@ -88,7 +87,7 @@ test("all seven batch tools preview and save selected links", async ({
 		.click();
 	await expect(dialog).toBeHidden();
 	dialog = await openBatch(page);
-	await dialog.getByLabel("Action", { exact: true }).selectOption("clean");
+	await chooseOption(dialog.getByLabel("Action", { exact: true }), "clean");
 	await expect(
 		dialog.getByText("After: https://example.org/a?id=42#read", {
 			exact: true,
@@ -99,7 +98,7 @@ test("all seven batch tools preview and save selected links", async ({
 		.click();
 	await expect(dialog).toBeHidden();
 	dialog = await openBatch(page);
-	await dialog.getByLabel("Action", { exact: true }).selectOption("duplicate");
+	await chooseOption(dialog.getByLabel("Action", { exact: true }), "duplicate");
 	await dialog
 		.getByRole("button", { name: "Apply to 2 links", exact: true })
 		.click();
@@ -123,7 +122,7 @@ test("all seven batch tools preview and save selected links", async ({
 		),
 	).toBe(true);
 	dialog = await openBatch(page);
-	await dialog.getByLabel("Action", { exact: true }).selectOption("schedule");
+	await chooseOption(dialog.getByLabel("Action", { exact: true }), "schedule");
 	await dialog
 		.getByLabel("Publish time", { exact: true })
 		.fill("2050-01-02T10:00");
@@ -387,7 +386,7 @@ test("saving a sort previews the complete page order and preserves section bound
 			url: "https://example.com/" + title.replace(" ", "-"),
 		});
 	await page.goto("/dashboard");
-	await page.getByLabel("Sort links").selectOption("az");
+	await chooseOption(page.getByLabel("Sort links"), "az");
 	await page
 		.getByRole("button", { name: "Save as page order", exact: true })
 		.click();
@@ -479,7 +478,7 @@ test("six new blocks publish safely, remain interactive and restore through styl
 		.getByRole("button", { name: "Add content block", exact: true })
 		.click();
 	const last = page.getByLabel("Block type").last();
-	await last.selectOption("button");
+	await chooseOption(last, "button");
 	const card = last.locator("xpath=../..");
 	await card.getByLabel("Title / image alt text").fill("New action");
 	await card.getByLabel("Button destination").fill("https://example.com/new");
@@ -631,7 +630,7 @@ test("badge generation and batch dialogs fit mobile and keyboard dismissal prese
 	});
 	await page.goto("/dashboard");
 	let dialog = await openBatch(page);
-	await dialog.getByLabel("Action", { exact: true }).selectOption("title");
+	await chooseOption(dialog.getByLabel("Action", { exact: true }), "title");
 	await dialog.getByLabel("Find text", { exact: true }).fill("Mobile");
 	await dialog.getByLabel("Replace with", { exact: true }).fill("Changed");
 	expect(
@@ -659,7 +658,7 @@ test("badge generation and batch dialogs fit mobile and keyboard dismissal prese
 		.click();
 	dialog = page.getByRole("dialog");
 	await dialog.getByLabel("Badge label").fill("<img src=x>");
-	await dialog.getByLabel("Badge appearance").selectOption("light");
+	await chooseOption(dialog.getByLabel("Badge appearance"), "light");
 	const code = await downloadText(page, () =>
 		dialog.getByRole("button", { name: "Download badge", exact: true }).click(),
 	);

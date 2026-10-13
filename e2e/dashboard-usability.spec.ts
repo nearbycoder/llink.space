@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, setupCreator } from "./feature-helpers";
+import { api, setupCreator, chooseOption } from "./feature-helpers";
 
 async function ready(page: import("@playwright/test").Page) {
 	await page.goto("/dashboard");
@@ -27,7 +27,10 @@ test("status totals filter the catalog and clearing search keeps focus", async (
 	await expect(page.getByLabel("Search links", { exact: true })).toHaveValue(
 		"",
 	);
-	await expect(page.getByLabel("Filter links by status")).toHaveValue("paused");
+	await expect(page.getByLabel("Filter links by status")).toHaveAttribute(
+		"data-value",
+		"paused",
+	);
 	await expect(
 		page.getByRole("button", { name: "Edit Paused essay", exact: true }),
 	).toHaveCount(1);
@@ -202,12 +205,12 @@ test("filters wait for hydration before accepting the first interaction", async 
 	}
 	const sort = page.getByLabel("Sort links", { exact: true });
 	await expect(sort).toBeEnabled();
-	await sort.selectOption("az");
+	await chooseOption(sort, "az");
 	await expect(
 		page.locator("span").filter({ hasText: /^(Zulu first|Alpha second)$/ }),
 	).toHaveText(["Alpha second", "Zulu first"]);
 	await page.getByRole("button", { name: "Show paused", exact: true }).click();
 	await expect(
 		page.getByLabel("Filter links by status", { exact: true }),
-	).toHaveValue("paused");
+	).toHaveAttribute("data-value", "paused");
 });

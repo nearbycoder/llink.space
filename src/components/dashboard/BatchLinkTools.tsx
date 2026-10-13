@@ -20,10 +20,7 @@ import {
 	FieldLabel,
 } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
-import {
-	NativeSelect,
-	NativeSelectOption,
-} from "#/components/ui/native-select";
+import { Select } from "#/components/ui/select";
 import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -180,19 +177,16 @@ export function BatchLinkTools({
 						<FieldGroup>
 							<Field>
 								<FieldLabel htmlFor={`${id}-tool`}>Action</FieldLabel>
-								<NativeSelect
+								<Select
 									id={`${id}-tool`}
 									value={kind}
-									onChange={(e) =>
-										setKind(e.target.value as BatchOperation["kind"])
+									onValueChange={(value) =>
+										setKind(value as BatchOperation["kind"])
 									}
-								>
-									{Object.entries(BATCH_TOOL_LABELS).map(([key, label]) => (
-										<NativeSelectOption key={key} value={key}>
-											{label}
-										</NativeSelectOption>
-									))}
-								</NativeSelect>
+									options={Object.entries(BATCH_TOOL_LABELS).map(
+										([value, label]) => ({ value, label }),
+									)}
+								/>
 							</Field>
 							{(kind === "title" || kind === "url") && (
 								<>
@@ -242,20 +236,19 @@ export function BatchLinkTools({
 								<>
 									<Field>
 										<FieldLabel htmlFor={`${id}-icon`}>Link icon</FieldLabel>
-										<NativeSelect
+										<Select
 											id={`${id}-icon`}
 											value={icon}
-											onChange={(e) => setIcon(e.target.value as typeof icon)}
-										>
-											<NativeSelectOption value="none">
-												No icon
-											</NativeSelectOption>
-											{LINK_ICON_OPTIONS.map((o) => (
-												<NativeSelectOption key={o.key} value={o.key}>
-													{o.label}
-												</NativeSelectOption>
-											))}
-										</NativeSelect>
+											onValueChange={(value) => setIcon(value as typeof icon)}
+											options={[
+												{ value: "none", label: "No icon" },
+												...LINK_ICON_OPTIONS.map((o) => ({
+													value: o.key,
+													label: o.label,
+													icon: <o.Icon />,
+												})),
+											]}
+										/>
 									</Field>
 									<Field>
 										<FieldLabel htmlFor={`${id}-color`}>

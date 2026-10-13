@@ -49,6 +49,7 @@ import {
 	DialogTitle,
 } from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
+import { Select } from "#/components/ui/select";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardLinks } from "#/lib/auth-server";
 import {
@@ -114,8 +115,15 @@ const LINK_STAT_CARDS = [
 	{ id: "expired", label: "Expired", Icon: CalendarX },
 ] as const;
 
-const toolbarSelectClass =
-	"h-10 min-w-0 rounded-xl border border-input/60 bg-card px-3.5 text-base font-medium text-foreground transition-colors hover:border-input sm:text-sm lg:w-auto";
+const toolbarSelectClass = "lg:w-44";
+
+const STATUS_FILTER_OPTIONS = [
+	{ value: "all", label: "All statuses" },
+	{ value: "live", label: "Live only" },
+	{ value: "paused", label: "Paused only" },
+	{ value: "scheduled", label: "Scheduled only" },
+	{ value: "expired", label: "Expired only" },
+];
 
 function errorMessage(error: unknown, fallback: string) {
 	return error instanceof Error && error.message ? error.message : fallback;
@@ -721,49 +729,42 @@ function DashboardPage() {
 							</button>
 						)}
 					</div>
-					<select
+					<Select
 						aria-label="Sort links"
 						disabled={!isHydrated}
 						value={sortMode}
-						onChange={(e) => setSortMode(e.target.value as LinkSort)}
+						onValueChange={(value) => setSortMode(value as LinkSort)}
+						options={Object.entries(LINK_SORTS).map(([value, label]) => ({
+							value,
+							label,
+						}))}
 						className={toolbarSelectClass}
-					>
-						{Object.entries(LINK_SORTS).map(([value, label]) => (
-							<option key={value} value={value}>
-								{label}
-							</option>
-						))}
-					</select>
-					<select
+					/>
+					<Select
 						aria-label="Filter links by status"
 						disabled={!isHydrated}
 						value={statusFilter}
-						onChange={(event) =>
-							setStatusFilter(event.target.value as LinkStatusFilter)
+						onValueChange={(value) =>
+							setStatusFilter(value as LinkStatusFilter)
 						}
+						options={STATUS_FILTER_OPTIONS}
 						className={toolbarSelectClass}
-					>
-						<option value="all">All statuses</option>
-						<option value="live">Live only</option>
-						<option value="paused">Paused only</option>
-						<option value="scheduled">Scheduled only</option>
-						<option value="expired">Expired only</option>
-					</select>
-					<select
+					/>
+					<Select
 						aria-label="Filter links by section"
 						disabled={!isHydrated}
 						value={sectionFilter}
-						onChange={(event) => setSectionFilter(event.target.value)}
+						onValueChange={setSectionFilter}
+						options={[
+							{ value: "all", label: "All sections" },
+							{ value: "unsectioned", label: "Unsectioned" },
+							...layout.sections.map((section) => ({
+								value: section.id,
+								label: section.title,
+							})),
+						]}
 						className={cn(toolbarSelectClass, "col-span-2")}
-					>
-						<option value="all">All sections</option>
-						<option value="unsectioned">Unsectioned</option>
-						{layout.sections.map((section) => (
-							<option key={section.id} value={section.id}>
-								{section.title}
-							</option>
-						))}
-					</select>
+					/>
 				</div>
 				<div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
 					<p
@@ -982,19 +983,20 @@ function DashboardPage() {
 								<EyeOff className="h-3.5 w-3.5" /> Pause
 							</Button>
 							<div className="flex w-full min-w-0 gap-2 sm:w-auto sm:flex-initial">
-								<select
+								<Select
 									aria-label="Bulk move destination"
+									size="sm"
 									value={bulkMoveSectionId}
-									onChange={(event) => setBulkMoveSectionId(event.target.value)}
-									className="h-8 min-w-0 flex-1 rounded-full border border-input/60 bg-card px-3 text-xs font-medium text-foreground sm:w-40"
-								>
-									<option value="unsectioned">Unsectioned</option>
-									{layout.sections.map((section) => (
-										<option key={section.id} value={section.id}>
-											{section.title}
-										</option>
-									))}
-								</select>
+									onValueChange={setBulkMoveSectionId}
+									options={[
+										{ value: "unsectioned", label: "Unsectioned" },
+										...layout.sections.map((section) => ({
+											value: section.id,
+											label: section.title,
+										})),
+									]}
+									className="flex-1 sm:w-44"
+								/>
 								<Button
 									type="button"
 									variant="outline"

@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { LINK_ICON_OPTIONS } from "#/components/links/icon-options";
@@ -8,6 +7,7 @@ import { LinkCard } from "#/components/profile/LinkCard";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { Select } from "#/components/ui/select";
 import { Switch } from "#/components/ui/switch";
 import { Textarea } from "#/components/ui/textarea";
 import { duplicateDestinations } from "#/lib/duplicate-links";
@@ -28,6 +28,7 @@ import { CampaignUrlBuilder } from "./CampaignUrlBuilder";
 import { UrlCleanup } from "./UrlCleanup";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+const UNSECTIONED = "__unsectioned";
 const ICON_BG_PRESETS = [
 	DEFAULT_ICON_BG_COLOR,
 	"#FF5F1F",
@@ -185,30 +186,6 @@ export function LinkForm({
 	const sectionId = useId();
 	const descriptionId = useId();
 	const isActiveId = useId();
-	const sectionDropdownRef = useRef<HTMLDivElement | null>(null);
-	const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
-
-	const selectedSectionTitle = useMemo(() => {
-		if (!selectedSectionId) return "Unsectioned";
-		return (
-			sections.find((section) => section.id === selectedSectionId)?.title ??
-			"Unsectioned"
-		);
-	}, [sections, selectedSectionId]);
-
-	useEffect(() => {
-		if (!isSectionDropdownOpen) return;
-
-		const onPointerDown = (event: PointerEvent) => {
-			const target = event.target as Node | null;
-			if (!target) return;
-			if (sectionDropdownRef.current?.contains(target)) return;
-			setIsSectionDropdownOpen(false);
-		};
-
-		document.addEventListener("pointerdown", onPointerDown);
-		return () => document.removeEventListener("pointerdown", onPointerDown);
-	}, [isSectionDropdownOpen]);
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -283,83 +260,24 @@ export function LinkForm({
 				<div className="space-y-1.5">
 					<Label htmlFor={sectionId}>Section</Label>
 					<input type="hidden" {...register("sectionId")} />
-					<div ref={sectionDropdownRef} className="relative">
-						<button
-							id={sectionId}
-							type="button"
-							onClick={() => setIsSectionDropdownOpen((isOpen) => !isOpen)}
-							onKeyDown={(event) => {
-								if (event.key === "Escape") {
-									event.preventDefault();
-									setIsSectionDropdownOpen(false);
-								}
-							}}
-							aria-expanded={isSectionDropdownOpen}
-							aria-haspopup="listbox"
-							className="flex h-10 w-full min-w-0 items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm outline-none transition-[color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-ring/25"
-						>
-							<span className="truncate">{selectedSectionTitle}</span>
-							<ChevronDown
-								className={cn(
-									"h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-									isSectionDropdownOpen && "rotate-180",
-								)}
-							/>
-						</button>
-
-						{isSectionDropdownOpen && (
-							<div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card p-1 shadow-sm">
-								<button
-									type="button"
-									role="option"
-									aria-selected={!selectedSectionId}
-									onClick={() => {
-										setValue("sectionId", "", {
-											shouldDirty: true,
-											shouldTouch: true,
-											shouldValidate: true,
-										});
-										setIsSectionDropdownOpen(false);
-									}}
-									className={cn(
-										"flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors",
-										!selectedSectionId
-											? "bg-primary text-primary-foreground"
-											: "text-foreground hover:bg-muted",
-									)}
-								>
-									Unsectioned
-								</button>
-								{sections.map((section) => {
-									const isSelected = selectedSectionId === section.id;
-									return (
-										<button
-											key={section.id}
-											type="button"
-											role="option"
-											aria-selected={isSelected}
-											onClick={() => {
-												setValue("sectionId", section.id, {
-													shouldDirty: true,
-													shouldTouch: true,
-													shouldValidate: true,
-												});
-												setIsSectionDropdownOpen(false);
-											}}
-											className={cn(
-												"flex w-full items-center rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors",
-												isSelected
-													? "bg-primary text-primary-foreground"
-													: "text-foreground hover:bg-muted",
-											)}
-										>
-											<span className="truncate">{section.title}</span>
-										</button>
-									);
-								})}
-							</div>
-						)}
-					</div>
+					<Select
+						id={sectionId}
+						value={selectedSectionId || UNSECTIONED}
+						onValueChange={(value) =>
+							setValue("sectionId", value === UNSECTIONED ? "" : value, {
+								shouldDirty: true,
+								shouldTouch: true,
+								shouldValidate: true,
+							})
+						}
+						options={[
+							{ value: UNSECTIONED, label: "Unsectioned" },
+							...sections.map((section) => ({
+								value: section.id,
+								label: section.title,
+							})),
+						]}
+					/>
 					{errors.sectionId && (
 						<p className="text-xs text-destructive">
 							{errors.sectionId.message}
@@ -589,30 +507,29 @@ export function LinkForm({
 						</label>
 					</>
 				)}
-				<label className="block text-sm">
-					Schedule shortcut
-					<select
+				<div className="block text-sm font-medium">
+					<label htmlFor={`${publishingId}-shortcut`}>Schedule shortcut</label>
+					<Select
+						id={`${publishingId}-shortcut`}
+						aria-label="Schedule shortcut"
 						value=""
-						className="mt-1 block w-full rounded-xl border border-border bg-card p-2 text-base"
-						onChange={(event) => {
-							const next = publishingPreset(
-								event.target.value as PublishingPreset,
-							);
+						placeholder="Choose a schedule…"
+						className="mt-1.5"
+						onValueChange={(value) => {
+							const next = publishingPreset(value as PublishingPreset);
 							setValue("publishAt", next.publishAt, { shouldDirty: true });
 							setValue("expireAt", next.expireAt, {
 								shouldDirty: true,
 								shouldValidate: true,
 							});
 						}}
-					>
-						<option value="" disabled>
-							Choose a schedule…
-						</option>
-						<option value="tomorrow">Publish tomorrow at 9am</option>
-						<option value="week">Live now, hide in 7 days</option>
-						<option value="none">No schedule</option>
-					</select>
-				</label>
+						options={[
+							{ value: "tomorrow", label: "Publish tomorrow at 9am" },
+							{ value: "week", label: "Live now, hide in 7 days" },
+							{ value: "none", label: "No schedule" },
+						]}
+					/>
+				</div>
 				<p className="text-xs text-muted-foreground">
 					Shortcuts replace both dates below. Hidden links stay hidden until you
 					activate them.

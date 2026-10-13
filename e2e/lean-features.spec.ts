@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { api, setupCreator } from "./feature-helpers";
+import { api, setupCreator, chooseOption } from "./feature-helpers";
 
 test("CSV files preview and import titles as paused drafts", async ({page})=>{
  await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled();
@@ -57,9 +57,9 @@ test("Link editor warns about duplicate destinations including tracking variants
 
 test("Publishing shortcuts fill editable dates and clear schedules", async ({page}) => {
  await setupCreator(page); await page.goto('/dashboard'); await expect(page.getByRole('button',{name:'Add link',exact:true})).toBeEnabled(); await page.getByRole('button',{name:'Add link',exact:true}).click();
- const dialog=page.getByRole('dialog'); await dialog.getByLabel('Schedule shortcut').selectOption('tomorrow'); await expect(dialog.getByLabel('Publish at',{exact:true})).toHaveValue(/T09:00$/);
- await dialog.getByLabel('Schedule shortcut').selectOption('week'); await expect(dialog.getByLabel('Publish at',{exact:true})).toHaveValue(''); await expect(dialog.getByLabel('Hide at',{exact:true})).not.toHaveValue('');
- await dialog.getByLabel('Schedule shortcut').selectOption('none'); await expect(dialog.getByLabel('Hide at',{exact:true})).toHaveValue('');
+ const dialog=page.getByRole('dialog'); await chooseOption(dialog.getByLabel('Schedule shortcut'), 'tomorrow'); await expect(dialog.getByLabel('Publish at',{exact:true})).toHaveValue(/T09:00$/);
+ await chooseOption(dialog.getByLabel('Schedule shortcut'), 'week'); await expect(dialog.getByLabel('Publish at',{exact:true})).toHaveValue(''); await expect(dialog.getByLabel('Hide at',{exact:true})).not.toHaveValue('');
+ await chooseOption(dialog.getByLabel('Schedule shortcut'), 'none'); await expect(dialog.getByLabel('Hide at',{exact:true})).toHaveValue('');
 });
 
 test("Filtered CSV export includes only matching links", async ({page}) => {
@@ -115,7 +115,7 @@ test("Link health filters results and clears hidden selections", async ({page}) 
  await setupCreator(page); await api(page.request,'links.add',{title:'Health notes',url:'https://example.com/notes'}); await api(page.request,'links.add',{title:'Health shop',url:'https://example.com/shop'});
  await page.goto('/dashboard/health'); const search=page.getByLabel('Search link health'); await expect(search).toBeEnabled(); await page.getByRole('button',{name:'Select unchecked',exact:true}).click(); await expect(page.getByRole('button',{name:'Check selected (2/10)',exact:true})).toBeEnabled();
  await search.fill('notes'); await expect(page.getByRole('checkbox')).toHaveCount(1); await expect(page.getByRole('button',{name:'Check selected (0/10)',exact:true})).toBeDisabled();
- await page.getByLabel('Filter health status').selectOption('healthy'); await expect(page.getByText('No links match these health filters.')).toBeVisible();
+ await chooseOption(page.getByLabel('Filter health status'), 'healthy'); await expect(page.getByText('No links match these health filters.')).toBeVisible();
 });
 
 test("Health CSV exports the current filtered results", async ({page}) => {
@@ -143,8 +143,8 @@ test("Audience status filters compose with search and preserve owner boundaries"
  const {profile}=await setupCreator(page); const {Client}=await import('pg'); const db=new Client({connectionString:process.env.DATABASE_URL||'postgres://postgres:postgres@127.0.0.1:5432/llink_test'}); await db.connect(); try {
  await db.query("INSERT INTO subscribers(profile_id,email,name,consent_text,unsubscribe_hash,unsubscribed_at) VALUES($1,'active@example.test','Reader','Test',$2,null),($1,'left@example.test','Reader','Test',$3,now())",[profile.id,crypto.randomUUID(),crypto.randomUUID()]);
  }finally{await db.end();}
- await page.goto('/dashboard/audience'); const filter=page.getByLabel('Subscriber status'); await expect(filter).toBeEnabled(); await filter.selectOption('unsubscribed'); await expect(page.getByText('left@example.test',{exact:true})).toBeVisible(); await expect(page.getByText('active@example.test',{exact:true})).toHaveCount(0);
- await filter.selectOption('active'); await expect(page.getByText('active@example.test',{exact:true})).toBeVisible(); await expect(page.getByText('left@example.test',{exact:true})).toHaveCount(0);
+ await page.goto('/dashboard/audience'); const filter=page.getByLabel('Subscriber status'); await expect(filter).toBeEnabled(); await chooseOption(filter, 'unsubscribed'); await expect(page.getByText('left@example.test',{exact:true})).toBeVisible(); await expect(page.getByText('active@example.test',{exact:true})).toHaveCount(0);
+ await chooseOption(filter, 'active'); await expect(page.getByText('active@example.test',{exact:true})).toBeVisible(); await expect(page.getByText('left@example.test',{exact:true})).toHaveCount(0);
  const name='other'+Date.now(); expect((await request.post('/api/auth/sign-up/email',{data:{name,email:name+'@example.test',password:'FeaturePassword123!'}})).ok()).toBe(true); await api(request,'profile.create',{username:name});
  const response=await request.get('/api/trpc/audience.list',{params:{input:JSON.stringify({json:{search:'Reader',status:'active'}})}}); const data=(await response.json()).result.data.json; expect(data.rows).toEqual([]); expect(data.matchingCount).toBe(0);
 });
