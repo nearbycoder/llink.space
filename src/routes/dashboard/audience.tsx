@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "#/components/dashboard/PageHeader";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import { Button } from "#/components/ui/button";
+import { Select } from "#/components/ui/select";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardAudience } from "#/lib/auth-server";
 export const Route = createFileRoute("/dashboard/audience")({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/dashboard/audience")({
 const field =
 	"mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm";
 function AudiencePage() {
+	const statusId = useId();
 	const initial = Route.useLoaderData(),
 		trpc = useTRPC(),
 		queryClient = useQueryClient();
@@ -291,22 +293,25 @@ function AudiencePage() {
 						: `${data.matchingCount} matching subscribers`}
 					. CSV export includes all subscribers.
 				</p>
-				<label className="mb-4 block text-sm">
-					Subscriber status
-					<select
+				<div className="mb-4 flex items-center gap-3 text-sm font-medium">
+					<label htmlFor={`${statusId}`}>Subscriber status</label>
+					<Select
+						id={`${statusId}`}
+						aria-label="Subscriber status"
+						className="w-48"
 						value={status}
 						disabled={!ready}
-						onChange={(event) => {
-							setStatus(event.target.value as typeof status);
+						onValueChange={(value) => {
+							setStatus(value as typeof status);
 							setPage(0);
 						}}
-						className="ml-2 rounded-xl border border-border bg-card p-2 text-base"
-					>
-						<option value="all">All subscribers</option>
-						<option value="active">Active only</option>
-						<option value="unsubscribed">Unsubscribed only</option>
-					</select>
-				</label>
+						options={[
+							{ value: "all", label: "All subscribers" },
+							{ value: "active", label: "Active only" },
+							{ value: "unsubscribed", label: "Unsubscribed only" },
+						]}
+					/>
+				</div>
 				<div className="overflow-x-auto">
 					<table className="w-full text-left text-sm">
 						<thead>

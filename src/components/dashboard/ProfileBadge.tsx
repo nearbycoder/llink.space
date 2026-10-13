@@ -16,10 +16,7 @@ import {
 	FieldLabel,
 } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
-import {
-	NativeSelect,
-	NativeSelectOption,
-} from "#/components/ui/native-select";
+import { Select } from "#/components/ui/select";
 import { Textarea } from "#/components/ui/textarea";
 import { downloadFile } from "#/lib/download-file";
 import { buildProfileBadge } from "#/lib/profile-badge";
@@ -89,16 +86,17 @@ export function ProfileBadge({ username }: { username: string }) {
 							<FieldLabel htmlFor={`${id}-appearance`}>
 								Badge appearance
 							</FieldLabel>
-							<NativeSelect
+							<Select
 								id={`${id}-appearance`}
 								value={appearance}
-								onChange={(e) =>
-									setAppearance(e.target.value as typeof appearance)
+								onValueChange={(value) =>
+									setAppearance(value as typeof appearance)
 								}
-							>
-								<NativeSelectOption value="dark">Forest</NativeSelectOption>
-								<NativeSelectOption value="light">Paper</NativeSelectOption>
-							</NativeSelect>
+								options={[
+									{ value: "dark", label: "Forest" },
+									{ value: "light", label: "Paper" },
+								]}
+							/>
 						</Field>
 						<Field>
 							<FieldLabel>Preview</FieldLabel>

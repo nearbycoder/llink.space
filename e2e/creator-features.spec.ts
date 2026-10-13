@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
+import { chooseOption } from "./feature-helpers";
 async function write(api: APIRequestContext, name: string, input: unknown) {
  const res=await api.post(`/api/trpc/${name}`,{data:{json:input}});
  expect(res.ok(),await res.text()).toBe(true); return (await res.json()).result.data.json;
@@ -39,9 +40,9 @@ test('design drafts preview, publish, persist and keep templates reversible',asy
  await page.goto('/dashboard/design');
  await page.getByRole('heading',{name:'Design studio'}).waitFor();
  await page.getByLabel('Display name',{exact:true}).fill('Studio Creator');
- await page.getByLabel('Theme',{exact:true}).selectOption('dark');
- await page.getByLabel('Typography',{exact:true}).selectOption('editorial');
- await page.getByLabel('Button shape',{exact:true}).selectOption('pill');
+ await chooseOption(page.getByLabel('Theme',{exact:true}), 'dark');
+ await chooseOption(page.getByLabel('Typography',{exact:true}), 'editorial');
+ await chooseOption(page.getByLabel('Button shape',{exact:true}), 'pill');
  await page.getByRole('button',{name:'Add content block',exact:true}).click();
  await page.getByLabel('Title / image alt text').fill('Behind the scenes');
  await page.getByLabel('Text',{exact:true}).fill('Stories from the studio.');

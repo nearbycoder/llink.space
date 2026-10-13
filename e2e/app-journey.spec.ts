@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { chooseOption } from "./feature-helpers";
 import path from "node:path";
 
 test("complete creator journey works end to end", async ({ page }) => {
@@ -50,7 +51,7 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await expect(
 		page.getByText("HTTPS is added automatically when you omit it."),
 	).toBeVisible();
-	await page.getByRole("button", { name: "Section", exact: true }).click();
+	await page.getByRole("combobox", { name: "Section", exact: true }).click();
 	await page.getByRole("option", { name: "Featured" }).click();
 	await page
 		.getByLabel("Description (optional)")
@@ -65,8 +66,8 @@ test("complete creator journey works end to end", async ({ page }) => {
 
 	await page.getByRole("textbox", { name: "Search links" }).fill("portfolio");
 	await expect(page.getByText("Showing 1 of 1 links")).toBeVisible();
-	await page.getByLabel("Filter links by status").selectOption("live");
-	await page.getByLabel("Filter links by section").selectOption({ label: "Featured" });
+	await chooseOption(page.getByLabel("Filter links by status"), "live");
+	await chooseOption(page.getByLabel("Filter links by section"), { label: "Featured" });
 	await expect(page.getByText("Test portfolio", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "Clear filters" }).click();
 
@@ -77,7 +78,7 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await page.getByRole("button", { name: "Pause Test portfolio" }).click();
 	await expect(page.getByText("Link paused")).toBeVisible();
 	await expect(page.locator('[data-slot="badge"]').getByText("Paused", { exact: true })).toBeVisible();
-	await page.getByLabel("Filter links by status").selectOption("paused");
+	await chooseOption(page.getByLabel("Filter links by status"), "paused");
 	await expect(page.getByText("Showing 1 of 1 links")).toBeVisible();
 	await page.getByRole("button", { name: "Clear filters" }).click();
 
@@ -116,7 +117,7 @@ test("complete creator journey works end to end", async ({ page }) => {
 	await expect(page.getByTestId("link-stat-live")).toContainText("2");
 
 	await page.getByLabel("Select Test portfolio copy").check();
-	await page.getByLabel("Bulk move destination").selectOption("unsectioned");
+	await chooseOption(page.getByLabel("Bulk move destination"), "unsectioned");
 	await page.getByRole("button", { name: "Move", exact: true }).click();
 	await expect(page.getByText("1 link moved")).toBeVisible();
 	await page.getByLabel("Select Test portfolio copy").check();

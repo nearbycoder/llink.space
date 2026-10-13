@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { PageHeader } from "#/components/dashboard/PageHeader";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
+import { Select } from "#/components/ui/select";
 import { useTRPC } from "#/integrations/trpc/react";
 import { getDashboardDesign } from "#/lib/auth-server";
 import { downloadFile } from "#/lib/download-file";
@@ -65,24 +66,24 @@ function HealthPage() {
 							setSelected([]);
 						}}
 					/>
-					<select
+					<Select
 						aria-label="Filter health status"
 						disabled={!ready || check.isPending}
 						value={state}
-						onChange={(event) => {
-							setState(event.target.value);
+						onValueChange={(value) => {
+							setState(value);
 							setSelected([]);
 						}}
-						className="h-10 rounded-xl border border-input/60 bg-card px-3.5 text-base font-medium sm:text-sm"
-					>
-						<option value="all">All health results</option>
-						{HEALTH_STATES.map((value) => (
-							<option key={value} value={value}>
-								{value.charAt(0).toUpperCase() +
-									value.slice(1).replaceAll("-", " ")}
-							</option>
-						))}
-					</select>
+						options={[
+							{ value: "all", label: "All health results" },
+							...HEALTH_STATES.map((value) => ({
+								value,
+								label:
+									value.charAt(0).toUpperCase() +
+									value.slice(1).replaceAll("-", " "),
+							})),
+						]}
+					/>
 				</div>
 				<p role="status" className="mb-3 text-xs text-muted-foreground">
 					Showing {filtered.length} of {links.length} links. Changing filters
