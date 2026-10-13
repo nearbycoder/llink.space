@@ -24,10 +24,15 @@ const db = new pg.Client({ connectionString: databaseURL });
 await db.connect();
 const browser = await chromium.launch({ headless: true });
 const setup = await browser.newContext({ baseURL });
-const username = `studiofield-${Date.now().toString(36)}`;
+// The clean handle appears on camera, so record into a database without it.
+const username = "studiofield";
 const password = randomUUID() + "Aa1!";
 const signup = await setup.request.post("/api/auth/sign-up/email", {
-	data: { name: "Studio Field", email: `${username}@example.test`, password },
+	data: {
+		name: "Studio Field",
+		email: `studiofield-${Date.now().toString(36)}@example.test`,
+		password,
+	},
 });
 if (!signup.ok()) throw new Error(await signup.text());
 async function api(name, json) {
@@ -46,21 +51,21 @@ for (const [title, slug, description, iconUrl, iconBgColor] of [
 		"collection",
 		"Objects made slowly. Made to stay.",
 		"link-2",
-		"#DDEBAF",
+		"#FFD9C7",
 	],
 	[
 		"Notes from the studio",
 		"journal",
 		"Ideas, process, and work in progress.",
 		"file-text",
-		"#D6E8E3",
+		"#C7D2FF",
 	],
 	[
 		"Work with us",
 		"contact",
 		"Good things start with a conversation.",
 		"link-2",
-		"#EADDD1",
+		"#C9E4C5",
 	],
 ])
 	links.push(
@@ -75,7 +80,7 @@ for (const [title, slug, description, iconUrl, iconBgColor] of [
 await api("profile.update", {
 	displayName: "Studio Field",
 	bio: "Objects, stories, and other small obsessions. Independent design, made with care.",
-	theme: "slate",
+	theme: "default",
 	pageBackgroundType: "theme",
 	fontFamily: "work",
 	buttonStyle: "rounded",
@@ -98,6 +103,36 @@ await db.query(
 await db.end();
 const storageState = await setup.storageState();
 await setup.close();
+// Homepage phone image: a real 3x mobile capture of the fictional profile.
+{
+	const mobile = await browser.newContext({
+		baseURL,
+		viewport: { width: 390, height: 790 },
+		deviceScaleFactor: 3,
+		isMobile: true,
+		hasTouch: true,
+	});
+	await mobile.addInitScript(() => {
+		document.addEventListener("DOMContentLoaded", () => {
+			const style = document.createElement("style");
+			style.textContent = '[data-testid="tanstack_devtools"] {display:none!important}';
+			document.head.append(style);
+		});
+	});
+	const page = await mobile.newPage();
+	await page.goto(`/u/${username}`);
+	await expect(
+		page.getByRole("button", { name: "Save The spring collection for later" }),
+	).toBeEnabled();
+	await page.evaluate(() => document.fonts.ready);
+	await page.waitForTimeout(500);
+	const shot = path.join(work, "profile-preview.png");
+	await page.screenshot({ path: shot });
+	await sharp(shot)
+		.webp({ lossless: true })
+		.toFile(path.join(assets, "profile-preview.webp"));
+	await mobile.close();
+}
 const chapters = [];
 const captions = [];
 let total = 0;
@@ -136,7 +171,7 @@ async function segment(title, description, url, ready, actions) {
 			document.head.append(style);
 			const cursor = document.createElement("div");
 			cursor.style.cssText =
-				"position:fixed;z-index:2147483647;pointer-events:none;width:22px;height:22px;border:2px solid #263b25;border-radius:50%;background:#ddebaf99;transform:translate(-50%,-50%);left:-100px;top:-100px";
+				"position:fixed;z-index:2147483647;pointer-events:none;width:22px;height:22px;border:2px solid #16140f;border-radius:50%;background:#ff5f1f66;transform:translate(-50%,-50%);left:-100px;top:-100px";
 			document.body.append(cursor);
 			document.addEventListener("mousemove", (e) => {
 				cursor.style.left = e.clientX + "px";

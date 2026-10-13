@@ -19,7 +19,7 @@ export function ContactDownload({
 		<button
 			type="button"
 			disabled={!ready}
-			className="inline-flex min-h-11 items-center gap-2 rounded-full border border-current/30 px-3 text-xs font-semibold"
+			className="public-profile-tool !text-xs"
 			onClick={() =>
 				downloadFile(
 					buildVcard({

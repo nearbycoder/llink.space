@@ -7,9 +7,11 @@ test("landing page renders primary content and nav actions", async ({ page }) =>
 
 	await expect(page).toHaveTitle(/llink\.space/i);
 	await expect(
-		page.getByRole("heading", { level: 1, name: /One link.*A whole lot.*of you/ }),
+		page.getByRole("heading", { level: 1, name: /Everything you make,.*one link away/ }),
 	).toBeVisible();
-	await expect(page.getByRole("link", { name: "Create your page" })).toBeVisible();
+	await expect(
+		page.getByRole("link", { name: "Create your page", exact: true }).first(),
+	).toBeVisible();
 	await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible({
 		timeout: 15_000,
 	});
@@ -28,6 +30,8 @@ test("cross-origin API writes are rejected", async ({ request }) => {
 test("unknown route renders not found experience", async ({ page }) => {
 	await page.goto("/this-route-does-not-exist");
 
-	await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: /This page drifted off the map/ }),
+	).toBeVisible();
 	await expect(page.getByRole("link", { name: "Go home" })).toBeVisible();
 });

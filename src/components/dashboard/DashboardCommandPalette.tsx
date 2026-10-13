@@ -281,7 +281,7 @@ export function DashboardCommandPalette({
 											</p>
 											<p
 												data-slot="command-item-description"
-												className="hidden truncate text-xs text-muted-foreground sm:block group-data-[selected=true]/item:text-primary-foreground/80"
+												className="hidden truncate text-xs text-muted-foreground sm:block group-data-[selected=true]/item:text-foreground/70"
 											>
 												{action.description}
 											</p>
@@ -304,8 +304,8 @@ export function DashboardCommandPalette({
 						className="hidden shrink-0 items-center justify-between border-t border-border bg-black/[0.025] px-4 py-3 text-xs text-muted-foreground sm:flex"
 					>
 						<span>
-							↑ ↓ to browse <span className="mx-2 text-black/20">/</span> ↵ to
-							open
+							↑ ↓ to browse <span className="mx-2 text-foreground/20">/</span> ↵
+							to open
 						</span>
 						<kbd className="inline-flex items-center gap-1 font-medium">
 							{isMac ? (

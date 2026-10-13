@@ -1,3 +1,4 @@
+import { QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
 import {
@@ -55,7 +56,7 @@ export function QrShare({
 			<button
 				type="button"
 				disabled={!ready}
-				className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground"
+				className="public-profile-tool !min-h-9 !px-3 !text-xs"
 				onClick={() =>
 					setUrl(
 						customDomain
@@ -64,6 +65,7 @@ export function QrShare({
 					)
 				}
 			>
+				<QrCode aria-hidden="true" className="h-3.5 w-3.5" />
 				QR code
 			</button>
 			<Dialog
@@ -79,21 +81,28 @@ export function QrShare({
 							Save a QR code for posters, business cards, or your next event.
 						</DialogDescription>
 					</DialogHeader>
-					{image ? (
-						<img
-							src={image.png}
-							alt={`QR code for @${username}`}
-							className="mx-auto aspect-square w-60 max-w-full rounded-xl bg-card"
-						/>
-					) : (
-						<p role="status">
-							{error
-								? "Could not generate the QR code. Close and try again."
-								: "Creating your code…"}
+					<div className="rounded-2xl bg-muted p-5">
+						{image ? (
+							<img
+								src={image.png}
+								alt={`QR code for @${username}`}
+								className="mx-auto aspect-square w-56 max-w-full rounded-xl bg-white p-2 shadow-[0_12px_32px_-16px_rgb(22_20_15/0.4)]"
+							/>
+						) : (
+							<p
+								role="status"
+								className="flex aspect-square w-56 max-w-full mx-auto items-center justify-center text-center text-sm text-muted-foreground"
+							>
+								{error
+									? "Could not generate the QR code. Close and try again."
+									: "Creating your code…"}
+							</p>
+						)}
+						<p className="mt-4 break-all text-center font-mono text-xs text-muted-foreground">
+							{url}
 						</p>
-					)}
-					<p className="break-all text-center text-xs">{url}</p>
-					<div className="flex flex-wrap gap-2">
+					</div>
+					<div className="grid grid-cols-2 gap-2">
 						<Button
 							disabled={!image}
 							onClick={() => {

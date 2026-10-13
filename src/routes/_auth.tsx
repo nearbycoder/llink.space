@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { SiteBrand } from "#/components/SiteBrand";
+import { AuthFrame } from "#/components/AuthFrame";
 import { checkDashboardAccess } from "#/lib/auth-server";
 
 export const Route = createFileRoute("/_auth")({
@@ -17,15 +17,8 @@ export const Route = createFileRoute("/_auth")({
 
 function AuthLayout() {
 	return (
-		<div className="auth-workspace min-h-screen flex items-center justify-center px-4">
-			<div className="my-6 w-full max-w-md kinetic-shell p-7 sm:p-10">
-				<div className="text-center mb-8">
-					<a href="/" className="inline-block">
-						<SiteBrand size="lg" />
-					</a>
-				</div>
-				<Outlet />
-			</div>
-		</div>
+		<AuthFrame>
+			<Outlet />
+		</AuthFrame>
 	);
 }

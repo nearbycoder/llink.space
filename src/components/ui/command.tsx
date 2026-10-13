@@ -82,7 +82,7 @@ function CommandDialog({
 				<DialogDescription className="sr-only">
 					Search pages and actions, or create a link.
 				</DialogDescription>
-				<Command className="min-h-0 rounded-none border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:bg-accent [&_[cmdk-item][data-selected=true]]:text-primary">
+				<Command className="min-h-0 rounded-none border-0 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[10.5px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-item][data-disabled=true]]:pointer-events-none [&_[cmdk-item][data-disabled=true]]:opacity-50 [&_[cmdk-item][data-selected=true]]:bg-accent [&_[cmdk-item][data-selected=true]]:text-foreground">
 					{children}
 				</Command>
 			</DialogContent>
@@ -163,7 +163,7 @@ function CommandSeparator({
 	return (
 		<CommandPrimitive.Separator
 			data-slot="command-separator"
-			className={cn("-mx-1 h-px bg-black/15", className)}
+			className={cn("-mx-1 h-px bg-border", className)}
 			{...props}
 		/>
 	);
@@ -193,7 +193,7 @@ function CommandShortcut({
 		<span
 			data-slot="command-shortcut"
 			className={cn(
-				"ml-auto text-[11px] font-medium tracking-wide text-muted-foreground group-data-[selected=true]/item:text-primary-foreground/80",
+				"ml-auto text-[11px] font-medium tracking-wide text-muted-foreground group-data-[selected=true]/item:text-foreground/70",
 				className,
 			)}
 			{...props}

@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { type ContentBlock, videoEmbedUrl } from "#/lib/page-design";
 import { isAllowedAvatarUrl, normalizeHttpUrl } from "#/lib/security";
 import { EventBlock } from "./EventBlock";
@@ -19,10 +20,14 @@ export function ContentBlockView({
 		return (
 			<details
 				open={preview || undefined}
-				className="my-5 rounded-xl border border-current/25 px-4 py-3"
+				className="group my-5 rounded-2xl border border-current/15 px-4 py-3"
 			>
-				<summary className="cursor-pointer py-1 font-semibold">
+				<summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 py-1 font-semibold [&::-webkit-details-marker]:hidden">
 					{block.title}
+					<Plus
+						aria-hidden="true"
+						className="size-4 shrink-0 opacity-60 transition-transform group-open:rotate-45"
+					/>
 				</summary>
 				<p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">
 					{block.body}
@@ -31,7 +36,7 @@ export function ContentBlockView({
 		);
 	if (block.type === "quote")
 		return (
-			<figure className="my-5 border-l-4 border-current/40 pl-4">
+			<figure className="my-6 border-l-2 border-[#FF5F1F] pl-4">
 				<blockquote className="whitespace-pre-wrap break-words text-base leading-relaxed">
 					{block.body}
 				</blockquote>
@@ -60,7 +65,11 @@ export function ContentBlockView({
 			className="my-5 space-y-2 break-words"
 			aria-label={block.title || block.type}
 		>
-			{block.title && <h2 className="text-lg font-bold">{block.title}</h2>}
+			{block.title && (
+				<h2 className="text-lg font-semibold tracking-[-0.015em]">
+					{block.title}
+				</h2>
+			)}
 			{block.body && (
 				<p className="whitespace-pre-wrap text-sm leading-relaxed">
 					{block.body}

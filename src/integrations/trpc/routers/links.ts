@@ -19,6 +19,7 @@ import {
 	normalizeHttpUrl,
 	prepareHttpUrl,
 } from "#/lib/security";
+import { DEFAULT_ICON_BG_COLOR } from "#/lib/utils";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 const publishingFields = {
@@ -333,7 +334,7 @@ export const linksRouter = createTRPCRouter({
 					await tx.insert(links).values(
 						parsed.links.map((l, index) => ({
 							...l,
-							iconBgColor: l.iconBgColor ?? "#F5FF7B",
+							iconBgColor: l.iconBgColor ?? DEFAULT_ICON_BG_COLOR,
 							profileId: profile.id,
 							isActive: false,
 							sortOrder: position.max + index + 1,
@@ -465,7 +466,7 @@ export const linksRouter = createTRPCRouter({
 						url: input.url,
 						description: input.description ?? null,
 						iconUrl: input.iconUrl ?? null,
-						iconBgColor: input.iconBgColor ?? "#F5FF7B",
+						iconBgColor: input.iconBgColor ?? DEFAULT_ICON_BG_COLOR,
 						isActive: input.isActive,
 						sortOrder: nextSortOrder,
 					})

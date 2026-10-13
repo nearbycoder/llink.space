@@ -23,34 +23,23 @@ import {
 	normalizeHttpUrl,
 	prepareHttpUrl,
 } from "#/lib/security";
-import { cn } from "#/lib/utils";
+import { cn, DEFAULT_ICON_BG_COLOR, readableTextColor } from "#/lib/utils";
 import { CampaignUrlBuilder } from "./CampaignUrlBuilder";
 import { UrlCleanup } from "./UrlCleanup";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
-const DEFAULT_ICON_BG_COLOR = "#F5FF7B";
 const ICON_BG_PRESETS = [
-	"#F5FF7B",
-	"#8AE1E7",
-	"#F2B7E2",
-	"#FF8A4C",
-	"#A8E6A1",
-	"#7CC6FF",
-	"#FFD9CF",
-	"#D9D5FF",
-	"#FCE78B",
-	"#F8F8F4",
+	DEFAULT_ICON_BG_COLOR,
+	"#FF5F1F",
+	"#FFE27A",
+	"#C9E4C5",
+	"#B9E3EC",
+	"#C7D2FF",
+	"#F5C9D6",
+	"#E9E5DC",
+	"#FFFFFF",
+	"#16140F",
 ];
-
-function getReadableTextColor(hexColor: string) {
-	const normalized = hexColor.replace("#", "");
-	if (normalized.length !== 6) return "#11110F";
-	const red = Number.parseInt(normalized.slice(0, 2), 16);
-	const green = Number.parseInt(normalized.slice(2, 4), 16);
-	const blue = Number.parseInt(normalized.slice(4, 6), 16);
-	const luminance = (red * 299 + green * 587 + blue * 114) / 1000;
-	return luminance < 140 ? "#FFFCEF" : "#11110F";
-}
 
 const schema = z
 	.object({
@@ -71,7 +60,7 @@ const schema = z
 		iconBgColor: z
 			.string()
 			.trim()
-			.regex(/^#?[0-9A-Fa-f]{6}$/, "Use a valid hex color (e.g. #F5FF7B)")
+			.regex(/^#?[0-9A-Fa-f]{6}$/, "Use a valid hex color (e.g. #FFD9C7)")
 			.transform((value) =>
 				(value.startsWith("#") ? value : `#${value}`).toUpperCase(),
 			),
@@ -189,7 +178,7 @@ export function LinkForm({
 	const selectedIconBgColor = watch("iconBgColor");
 	const selectedSectionId = watch("sectionId");
 	const selectedIconTileBg = selectedIconBgColor ?? DEFAULT_ICON_BG_COLOR;
-	const selectedIconTileText = getReadableTextColor(selectedIconTileBg);
+	const selectedIconTileText = readableTextColor(selectedIconTileBg);
 	const titleId = useId();
 	const publishingId = useId();
 	const urlId = useId();
@@ -265,7 +254,7 @@ export function LinkForm({
 			{duplicates.length > 0 && (
 				<p
 					role="status"
-					className="rounded-lg border border-amber-700/30 bg-amber-50 p-3 text-sm"
+					className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm text-warning-foreground"
 				>
 					This destination already appears in {duplicates.length} link
 					{duplicates.length === 1 ? "" : "s"}:{" "}
@@ -397,10 +386,10 @@ export function LinkForm({
 									})
 								}
 								className={cn(
-									"flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-2 text-[10px] font-medium transition-all",
+									"flex flex-col items-center justify-center gap-1 rounded-xl border p-2 text-[10px] font-medium transition-all",
 									isSelected
-										? "border-border shadow-sm"
-										: "border-border bg-card text-muted-foreground hover:border-foreground/25 hover:bg-card",
+										? "border-foreground ring-2 ring-foreground/15"
+										: "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
 								)}
 								style={
 									isSelected
@@ -451,9 +440,9 @@ export function LinkForm({
 								})
 							}
 							className={cn(
-								"h-7 w-7 rounded-full border border-border shadow-sm transition-transform hover:brightness-95",
+								"h-7 w-7 rounded-full border border-black/10 transition-transform hover:scale-110",
 								selectedIconBgColor?.toUpperCase() === color.toUpperCase() &&
-									"ring-2 ring-black ring-offset-2 ring-offset-[#FFFCEF]",
+									"ring-2 ring-foreground ring-offset-2 ring-offset-card",
 							)}
 							style={{ backgroundColor: color }}
 						/>
@@ -487,7 +476,7 @@ export function LinkForm({
 								shouldValidate: true,
 							})
 						}
-						placeholder="#F5FF7B"
+						placeholder="#FFD9C7"
 						maxLength={7}
 						className="font-mono"
 					/>

@@ -24,8 +24,8 @@ export function EmailSignup({
 	const [done, setDone] = useState(false),
 		[token, setToken] = useState("");
 	return (
-		<section className="mt-8 rounded-xl border-2 border-current/30 p-4">
-			<h2 className="text-lg font-bold">{title}</h2>
+		<section className="mt-10 rounded-[1.25rem] border border-current/15 bg-current/[0.03] p-5">
+			<h2 className="text-lg font-semibold tracking-[-0.015em]">{title}</h2>
 			{done ? (
 				<div className="mt-3 space-y-2">
 					<p role="status">Thanks! Your signup request has been saved.</p>
@@ -81,7 +81,7 @@ export function EmailSignup({
 						<label className="block text-sm">
 							Your name (optional)
 							<input
-								className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-foreground"
+								className="mt-1.5 w-full rounded-xl border border-current/20 bg-transparent px-3.5 py-2.5 text-base text-current outline-none focus-visible:border-current focus-visible:ring-2 focus-visible:ring-current/15 sm:text-sm"
 								value={name}
 								maxLength={100}
 								autoComplete="given-name"
@@ -94,7 +94,7 @@ export function EmailSignup({
 								type="email"
 								required
 								autoComplete="email"
-								className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-foreground"
+								className="mt-1.5 w-full rounded-xl border border-current/20 bg-transparent px-3.5 py-2.5 text-base text-current outline-none focus-visible:border-current focus-visible:ring-2 focus-visible:ring-current/15 sm:text-sm"
 								value={email}
 								maxLength={254}
 								onChange={(e) => setEmail(e.target.value)}
@@ -124,7 +124,7 @@ export function EmailSignup({
 						<button
 							type="submit"
 							disabled={!consent}
-							className="w-full rounded-lg border border-border bg-accent px-3 py-2 font-bold text-foreground"
+							className="min-h-11 w-full rounded-full bg-[#16140F] px-4 py-2.5 text-sm font-semibold text-[#FAF8F3] transition-opacity disabled:opacity-50"
 						>
 							{subscribe.isPending ? "Joining…" : "Join the list"}
 						</button>

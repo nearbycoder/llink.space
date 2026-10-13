@@ -18,7 +18,7 @@ export function TrafficInsights({
 	return (
 		<div className="grid min-w-0 gap-6 lg:grid-cols-[1fr_2fr]">
 			<section
-				className="kinetic-panel flex min-w-0 flex-col gap-5 p-5"
+				className="surface flex min-w-0 flex-col gap-5 p-5 sm:p-6"
 				aria-label="Clicks by device"
 			>
 				<div>
@@ -32,7 +32,7 @@ export function TrafficInsights({
 						<div key={d.device}>
 							<div className="mb-2 flex justify-between gap-3 text-sm">
 								<dt>{d.device}</dt>
-								<dd className="tabular-nums">
+								<dd className="font-mono text-xs tabular-nums">
 									{d.count}{" "}
 									<span className="text-muted-foreground">· {d.percent}%</span>
 								</dd>
@@ -65,7 +65,7 @@ export function TrafficInsights({
 				</Button>
 			</section>
 			<section
-				className="kinetic-panel flex min-w-0 flex-col gap-5 p-5"
+				className="surface flex min-w-0 flex-col gap-5 p-5 sm:p-6"
 				aria-label="Weekly click heatmap"
 			>
 				<div>
@@ -111,10 +111,10 @@ export function TrafficInsights({
 										.map((r) => (
 											<td
 												key={r.hour}
-												className="h-5 rounded-sm"
+												className="h-5 rounded-[4px]"
 												style={{
 													background: r.count
-														? `color-mix(in srgb, var(--primary) ${25 + (r.count / Math.max(max, 1)) * 75}%, var(--muted))`
+														? `color-mix(in srgb, var(--signal-strong) ${20 + (r.count / Math.max(max, 1)) * 80}%, var(--signal-soft))`
 														: "var(--muted)",
 												}}
 												title={`${day}, ${String(r.hour).padStart(2, "0")}:00 UTC: ${r.count} clicks`}
@@ -136,7 +136,14 @@ export function TrafficInsights({
 				</p>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<span className="text-xs text-muted-foreground">
-						Darker cells mean more clicks.
+						<span className="inline-flex items-center gap-2">
+							Fewer
+							<span
+								aria-hidden="true"
+								className="h-2 w-16 rounded-full bg-gradient-to-r from-signal-soft to-signal-strong"
+							/>
+							More clicks
+						</span>
 					</span>
 					<Button
 						size="sm"

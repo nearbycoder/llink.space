@@ -82,19 +82,22 @@ export function PublicProfileShare({
 	};
 
 	return (
-		<div data-print-hidden className="mb-3 flex flex-wrap justify-end gap-2">
+		<div
+			data-print-hidden
+			className="-mr-1 mb-2 flex flex-wrap justify-end gap-1.5"
+		>
 			<QrShare username={username} customDomain={customDomain} />
 			<button
 				type="button"
 				onClick={handleShare}
-				className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground shadow-sm transition-transform hover:brightness-95"
+				className="public-profile-tool !min-h-9 !px-3 !text-xs"
 				aria-label="Share profile"
 				aria-live="polite"
 			>
 				{status === "copied" ? (
-					<Check className="h-3.5 w-3.5" />
+					<Check aria-hidden="true" className="h-3.5 w-3.5" />
 				) : (
-					<Share2 className="h-3.5 w-3.5" />
+					<Share2 aria-hidden="true" className="h-3.5 w-3.5" />
 				)}
 				{status === "copied"
 					? "Link copied"

@@ -17,12 +17,12 @@ if (!databaseUrl) {
 
 const SEED_PASSWORD = "SeedPassword123!";
 const ICON_BG_COLORS = [
-	"#F5FF7B",
-	"#8AE1E7",
-	"#F2B7E2",
-	"#FF8A4C",
-	"#BFE3FF",
-	"#DFFCD2",
+	"#FFD9C7",
+	"#FFE27A",
+	"#C9E4C5",
+	"#B9E3EC",
+	"#C7D2FF",
+	"#F5C9D6",
 ];
 
 const seedProfiles = [

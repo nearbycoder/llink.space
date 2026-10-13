@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "#/components/dashboard/PageHeader";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -45,18 +46,13 @@ function HealthPage() {
 		}
 	};
 	return (
-		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
-			<header className="mb-7">
-				<p className="text-xs font-bold uppercase tracking-widest">
-					Keep every destination working
-				</p>
-				<h1 className="mt-2 text-3xl font-black">Link health</h1>
-				<p className="mt-2 text-sm">
-					Check up to 10 links at a time. Checks report redirects, broken
-					destinations, and sites that restrict automated requests.
-				</p>
-			</header>
-			<section className="kinetic-panel bg-card p-5">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:px-10">
+			<PageHeader
+				eyebrow="Keep every destination working"
+				title="Link health"
+				description="Check up to 10 links at a time. Checks report redirects, broken destinations, and sites that restrict automated requests."
+			/>
+			<section className="surface bg-card p-4 sm:p-5">
 				<div className="mb-4 grid gap-3 sm:grid-cols-2">
 					<Input
 						aria-label="Search link health"
@@ -77,7 +73,7 @@ function HealthPage() {
 							setState(event.target.value);
 							setSelected([]);
 						}}
-						className="rounded-xl border border-border bg-card p-2 text-base"
+						className="h-10 rounded-xl border border-input/60 bg-card px-3.5 text-base font-medium sm:text-sm"
 					>
 						<option value="all">All health results</option>
 						{HEALTH_STATES.map((value) => (
@@ -88,12 +84,13 @@ function HealthPage() {
 						))}
 					</select>
 				</div>
-				<p role="status" className="mb-3 text-xs">
+				<p role="status" className="mb-3 text-xs text-muted-foreground">
 					Showing {filtered.length} of {links.length} links. Changing filters
 					clears the selection.
 				</p>
 				<div className="mb-4 flex flex-wrap items-center gap-3">
 					<Button
+						variant="brand"
 						onClick={run}
 						disabled={!ready || !selected.length || check.isPending}
 					>
@@ -141,16 +138,16 @@ function HealthPage() {
 						Export health results ({filtered.length})
 					</Button>
 				</div>
-				<p className="mb-5 text-xs">
+				<p className="mb-5 text-xs text-muted-foreground">
 					Public HTTP(S) destinations only. A restricted or unreachable result
 					does not necessarily mean a link is broken. One batch every 30
 					seconds. Stale checks are more than 7 days old.
 				</p>
-				<div className="space-y-3">
+				<div className="divide-y divide-border overflow-hidden rounded-[0.875rem] border border-border">
 					{filtered.map((l) => (
 						<label
 							key={l.id}
-							className="flex items-start gap-3 rounded-xl border border-border bg-card p-4"
+							className="flex cursor-pointer items-start gap-3 bg-card px-4 py-3 transition-colors hover:bg-muted/50 has-[:checked]:bg-signal-soft/40"
 						>
 							<input
 								type="checkbox"
@@ -170,16 +167,30 @@ function HealthPage() {
 								}
 							/>
 							<span className="min-w-0 flex-1">
-								<strong className="block truncate">{l.title}</strong>
-								<span className="block truncate text-xs">{l.url}</span>
-								<span className="mt-2 block text-xs font-semibold">
-									{l.healthState ?? "Unchecked"} {l.healthStatusCode ?? ""}
-									{l.healthCheckedAt
-										? ` · ${new Date(l.healthCheckedAt).toLocaleString()}`
-										: ""}
+								<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+									<strong className="min-w-0 truncate text-sm font-semibold">
+										{l.title}
+									</strong>
+									<span
+										className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${healthTone(l.healthState)}`}
+									>
+										<span
+											aria-hidden="true"
+											className="size-1.5 rounded-full bg-current"
+										/>
+										{l.healthState ?? "Unchecked"} {l.healthStatusCode ?? ""}
+									</span>
 								</span>
+								<span className="mt-0.5 block truncate font-mono text-[11.5px] text-muted-foreground">
+									{l.url}
+								</span>
+								{l.healthCheckedAt && (
+									<span className="mt-1 block text-[11px] text-muted-foreground">
+										Checked {new Date(l.healthCheckedAt).toLocaleString()}
+									</span>
+								)}
 								{l.healthFinalUrl && l.healthFinalUrl !== l.url && (
-									<span className="block break-all text-xs">
+									<span className="mt-1 block break-all text-xs text-muted-foreground">
 										Redirects to {l.healthFinalUrl}
 									</span>
 								)}
@@ -188,12 +199,33 @@ function HealthPage() {
 					))}
 				</div>
 				{links.length > 0 && !filtered.length && (
-					<p>No links match these health filters.</p>
+					<p className="py-8 text-center text-sm text-muted-foreground">
+						No links match these health filters.
+					</p>
 				)}
 				{!links.length && (
-					<p>Add links to start checking their destinations.</p>
+					<p className="py-8 text-center text-sm text-muted-foreground">
+						Add links to start checking their destinations.
+					</p>
 				)}
 			</section>
 		</div>
 	);
+}
+
+function healthTone(state: string | null) {
+	switch (state) {
+		case "healthy":
+			return "bg-success/10 text-success";
+		case "redirected":
+		case "restricted":
+			return "bg-warning/15 text-warning-foreground";
+		case "broken":
+		case "blocked":
+		case "unreachable":
+		case "redirect-loop":
+			return "bg-destructive/8 text-destructive";
+		default:
+			return "bg-muted text-muted-foreground";
+	}
 }

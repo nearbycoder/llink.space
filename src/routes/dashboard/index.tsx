@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
 	CalendarX,
 	Check,
+	ChevronDown,
 	Clock,
 	Copy,
 	Download,
@@ -15,6 +16,7 @@ import {
 	Plus,
 	Search,
 	Trash2,
+	Wrench,
 	X,
 } from "lucide-react";
 import type { FormEvent } from "react";
@@ -29,6 +31,7 @@ import type { LinkFormData } from "#/components/dashboard/LinkForm";
 import { LinkForm } from "#/components/dashboard/LinkForm";
 import { LinkImportDialog } from "#/components/dashboard/LinkImportDialog";
 import { MarkdownExport } from "#/components/dashboard/MarkdownExport";
+import { PageHeader } from "#/components/dashboard/PageHeader";
 import { PublishingCalendar } from "#/components/dashboard/PublishingCalendar";
 import { SavedLinkViews } from "#/components/dashboard/SavedLinkViews";
 import { SavePageOrder } from "#/components/dashboard/SavePageOrder";
@@ -58,6 +61,7 @@ import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { publishingStatus } from "#/lib/link-publishing";
 import { LINK_SORTS, type LinkSort, sortDashboardView } from "#/lib/link-sort";
 import { buildLinkMarkdown } from "#/lib/markdown-export";
+import { cn } from "#/lib/utils";
 
 export const Route = createFileRoute("/dashboard/")({
 	headers: () => ({
@@ -103,12 +107,15 @@ interface LinkDeleteState {
 type BulkLinkAction = "publish" | "pause" | "move" | "delete";
 
 const LINK_STAT_CARDS = [
-	{ id: "total", label: "Total links", Icon: Link2, color: "bg-accent" },
-	{ id: "live", label: "Live", Icon: Eye, color: "bg-info/10" },
-	{ id: "paused", label: "Paused", Icon: EyeOff, color: "bg-muted" },
-	{ id: "scheduled", label: "Scheduled", Icon: Clock, color: "bg-muted" },
-	{ id: "expired", label: "Expired", Icon: CalendarX, color: "bg-warning/10" },
+	{ id: "total", label: "Total links", Icon: Link2 },
+	{ id: "live", label: "Live", Icon: Eye },
+	{ id: "paused", label: "Paused", Icon: EyeOff },
+	{ id: "scheduled", label: "Scheduled", Icon: Clock },
+	{ id: "expired", label: "Expired", Icon: CalendarX },
 ] as const;
+
+const toolbarSelectClass =
+	"h-10 min-w-0 rounded-xl border border-input/60 bg-card px-3.5 text-base font-medium text-foreground transition-colors hover:border-input sm:text-sm lg:w-auto";
 
 function errorMessage(error: unknown, fallback: string) {
 	return error instanceof Error && error.message ? error.message : fallback;
@@ -599,62 +606,57 @@ function DashboardPage() {
 	const isBulkBusy = bulkAction.isPending;
 
 	return (
-		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
-			<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div>
-					<h1
-						className="text-2xl text-foreground"
-						style={{ fontFamily: "'Work Sans', sans-serif" }}
-					>
-						Links
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Organize links into sections and drag them where they belong
-					</p>
-				</div>
-				<div className="flex w-full flex-wrap gap-2 sm:w-auto">
-					<LinkImportDialog
-						existingUrls={layout.links.map((link) => link.url)}
-						onImported={refreshLayout}
-						disabled={isBusy || isBulkBusy}
-					/>
-					<Button
-						type="button"
-						size="sm"
-						variant={selectionMode ? "default" : "outline"}
-						onClick={toggleSelectionMode}
-						disabled={
-							(layout.links.length === 0 && !selectionMode) ||
-							isBusy ||
-							isBulkBusy
-						}
-					>
-						<ListChecks className="mr-1.5 h-4 w-4" />
-						{selectionMode ? "Done" : "Select"}
-					</Button>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={handleOpenAddSection}
-						disabled={isBusy || isBulkBusy}
-					>
-						<FolderPlus className="mr-1.5 h-4 w-4" />
-						Add section
-					</Button>
-					<Button
-						size="sm"
-						onClick={() => setShowAddLink(true)}
-						disabled={isBusy || isBulkBusy}
-					>
-						<Plus className="mr-1.5 h-4 w-4" />
-						Add link
-					</Button>
-				</div>
-			</div>
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:px-10">
+			<PageHeader
+				eyebrow="Build"
+				title="Links"
+				description="Organize links into sections and drag them where they belong"
+				actions={
+					<>
+						<LinkImportDialog
+							existingUrls={layout.links.map((link) => link.url)}
+							onImported={refreshLayout}
+							disabled={isBusy || isBulkBusy}
+						/>
+						<Button
+							type="button"
+							size="sm"
+							variant={selectionMode ? "default" : "outline"}
+							onClick={toggleSelectionMode}
+							disabled={
+								(layout.links.length === 0 && !selectionMode) ||
+								isBusy ||
+								isBulkBusy
+							}
+						>
+							<ListChecks className="h-4 w-4" />
+							{selectionMode ? "Done" : "Select"}
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={handleOpenAddSection}
+							disabled={isBusy || isBulkBusy}
+						>
+							<FolderPlus className="h-4 w-4" />
+							Add section
+						</Button>
+						<Button
+							size="sm"
+							variant="brand"
+							onClick={() => setShowAddLink(true)}
+							disabled={isBusy || isBulkBusy}
+						>
+							<Plus className="h-4 w-4" />
+							Add link
+						</Button>
+					</>
+				}
+			/>
 
-			<div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
-				{LINK_STAT_CARDS.map(({ id, label, Icon, color }) => (
+			<div className="surface mb-4 grid grid-cols-3 overflow-hidden sm:grid-cols-5">
+				{LINK_STAT_CARDS.map(({ id, label, Icon }, index) => (
 					<button
 						type="button"
 						aria-label={`Show ${label.toLowerCase()}`}
@@ -666,29 +668,34 @@ function DashboardPage() {
 						}}
 						key={id}
 						data-testid={`link-stat-${id}`}
-						className="kinetic-panel flex items-center gap-2 p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 hover:bg-accent aria-pressed:bg-accent sm:p-4"
+						className={cn(
+							"group relative flex flex-col items-start gap-3 p-4 text-left transition-colors hover:bg-accent focus-visible:z-10 focus-visible:outline-offset-[-3px] aria-pressed:bg-accent sm:p-5",
+							index > 0 && "border-l border-border",
+							index === 3 && "border-l-0 border-t sm:border-l sm:border-t-0",
+							index === 4 && "border-t sm:border-t-0",
+						)}
 					>
-						<span
-							className={`hidden rounded-lg border border-border p-1.5 sm:inline-flex ${color}`}
-						>
-							<Icon className="h-4 w-4" />
-						</span>
-						<div>
-							<p className="text-xl font-bold leading-none text-foreground">
-								{stats[id]}
-							</p>
-							<p className="mt-1 text-[11px] font-semibold text-muted-foreground sm:text-xs">
+						<span className="flex w-full items-center justify-between gap-2 text-muted-foreground">
+							<span className="text-[12px] font-medium sm:text-[13px]">
 								{label}
-							</p>
-						</div>
+							</span>
+							<Icon className="hidden h-4 w-4 sm:block" aria-hidden="true" />
+						</span>
+						<span className="font-display text-[1.75rem] leading-none font-semibold tabular-nums text-foreground sm:text-[2rem]">
+							{stats[id]}
+						</span>
+						<span
+							aria-hidden="true"
+							className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-signal opacity-0 transition-opacity group-aria-pressed:opacity-100 sm:inset-x-5"
+						/>
 					</button>
 				))}
 			</div>
 
-			<div className="kinetic-panel mb-5 space-y-3 p-3 sm:p-4">
-				<div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-					<div className="relative col-span-2 min-w-0 flex-1">
-						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+			<div className="surface mb-5 space-y-3 p-3 sm:p-4">
+				<div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap">
+					<div className="relative col-span-2 min-w-0 flex-1 lg:min-w-[18rem]">
+						<Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 						<Input
 							ref={searchInputRef}
 							value={linkQuery}
@@ -698,7 +705,7 @@ function DashboardPage() {
 							maxLength={500}
 							aria-label="Search links"
 							disabled={!isHydrated}
-							className="pl-9 pr-11"
+							className="pl-10 pr-11"
 						/>
 						{linkQuery && (
 							<button
@@ -719,7 +726,7 @@ function DashboardPage() {
 						disabled={!isHydrated}
 						value={sortMode}
 						onChange={(e) => setSortMode(e.target.value as LinkSort)}
-						className="h-10 min-w-0 rounded-xl border border-border bg-card px-3 text-base font-semibold"
+						className={toolbarSelectClass}
 					>
 						{Object.entries(LINK_SORTS).map(([value, label]) => (
 							<option key={value} value={value}>
@@ -734,7 +741,7 @@ function DashboardPage() {
 						onChange={(event) =>
 							setStatusFilter(event.target.value as LinkStatusFilter)
 						}
-						className="h-10 min-w-0 rounded-xl border border-border bg-card px-3 text-base font-semibold text-foreground sm:text-sm"
+						className={toolbarSelectClass}
 					>
 						<option value="all">All statuses</option>
 						<option value="live">Live only</option>
@@ -747,7 +754,7 @@ function DashboardPage() {
 						disabled={!isHydrated}
 						value={sectionFilter}
 						onChange={(event) => setSectionFilter(event.target.value)}
-						className="col-span-2 h-10 min-w-0 rounded-xl border border-border bg-card px-3 text-base font-semibold text-foreground sm:text-sm"
+						className={cn(toolbarSelectClass, "col-span-2")}
 					>
 						<option value="all">All sections</option>
 						<option value="unsectioned">Unsectioned</option>
@@ -758,9 +765,9 @@ function DashboardPage() {
 						))}
 					</select>
 				</div>
-				<div className="flex flex-wrap items-center justify-between gap-2">
+				<div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
 					<p
-						className="text-xs font-semibold text-muted-foreground"
+						className="font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground"
 						aria-live="polite"
 					>
 						Showing {filteredLinks.length} of {layout.links.length} links
@@ -773,7 +780,7 @@ function DashboardPage() {
 								size="sm"
 								onClick={clearFilters}
 							>
-								<X className="mr-1 h-3.5 w-3.5" /> Clear filters
+								<X className="h-3.5 w-3.5" /> Clear filters
 							</Button>
 						)}
 						<Button
@@ -783,9 +790,9 @@ function DashboardPage() {
 							onClick={handleCopyProfileUrl}
 						>
 							{copiedProfileUrl ? (
-								<Check className="mr-1 h-3.5 w-3.5" />
+								<Check className="h-3.5 w-3.5" />
 							) : (
-								<Copy className="mr-1 h-3.5 w-3.5" />
+								<Copy className="h-3.5 w-3.5" />
 							)}
 							{copiedProfileUrl ? "Copied" : "Copy page URL"}
 						</Button>
@@ -796,7 +803,7 @@ function DashboardPage() {
 							onClick={() => handleExportLinks()}
 							disabled={!isHydrated || layout.links.length === 0}
 						>
-							<Download className="mr-1 h-3.5 w-3.5" />
+							<Download className="h-3.5 w-3.5" />
 							Export links
 						</Button>
 					</div>
@@ -814,11 +821,22 @@ function DashboardPage() {
 					}}
 				/>
 			)}
-			<details className="kinetic-panel mb-5 p-3 sm:p-4">
-				<summary className="cursor-pointer text-sm font-semibold">
-					More link tools
+			<details className="tool-disclosure group surface mb-5">
+				<summary className="flex min-h-12 cursor-pointer items-center gap-3 px-4 py-3 text-sm font-semibold sm:px-5">
+					<Wrench
+						className="h-4 w-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					<span className="flex-1">More link tools</span>
+					<span className="hidden text-xs font-normal text-muted-foreground sm:inline">
+						Duplicates, calendar, saved views, exports
+					</span>
+					<ChevronDown
+						className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180"
+						aria-hidden="true"
+					/>
 				</summary>
-				<div className="mt-3 flex flex-wrap gap-2">
+				<div className="flex flex-wrap gap-2 border-t border-border px-4 py-4 sm:px-5">
 					<DuplicateReview links={layout.links} onEdit={setEditingLink} />
 					<PublishingCalendar links={layout.links} />
 					<SavedLinkViews
@@ -854,7 +872,7 @@ function DashboardPage() {
 
 			{selectionMode && (
 				<fieldset
-					className="kinetic-panel mb-5 border-border bg-accent p-3 sm:p-4"
+					className="surface mb-5 border-foreground/15 bg-signal-soft/50 p-3 sm:p-4"
 					aria-label="Bulk link actions"
 				>
 					<div className="flex flex-col gap-3">
@@ -933,7 +951,7 @@ function DashboardPage() {
 								onClick={() => void handleBulkAction("publish")}
 								disabled={selectedCount === 0 || isBulkBusy}
 							>
-								<Eye className="mr-1 h-3.5 w-3.5" /> Publish
+								<Eye className="h-3.5 w-3.5" /> Publish
 							</Button>
 							<Button
 								type="button"
@@ -942,7 +960,7 @@ function DashboardPage() {
 								onClick={() => void copySelectedUrls()}
 								disabled={selectedCount === 0 || isBulkBusy}
 							>
-								<Copy className="mr-1 h-3.5 w-3.5" />
+								<Copy className="h-3.5 w-3.5" />
 								Copy selected URLs
 							</Button>
 							<Button
@@ -961,14 +979,14 @@ function DashboardPage() {
 								onClick={() => void handleBulkAction("pause")}
 								disabled={selectedCount === 0 || isBulkBusy}
 							>
-								<EyeOff className="mr-1 h-3.5 w-3.5" /> Pause
+								<EyeOff className="h-3.5 w-3.5" /> Pause
 							</Button>
 							<div className="flex w-full min-w-0 gap-2 sm:w-auto sm:flex-initial">
 								<select
 									aria-label="Bulk move destination"
 									value={bulkMoveSectionId}
 									onChange={(event) => setBulkMoveSectionId(event.target.value)}
-									className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-card px-2 text-xs font-semibold text-foreground sm:w-40"
+									className="h-8 min-w-0 flex-1 rounded-full border border-input/60 bg-card px-3 text-xs font-medium text-foreground sm:w-40"
 								>
 									<option value="unsectioned">Unsectioned</option>
 									{layout.sections.map((section) => (
@@ -984,17 +1002,17 @@ function DashboardPage() {
 									onClick={() => void handleBulkAction("move")}
 									disabled={selectedCount === 0 || isBulkBusy}
 								>
-									<MoveRight className="mr-1 h-3.5 w-3.5" /> Move
+									<MoveRight className="h-3.5 w-3.5" /> Move
 								</Button>
 							</div>
 							<Button
 								type="button"
 								size="sm"
-								className="bg-destructive text-white hover:bg-destructive/90"
+								variant="destructive"
 								onClick={() => setBulkDeleteOpen(true)}
 								disabled={selectedCount === 0 || isBulkBusy}
 							>
-								<Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+								<Trash2 className="h-3.5 w-3.5" /> Delete
 							</Button>
 						</div>
 					</div>
@@ -1002,20 +1020,30 @@ function DashboardPage() {
 			)}
 
 			{layout.links.length === 0 && layout.sections.length === 0 ? (
-				<div className="kinetic-panel py-16 text-center">
-					<p className="text-sm text-muted-foreground">No links yet</p>
+				<div className="surface flex flex-col items-center px-6 py-16 text-center">
+					<span className="flex size-12 items-center justify-center rounded-2xl bg-signal-soft text-signal-strong">
+						<Link2 className="size-5" aria-hidden="true" />
+					</span>
+					<p className="font-display mt-5 text-2xl font-semibold">
+						No links yet
+					</p>
+					<p className="mt-2 max-w-sm text-sm text-muted-foreground">
+						Add the first place you want visitors to go. You can group links
+						into sections and reorder them any time.
+					</p>
 					<Button
 						onClick={() => setShowAddLink(true)}
-						variant="outline"
-						className="mt-4"
+						variant="brand"
+						className="mt-6"
 					>
+						<Plus className="h-4 w-4" />
 						Add your first link
 					</Button>
 				</div>
 			) : filteredLinks.length === 0 && hasActiveFilters ? (
-				<div className="kinetic-panel py-12 text-center">
-					<Search className="mx-auto h-7 w-7 text-muted-foreground" />
-					<p className="mt-3 text-sm font-semibold text-foreground">
+				<div className="surface py-14 text-center">
+					<Search className="mx-auto h-6 w-6 text-muted-foreground" />
+					<p className="mt-3 text-base font-semibold text-foreground">
 						No matching links
 					</p>
 					<p className="mt-1 text-xs text-muted-foreground">
@@ -1129,7 +1157,7 @@ function DashboardPage() {
 						<div className="flex flex-col-reverse gap-2 sm:flex-row">
 							<Button
 								type="button"
-								className="bg-destructive text-white hover:bg-destructive/90"
+								variant="destructive"
 								onClick={() => void handleBulkAction("delete")}
 								disabled={isBulkBusy}
 							>
@@ -1170,7 +1198,7 @@ function DashboardPage() {
 						<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
 							<Button
 								type="button"
-								className="bg-destructive text-white hover:bg-destructive/90"
+								variant="destructive"
 								onClick={handleConfirmDeleteLink}
 								disabled={deleteLink.isPending}
 							>
@@ -1303,7 +1331,7 @@ function DashboardPage() {
 						<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
 							<Button
 								type="button"
-								className="bg-destructive text-white hover:bg-destructive/90"
+								variant="destructive"
 								onClick={handleConfirmDeleteSection}
 								disabled={deleteSection.isPending}
 							>

@@ -109,7 +109,7 @@ test("marketing page remains readable on mobile and respects reduced motion", as
 		page.getByRole("link", { name: "Sign in", exact: true }),
 	).toBeVisible();
 	await expect(page.getByRole("heading", { level: 1 })).toContainText(
-		"One link.",
+		"Everything you make,",
 	);
 	expect(
 		await page.evaluate(
@@ -122,9 +122,9 @@ test("marketing page remains readable on mobile and respects reduced motion", as
 			.evaluate((el) => getComputedStyle(el).animationName),
 	).toBe("none");
 	await page
-		.getByRole("link", { name: "See it in action", exact: true })
+		.getByRole("link", { name: "Watch the tour", exact: true })
 		.click();
-	await expect(page).toHaveURL(/#demo$/);
+	await expect(page).toHaveURL(/#tour$/);
 	await expect(
 		page.getByRole("heading", { name: "See it come together.", exact: true }),
 	).toBeVisible();

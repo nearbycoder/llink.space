@@ -50,35 +50,41 @@ export function DashboardPendingShellContent({
 			: pathname === to;
 
 	return (
-		<div className="dashboard-workspace min-h-screen kinetic-gradient md:flex">
-			<aside className="dashboard-sidebar fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r border-border bg-card/95 md:flex">
-				<div className="border-b border-border p-5">
+		<div className="dashboard-workspace min-h-screen app-canvas md:flex">
+			<aside className="dashboard-sidebar fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+				<div className="px-5 pt-5 pb-4">
 					<SiteBrand size="md" />
 				</div>
-				<nav className="flex-1 space-y-1 p-3" aria-label="Dashboard loading">
+				<div className="px-3">
+					<Skeleton className="h-10 w-full rounded-xl" />
+				</div>
+				<nav
+					className="flex-1 space-y-0.5 px-3 pt-6"
+					aria-label="Dashboard loading"
+				>
+					<p className="eyebrow mb-1.5 px-3">Build</p>
 					{navItems.map(({ label, to, Icon }) => (
 						<div
 							key={label}
-							className={`flex min-h-11 items-center gap-3 rounded-xl border px-3 py-2 text-sm font-medium ${
+							className={`flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium ${
 								isActive(to)
-									? "border-transparent bg-accent text-primary"
-									: "border-transparent text-muted-foreground"
+									? "bg-primary text-primary-foreground"
+									: "text-foreground/75"
 							}`}
 						>
-							<Icon className="h-4 w-4" />
+							<Icon className="size-4" />
 							{label}
 						</div>
 					))}
 				</nav>
-				<div className="space-y-3 border-t border-border p-4">
-					<Skeleton className="h-4 w-32" />
-					<Skeleton className="h-4 w-20" />
+				<div className="p-3">
+					<Skeleton className="h-14 w-full rounded-2xl" />
 				</div>
 			</aside>
 
-			<div className="flex-1 md:ml-60">
-				<header className="border-b border-border bg-card/95 md:hidden">
-					<div className="flex h-16 items-center justify-between px-4">
+			<div className="flex-1 md:ml-64">
+				<header className="border-b border-border bg-background/90 md:hidden">
+					<div className="flex h-14 items-center justify-between px-4">
 						<SiteBrand size="sm" />
 						<Skeleton className="h-3 w-20" />
 					</div>
@@ -103,14 +109,9 @@ function PageHeading({
 	description: string;
 }) {
 	return (
-		<div className="mb-6">
-			<h1
-				className="text-2xl text-foreground"
-				style={{ fontFamily: "'Work Sans', sans-serif" }}
-			>
-				{title}
-			</h1>
-			<p className="mt-1 text-sm text-muted-foreground">{description}</p>
+		<div className="mb-8 border-b border-border pb-7">
+			<h1 className="text-foreground">{title}</h1>
+			<p className="mt-2.5 text-[15px] text-muted-foreground">{description}</p>
 		</div>
 	);
 }
@@ -119,7 +120,7 @@ export function LinksLoadingState() {
 	return (
 		<LoadingRegion
 			label="Loading your links"
-			className="max-w-3xl px-4 py-5 sm:px-6 md:p-8"
+			className="dashboard-page px-4 py-6 sm:px-6 md:px-10"
 		>
 			<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<PageHeading
@@ -135,16 +136,11 @@ export function LinksLoadingState() {
 				{loadingSections.map((section) => (
 					<section key={section.title} className="space-y-2">
 						<div className="flex items-center gap-2 px-1">
-							<span className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-								{section.title}
-							</span>
+							<span className="eyebrow">{section.title}</span>
 							<Skeleton className="h-2 flex-1" />
 						</div>
 						{section.items.map((item) => (
-							<div
-								key={item}
-								className="kinetic-panel flex items-center gap-3 p-4"
-							>
+							<div key={item} className="surface flex items-center gap-3 p-4">
 								<Skeleton className="h-10 w-10 shrink-0 rounded-xl border border-border/20" />
 								<div className="min-w-0 flex-1 space-y-2">
 									<Skeleton className="h-4 w-2/5" />
@@ -166,7 +162,7 @@ export function AnalyticsLoadingState() {
 	return (
 		<LoadingRegion
 			label="Loading your analytics"
-			className="max-w-4xl px-4 py-5 sm:px-6 md:p-8"
+			className="dashboard-page px-4 py-6 sm:px-6 md:px-10"
 		>
 			<PageHeading
 				title="Analytics"
@@ -175,10 +171,10 @@ export function AnalyticsLoadingState() {
 			<div className="space-y-6">
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					{metrics.map((metric, index) => (
-						<div key={metric} className="kinetic-panel bg-card p-5">
+						<div key={metric} className="surface bg-card p-5">
 							<div className="mb-3 flex items-center gap-2">
 								<span
-									className={`inline-flex rounded-md border border-border p-1 ${index % 2 ? "bg-info/10" : "bg-accent"}`}
+									className={`inline-flex rounded-lg p-1.5 ${index % 2 ? "bg-muted" : "bg-signal-soft text-signal-strong"}`}
 								>
 									<MousePointerClick className="h-3.5 w-3.5" />
 								</span>
@@ -188,11 +184,11 @@ export function AnalyticsLoadingState() {
 						</div>
 					))}
 				</div>
-				<div className="kinetic-panel p-5">
+				<div className="surface p-5">
 					<p className="text-sm font-medium text-foreground">
 						Clicks over the last 7 days
 					</p>
-					<div className="mt-5 flex h-52 items-end gap-3 rounded-xl border border-border/15 bg-card p-4">
+					<div className="mt-5 flex h-52 items-end gap-3 rounded-xl bg-muted/60 p-4">
 						{loadingTrend.map(({ day, height }) => (
 							<Skeleton
 								key={day}
@@ -211,20 +207,20 @@ export function ProfileLoadingState() {
 	return (
 		<LoadingRegion
 			label="Loading your profile"
-			className="max-w-2xl px-4 py-5 sm:px-6 md:p-8"
+			className="dashboard-page px-4 py-6 sm:px-6 md:px-10"
 		>
 			<PageHeading
 				title="Profile"
 				description="Your public profile information"
 			/>
-			<div className="kinetic-panel mb-4 flex items-center gap-3 p-6">
+			<div className="surface mb-4 flex items-center gap-3 p-6">
 				<Skeleton className="h-10 w-10 rounded-full border border-border" />
 				<div className="flex-1 space-y-2">
 					<Skeleton className="h-4 w-28" />
 					<Skeleton className="h-3 w-48 max-w-full" />
 				</div>
 			</div>
-			<div className="kinetic-panel space-y-5 p-6">
+			<div className="surface space-y-5 p-6">
 				{["Display name", "Bio", "Avatar", "Page background"].map(
 					(label, index) => (
 						<div key={label} className="space-y-2">

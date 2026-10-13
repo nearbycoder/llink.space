@@ -6,6 +6,7 @@ import {
 	Clock3,
 	Download,
 	Globe2,
+	type LucideIcon,
 	MousePointerClick,
 	RefreshCw,
 	TrendingUp,
@@ -24,6 +25,7 @@ import {
 	YAxis,
 } from "recharts";
 import { AnalyticsLoadingState } from "#/components/dashboard/DashboardLoading";
+import { PageHeader } from "#/components/dashboard/PageHeader";
 import { TrafficInsights } from "#/components/dashboard/TrafficInsights";
 import { Button } from "#/components/ui/button";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -52,14 +54,19 @@ export const Route = createFileRoute("/dashboard/analytics")({
 	component: AnalyticsPage,
 });
 
-const chartColors = [
-	"#FF8A4C",
-	"#8AE1E7",
-	"#F5FF7B",
-	"#F2B7E2",
-	"#7CC6FF",
-	"#7FE8A7",
-];
+// Single-series charts use one hue; the top link gets the signal accent.
+const BAR_FILL = "#16140F";
+const BAR_PEAK_FILL = "#FF5F1F";
+const AXIS_TICK = { fontSize: 11, fill: "#67625A" };
+const GRID_STROKE = "#16140F14";
+const tooltipStyle = {
+	border: "1px solid #E3DED3",
+	borderRadius: "12px",
+	fontSize: "12px",
+	backgroundColor: "#FFFFFF",
+	boxShadow: "0 12px 32px -12px rgb(22 20 15 / 0.35)",
+	padding: "8px 12px",
+};
 
 function truncateLabel(value: string, maxLength = 18) {
 	if (value.length <= maxLength) return value;
@@ -123,7 +130,7 @@ function AnalyticsPage() {
 				...item,
 				label,
 				shortLabel: truncateLabel(label),
-				fill: chartColors[index % chartColors.length],
+				fill: index === 0 ? BAR_PEAK_FILL : BAR_FILL,
 			};
 		}) ?? [];
 
@@ -148,128 +155,97 @@ function AnalyticsPage() {
 	};
 
 	return (
-		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
-			<div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-				<div>
-					<h1
-						className="text-2xl text-foreground"
-						style={{ fontFamily: "'Work Sans', sans-serif" }}
-					>
-						Analytics
-					</h1>
-					<p className="text-sm text-muted-foreground mt-1">
-						Track click volume, traffic sources, and top-performing links
-					</p>
-				</div>
-				<div className="flex flex-wrap gap-2">
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => void refetch()}
-						disabled={isFetching}
-						aria-label="Refresh analytics"
-					>
-						<RefreshCw className="h-4 w-4" aria-hidden="true" />
-					</Button>
-					<fieldset
-						className="inline-flex rounded-xl border border-border bg-card p-1 shadow-sm"
-						aria-label="Analytics date range"
-					>
-						{([7, 30, 90] as const).map((days) => (
-							<button
-								key={days}
-								type="button"
-								onClick={() => void navigate({ search: { days } })}
-								aria-pressed={rangeDays === days}
-								className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${rangeDays === days ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-							>
-								{days}d
-							</button>
-						))}
-					</fieldset>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={handleExportCsv}
-						disabled={!isHydrated || isFetching}
-					>
-						<Download className="mr-1.5 h-4 w-4" />
-						Export CSV
-					</Button>
-				</div>
-			</div>
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:px-10">
+			<PageHeader
+				eyebrow="Grow"
+				title="Analytics"
+				description="Track click volume, traffic sources, and top-performing links"
+				actions={
+					<>
+						<fieldset
+							className="inline-flex rounded-full border border-border bg-card p-0.5"
+							aria-label="Analytics date range"
+						>
+							{([7, 30, 90] as const).map((days) => (
+								<button
+									key={days}
+									type="button"
+									onClick={() => void navigate({ search: { days } })}
+									aria-pressed={rangeDays === days}
+									className={`rounded-full px-3.5 py-1.5 font-mono text-xs font-medium transition-colors ${rangeDays === days ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+								>
+									{days}d
+								</button>
+							))}
+						</fieldset>
+						<Button
+							type="button"
+							variant="outline"
+							size="icon"
+							onClick={() => void refetch()}
+							disabled={isFetching}
+							aria-label="Refresh analytics"
+						>
+							<RefreshCw
+								className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+								aria-hidden="true"
+							/>
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handleExportCsv}
+							disabled={!isHydrated || isFetching}
+						>
+							<Download className="h-4 w-4" />
+							Export CSV
+						</Button>
+					</>
+				}
+			/>
 
 			{isError && (
 				<p
 					role="alert"
-					className="mb-4 rounded-xl border-2 border-destructive bg-card p-3 text-sm text-destructive"
+					className="mb-4 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive"
 				>
 					Analytics could not refresh. Showing the last available data. Use
 					Refresh analytics to try again.
 				</p>
 			)}
 			<div className="space-y-6" aria-busy={isFetching}>
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-					<div className="kinetic-panel p-5 bg-card">
-						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-accent p-1">
-								<MousePointerClick className="h-3.5 w-3.5 text-foreground" />
-							</span>
-							<span className="text-sm text-muted-foreground">
-								Total clicks
-							</span>
-						</div>
-						<p className="text-3xl font-bold text-foreground">{totalClicks}</p>
-					</div>
-
-					<div className="kinetic-panel p-5 bg-card">
-						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-info/10 p-1">
-								<Clock3 className="h-3.5 w-3.5 text-foreground" />
-							</span>
-							<span className="text-sm text-muted-foreground">Last 24h</span>
-						</div>
-						<p className="text-3xl font-bold text-foreground">
-							{summary?.clicksLast24h ?? 0}
-						</p>
-					</div>
-
-					<div className="kinetic-panel p-5 bg-card">
-						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-muted p-1">
-								<TrendingUp className="h-3.5 w-3.5 text-foreground" />
-							</span>
-							<span className="text-sm text-muted-foreground">
-								Last {displayRangeDays} days
-							</span>
-						</div>
-						<p className="text-3xl font-bold text-foreground">{periodClicks}</p>
-						<p className="mt-2 text-xs font-semibold">
-							{comparisonLabel(
-								periodClicks,
-								summary?.previousPeriodClicks ?? 0,
-							)}{" "}
-							vs previous {displayRangeDays} days (
-							{summary?.previousPeriodClicks ?? 0} clicks)
-						</p>
-					</div>
-
-					<div className="kinetic-panel p-5 bg-card">
-						<div className="mb-2 flex items-center gap-2">
-							<span className="inline-flex items-center justify-center rounded-md border border-border bg-info/10 p-1">
-								<Globe2 className="h-3.5 w-3.5 text-foreground" />
-							</span>
-							<span className="text-sm text-muted-foreground">
-								Traffic sources
-							</span>
-						</div>
-						<p className="text-3xl font-bold text-foreground">
-							{summary?.uniqueReferrers ?? 0}
-						</p>
-						<p className="mt-1 text-xs text-muted-foreground">
-							{directClicks} direct ({directPercent}%)
-						</p>
-					</div>
+				<div className="surface grid grid-cols-2 overflow-hidden xl:grid-cols-4">
+					<StatCell
+						icon={MousePointerClick}
+						label="Total clicks"
+						value={totalClicks}
+						detail="All time"
+					/>
+					<StatCell
+						icon={Clock3}
+						label="Last 24h"
+						value={summary?.clicksLast24h ?? 0}
+						detail="Rolling window"
+						className="border-l border-border"
+					/>
+					<StatCell
+						icon={TrendingUp}
+						label={`Last ${displayRangeDays} days`}
+						value={periodClicks}
+						detail={`${comparisonLabel(
+							periodClicks,
+							summary?.previousPeriodClicks ?? 0,
+						)} vs previous ${displayRangeDays} days (${summary?.previousPeriodClicks ?? 0} clicks)`}
+						accent
+						className="border-t border-border xl:border-t-0 xl:border-l"
+					/>
+					<StatCell
+						icon={Globe2}
+						label="Traffic sources"
+						value={summary?.uniqueReferrers ?? 0}
+						detail={`${directClicks} direct (${directPercent}%)`}
+						className="border-l border-t border-border xl:border-t-0"
+					/>
 				</div>
 
 				<TrafficInsights
@@ -279,10 +255,10 @@ function AnalyticsPage() {
 				/>
 
 				{summary && chartData.length > 0 && (
-					<div className="kinetic-panel p-5">
+					<div className="surface p-5 sm:p-6">
 						<div className="mb-4 flex flex-wrap items-end justify-between gap-2">
 							<div>
-								<h2 className="text-sm font-medium text-foreground">
+								<h2 className="text-base font-semibold text-foreground">
 									Clicks by link
 								</h2>
 								<p className="mt-1 text-xs text-muted-foreground">
@@ -290,15 +266,19 @@ function AnalyticsPage() {
 								</p>
 							</div>
 							{topLink ? (
-								<div className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs">
+								<div className="inline-flex items-center gap-2 rounded-full bg-signal-soft px-3 py-1 text-xs text-foreground">
+									<span
+										aria-hidden="true"
+										className="size-2 rounded-full bg-signal"
+									/>
 									Top link:{" "}
 									<span className="font-semibold">{topLink.label}</span> (
 									{topLink.count})
 								</div>
 							) : null}
 						</div>
-						<div className="rounded-xl border border-border/15 bg-card px-2 py-3">
-							<ResponsiveContainer width="100%" height={220}>
+						<div className="-mx-2">
+							<ResponsiveContainer width="100%" height={240}>
 								<BarChart
 									data={chartData}
 									margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
@@ -306,11 +286,11 @@ function AnalyticsPage() {
 									<CartesianGrid
 										vertical={false}
 										strokeDasharray="4 4"
-										stroke="#11110F33"
+										stroke={GRID_STROKE}
 									/>
 									<XAxis
 										dataKey="shortLabel"
-										tick={{ fontSize: 11, fill: "#4B4B45" }}
+										tick={AXIS_TICK}
 										tickLine={false}
 										axisLine={false}
 										minTickGap={12}
@@ -318,23 +298,17 @@ function AnalyticsPage() {
 									/>
 									<YAxis
 										allowDecimals={false}
-										tick={{ fontSize: 11, fill: "#4B4B45" }}
+										tick={AXIS_TICK}
 										tickLine={false}
 										axisLine={false}
 										width={30}
 									/>
 									<Tooltip
-										cursor={{ fill: "#11110F12" }}
-										contentStyle={{
-											border: "2px solid #11110F",
-											borderRadius: "10px",
-											fontSize: "12px",
-											backgroundColor: "#FFFCEF",
-											boxShadow: "4px 4px 0 #11110F",
-										}}
+										cursor={{ fill: "#16140F0A" }}
+										contentStyle={tooltipStyle}
 										labelStyle={{
-											fontWeight: 700,
-											color: "#11110F",
+											fontWeight: 600,
+											color: "#16140F",
 											marginBottom: 4,
 										}}
 										formatter={(value, _name, item) => [
@@ -345,9 +319,8 @@ function AnalyticsPage() {
 									<Bar
 										dataKey="count"
 										isAnimationActive={false}
-										radius={[8, 8, 0, 0]}
-										stroke="#11110F"
-										strokeWidth={1.5}
+										radius={[4, 4, 0, 0]}
+										maxBarSize={36}
 									>
 										{chartData.map((entry) => (
 											<Cell key={entry.linkId} fill={entry.fill} />
@@ -360,17 +333,17 @@ function AnalyticsPage() {
 				)}
 
 				<div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
-					<div className="kinetic-panel p-5 xl:col-span-3">
+					<div className="surface p-5 sm:p-6 xl:col-span-3">
 						<div className="mb-4">
-							<h2 className="text-sm font-medium text-foreground">
+							<h2 className="text-base font-semibold text-foreground">
 								Clicks trend ({displayRangeDays} days)
 							</h2>
 							<p className="mt-1 text-xs text-muted-foreground">
 								Daily click volume in the selected window (UTC)
 							</p>
 						</div>
-						<div className="rounded-xl border border-border/15 bg-card px-2 py-3">
-							<ResponsiveContainer width="100%" height={210}>
+						<div className="-mx-2">
+							<ResponsiveContainer width="100%" height={220}>
 								<AreaChart
 									data={trendData}
 									margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
@@ -384,44 +357,34 @@ function AnalyticsPage() {
 											y2="1"
 										>
 											<stop
-												offset="5%"
-												stopColor="#8AE1E7"
-												stopOpacity={0.85}
+												offset="0%"
+												stopColor="#FF5F1F"
+												stopOpacity={0.28}
 											/>
-											<stop
-												offset="95%"
-												stopColor="#8AE1E7"
-												stopOpacity={0.15}
-											/>
+											<stop offset="100%" stopColor="#FF5F1F" stopOpacity={0} />
 										</linearGradient>
 									</defs>
 									<CartesianGrid
 										vertical={false}
 										strokeDasharray="4 4"
-										stroke="#11110F22"
+										stroke={GRID_STROKE}
 									/>
 									<XAxis
 										dataKey="label"
-										tick={{ fontSize: 11, fill: "#4B4B45" }}
+										tick={AXIS_TICK}
 										tickLine={false}
 										axisLine={false}
 									/>
 									<YAxis
 										allowDecimals={false}
-										tick={{ fontSize: 11, fill: "#4B4B45" }}
+										tick={AXIS_TICK}
 										tickLine={false}
 										axisLine={false}
 										width={30}
 									/>
 									<Tooltip
-										cursor={{ stroke: "#11110F33", strokeWidth: 1 }}
-										contentStyle={{
-											border: "2px solid #11110F",
-											borderRadius: "10px",
-											fontSize: "12px",
-											backgroundColor: "#FFFCEF",
-											boxShadow: "4px 4px 0 #11110F",
-										}}
+										cursor={{ stroke: "#16140F40", strokeWidth: 1 }}
+										contentStyle={tooltipStyle}
 										labelFormatter={(_, payload) =>
 											payload?.[0]?.payload?.fullLabel ?? ""
 										}
@@ -431,8 +394,9 @@ function AnalyticsPage() {
 										type="monotone"
 										dataKey="count"
 										isAnimationActive={false}
-										stroke="#11110F"
+										stroke="#E5531A"
 										strokeWidth={2}
+										activeDot={{ r: 5, stroke: "#FFFFFF", strokeWidth: 2 }}
 										fill={`url(#${trendFillId})`}
 									/>
 								</AreaChart>
@@ -440,36 +404,33 @@ function AnalyticsPage() {
 						</div>
 					</div>
 
-					<div className="kinetic-panel p-5 xl:col-span-2">
+					<div className="surface p-5 sm:p-6 xl:col-span-2">
 						<div className="mb-4">
-							<h2 className="text-sm font-medium text-foreground">
+							<h2 className="text-base font-semibold text-foreground">
 								Referrer sources
 							</h2>
 							<p className="mt-1 text-xs text-muted-foreground">
 								Where click traffic comes from
 							</p>
 						</div>
-						<div className="space-y-2">
+						<div className="space-y-4">
 							{(summary?.topReferrers ?? []).slice(0, 6).map((item) => {
 								const percent = periodClicks
 									? Math.round((item.count / periodClicks) * 100)
 									: 0;
 								return (
-									<div
-										key={item.source}
-										className="rounded-lg border border-border bg-card px-3 py-2"
-									>
-										<div className="mb-1 flex items-center justify-between gap-2">
-											<span className="truncate text-xs font-medium text-foreground">
+									<div key={item.source}>
+										<div className="mb-1.5 flex items-center justify-between gap-2">
+											<span className="truncate text-sm font-medium text-foreground">
 												{item.source}
 											</span>
-											<span className="text-xs text-muted-foreground">
-												{item.count} ({percent}%)
+											<span className="font-mono text-xs tabular-nums text-muted-foreground">
+												{item.count} · {percent}%
 											</span>
 										</div>
-										<div className="h-1.5 rounded-full bg-[#ECE9DF]">
+										<div className="h-1.5 rounded-full bg-muted">
 											<div
-												className="h-full rounded-full bg-warning"
+												className="h-full rounded-full bg-primary"
 												style={{ width: `${Math.max(percent, 3)}%` }}
 											/>
 										</div>
@@ -477,7 +438,7 @@ function AnalyticsPage() {
 								);
 							})}
 							{(summary?.topReferrers ?? []).length === 0 && (
-								<p className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+								<p className="rounded-xl border border-dashed border-border-strong px-3 py-6 text-center text-xs text-muted-foreground">
 									No source data yet
 								</p>
 							)}
@@ -486,11 +447,11 @@ function AnalyticsPage() {
 				</div>
 
 				{summary && summary.recentClicks.length > 0 && (
-					<div className="kinetic-panel p-5">
-						<h2 className="mb-4 text-sm font-medium text-foreground">
+					<div className="surface p-5 sm:p-6">
+						<h2 className="mb-2 text-base font-semibold text-foreground">
 							Recent clicks
 						</h2>
-						<div className="space-y-2">
+						<div className="divide-y divide-border">
 							{summary.recentClicks.slice(0, 12).map((click) => {
 								const source = normalizeReferrer(click.referrer);
 								const linkLabel =
@@ -501,17 +462,17 @@ function AnalyticsPage() {
 								return (
 									<div
 										key={click.id}
-										className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5"
+										className="flex items-start justify-between gap-3 py-3"
 									>
 										<div className="min-w-0">
-											<p className="truncate text-xs font-semibold text-foreground">
+											<p className="truncate text-sm font-medium text-foreground">
 												{linkLabel}
 											</p>
 											<p className="mt-0.5 truncate text-xs text-muted-foreground">
 												Source: {source}
 											</p>
 										</div>
-										<span className="shrink-0 text-xs text-muted-foreground">
+										<span className="shrink-0 font-mono text-[11px] text-muted-foreground">
 											{click.clickedAt
 												? formatDistanceToNow(new Date(click.clickedAt), {
 														addSuffix: true,
@@ -525,20 +486,20 @@ function AnalyticsPage() {
 					</div>
 				)}
 
-				<section className="kinetic-panel mt-6 overflow-hidden bg-card p-5">
-					<h2 className="text-lg font-bold">What changed</h2>
-					<p className="mt-1 text-xs">
+				<section className="surface overflow-hidden bg-card p-5 sm:p-6">
+					<h2 className="font-display text-xl font-semibold">What changed</h2>
+					<p className="mt-1 text-xs text-muted-foreground">
 						Compared with {summary?.previousRangeStart} –{" "}
 						{summary?.previousRangeEnd}. Today is still in progress.
 					</p>
 					<div className="mt-4 overflow-x-auto">
-						<table className="w-full text-left text-sm">
+						<table className="w-full text-left text-sm tabular-nums">
 							<thead>
-								<tr>
-									<th className="py-2">Link</th>
-									<th>Now</th>
-									<th>Previous</th>
-									<th>Change</th>
+								<tr className="eyebrow">
+									<th className="py-2 font-medium">Link</th>
+									<th className="font-medium">Now</th>
+									<th className="font-medium">Previous</th>
+									<th className="font-medium">Change</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -556,11 +517,13 @@ function AnalyticsPage() {
 						</table>
 					</div>
 					{!summary?.clicksByLink.length && (
-						<p className="mt-3 text-sm">Click comparisons will appear here.</p>
+						<p className="mt-3 text-sm text-muted-foreground">
+							Click comparisons will appear here.
+						</p>
 					)}
 				</section>
 				{periodClicks === 0 && (
-					<div className="kinetic-panel py-16 text-center">
+					<div className="surface py-16 text-center">
 						<Activity className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
 						<p className="text-sm text-muted-foreground">
 							No clicks in the last {displayRangeDays} days
@@ -571,6 +534,38 @@ function AnalyticsPage() {
 					</div>
 				)}
 			</div>
+		</div>
+	);
+}
+
+function StatCell({
+	icon: Icon,
+	label,
+	value,
+	detail,
+	accent = false,
+	className,
+}: {
+	icon: LucideIcon;
+	label: string;
+	value: number;
+	detail: string;
+	accent?: boolean;
+	className?: string;
+}) {
+	return (
+		<div className={`flex flex-col gap-3 p-4 sm:p-5 ${className ?? ""}`}>
+			<span className="flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
+				{label}
+				<Icon
+					className={`h-4 w-4 ${accent ? "text-signal-strong" : ""}`}
+					aria-hidden="true"
+				/>
+			</span>
+			<p className="font-display text-[2rem] leading-none font-semibold tabular-nums text-foreground sm:text-[2.5rem]">
+				{value}
+			</p>
+			<p className="text-xs leading-snug text-muted-foreground">{detail}</p>
 		</div>
 	);
 }

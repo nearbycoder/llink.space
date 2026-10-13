@@ -1,88 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ImageResponse } from "@vercel/og";
-import { and, asc, eq, sql } from "drizzle-orm";
-import { Link2, type LucideIcon } from "lucide-react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { and, asc, count, eq, sql } from "drizzle-orm";
+import { Link2 } from "lucide-react";
 import { LINK_ICON_OPTIONS_BY_KEY } from "#/components/links/icon-options";
 import { db } from "#/db";
 import { linkSections, links, profiles } from "#/db/schema";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { publishedLinkFilter } from "#/lib/link-publishing-server";
+import {
+	clampText,
+	loadOgFonts,
+	lucideDataUri,
+	OG_CACHE_HEADERS,
+	OG_HEIGHT,
+	OG_INK,
+	OG_MUTED,
+	OG_PAPER,
+	OG_SIGNAL,
+	OG_SIGNAL_STRONG,
+	OG_WIDTH,
+	OgBrandMark,
+	OgWordmark,
+} from "#/lib/og-brand.server";
 import { storedPreviewImage } from "#/lib/og-image";
+import { getTheme } from "#/lib/themes";
+import { DEFAULT_ICON_BG_COLOR, readableTextColor } from "#/lib/utils";
 
-const WIDTH = 1200;
-const HEIGHT = 630;
 const MAX_LINKS = 4;
-const lucideDataUriCache = new Map<string, string>();
-
-function getLucideIconDataUri(
-	Icon: LucideIcon,
-	cacheKey: string,
-	size: number,
-	color: string,
-) {
-	const key = `${cacheKey}-${size}-${color}`;
-	const cached = lucideDataUriCache.get(key);
-	if (cached) return cached;
-
-	const svg = renderToStaticMarkup(
-		<Icon size={size} color={color} strokeWidth={2.2} />,
-	);
-	const uri = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-	lucideDataUriCache.set(key, uri);
-	return uri;
-}
-
-function LlinkBadge({ size = 34 }: { size?: number }) {
-	const glyphSize = Math.round(size * 0.58);
-	const glyphUrl = getLucideIconDataUri(
-		Link2,
-		"brand-link2",
-		glyphSize,
-		"#F5F3CF",
-	);
-
-	return (
-		<div
-			style={{
-				display: "flex",
-				width: size,
-				height: size,
-				borderRadius: Math.round(size * 0.28),
-				padding: 2,
-				background:
-					"linear-gradient(128deg, #f5ff7b 0%, #8ae1e7 34%, #f2b7e2 68%, #ff8a4c 100%)",
-				boxShadow: "0 2px 0 rgba(17,17,15,0.3)",
-			}}
-		>
-			<div
-				style={{
-					display: "flex",
-					width: "100%",
-					height: "100%",
-					alignItems: "center",
-					justifyContent: "center",
-					borderRadius: Math.round(size * 0.24),
-					background: "#11110F",
-				}}
-			>
-				<img
-					src={glyphUrl}
-					alt=""
-					aria-hidden="true"
-					width={glyphSize}
-					height={glyphSize}
-					style={{ width: glyphSize, height: glyphSize }}
-				/>
-			</div>
-		</div>
-	);
-}
-
-function clampText(value: string, maxLength: number) {
-	if (value.length <= maxLength) return value;
-	return `${value.slice(0, maxLength - 1)}…`;
-}
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 function hostnameFromUrl(url: string) {
 	try {
@@ -92,149 +37,111 @@ function hostnameFromUrl(url: string) {
 	}
 }
 
-function paletteFor(username: string) {
-	let hash = 0;
-	for (let i = 0; i < username.length; i += 1) {
-		hash = (hash << 5) - hash + username.charCodeAt(i);
-		hash |= 0;
-	}
-
-	const palettes = [
-		{
-			page: "linear-gradient(128deg, #93d5d8 0%, #bdeccf 42%, #d4c8f2 100%)",
-			card: "#F4F2E8",
-			accent: "#F5FF7B",
-			muted: "#54534C",
-			text: "#11110F",
-		},
-		{
-			page: "linear-gradient(128deg, #ffd2a8 0%, #f9ddb7 38%, #d2e9f8 100%)",
-			card: "#F4F2E8",
-			accent: "#FFD9CF",
-			muted: "#54534C",
-			text: "#11110F",
-		},
-		{
-			page: "linear-gradient(128deg, #a9e0d9 0%, #8fd1e7 44%, #d8c3ec 100%)",
-			card: "#F4F2E8",
-			accent: "#8AE1E7",
-			muted: "#54534C",
-			text: "#11110F",
-		},
-	];
-
-	return palettes[Math.abs(hash) % palettes.length];
-}
-
 function avatarLetters(name: string) {
-	const cleaned = name.replace(/[^A-Za-z0-9 ]/g, "").trim();
+	const cleaned = name.replace(/[^\p{L}\p{N} ]/gu, "").trim();
 	if (!cleaned) return "L";
 	const parts = cleaned.split(/\s+/);
 	if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
 	return `${parts[0].slice(0, 1)}${parts[1].slice(0, 1)}`.toUpperCase();
 }
 
-function renderUnavailableImage(username: string) {
-	const palette = paletteFor(username);
+/** Satori needs simple values: flat theme colors or the default paper glow. */
+function ogPalette(themeId: string | null, accentColor: string | null) {
+	const theme = getTheme(themeId ?? "default");
+	const accent =
+		accentColor && HEX_COLOR.test(accentColor) ? accentColor : theme.accent;
+	return {
+		page: HEX_COLOR.test(theme.background) ? theme.background : OG_PAPER,
+		glow: !HEX_COLOR.test(theme.background),
+		card: theme.cardBg,
+		text: theme.text,
+		muted: theme.mutedText,
+		line: `${theme.cardBorder}26`,
+		accent: HEX_COLOR.test(accent) ? accent : OG_SIGNAL,
+	};
+}
 
+const PAPER_WASH =
+	"linear-gradient(135deg, #FFDCC8 0%, #F5F3EE 42%, #F5F3EE 62%, #DEE4FA 100%)";
+
+async function renderUnavailableImage(username: string) {
+	const fonts = await loadOgFonts();
+	const handle = clampText(username, 24);
 	return new ImageResponse(
 		<div
 			style={{
 				display: "flex",
+				position: "relative",
 				width: "100%",
 				height: "100%",
-				justifyContent: "center",
-				alignItems: "center",
-				background: palette.page,
-				fontFamily: "Arial, sans-serif",
+				background: PAPER_WASH,
+				fontFamily: "Geist",
+				color: OG_INK,
+				overflow: "hidden",
 			}}
 		>
 			<div
 				style={{
 					display: "flex",
-					flexDirection: "row",
-					alignItems: "center",
+					flexDirection: "column",
 					justifyContent: "space-between",
-					width: 1080,
-					height: 520,
-					padding: "36px 42px",
-					borderRadius: 44,
-					border: "4px solid #11110F",
-					background: palette.card,
-					boxShadow: "12px 12px 0 #11110F",
-					transform: "rotate(-0.55deg)",
-					color: palette.text,
+					width: "100%",
+					padding: "64px 72px 60px",
 				}}
 			>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: 18,
-						width: 640,
-					}}
-				>
-					<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-						<LlinkBadge size={46} />
-						<div
-							style={{
-								fontSize: 38,
-								fontWeight: 900,
-								fontFamily: "'Arial Black', Arial, sans-serif",
-							}}
-						>
-							llink.space
-						</div>
+				<OgWordmark size={44} />
+				<div style={{ display: "flex", flexDirection: "column" }}>
+					<div
+						style={{
+							fontFamily: "Geist Mono",
+							fontSize: 26,
+							color: OG_MUTED,
+						}}
+					>
+						{`llink.space/u/${handle}`}
 					</div>
 					<div
 						style={{
-							fontSize: 66,
+							marginTop: 18,
+							fontFamily: "Fraunces",
+							fontWeight: 600,
+							fontSize: 84,
 							lineHeight: 1,
-							fontWeight: 900,
-							fontFamily: "'Arial Black', Arial, sans-serif",
+							letterSpacing: "-0.045em",
 						}}
 					>
-						Profile missing
+						This page isn’t here
 					</div>
 					<div
-						style={{ fontSize: 34, color: palette.muted, lineHeight: 1.2 }}
-					>{`/u/${username} is unavailable`}</div>
+						style={{
+							fontFamily: "Fraunces",
+							fontStyle: "italic",
+							fontWeight: 500,
+							fontSize: 84,
+							lineHeight: 1.1,
+							letterSpacing: "-0.045em",
+							color: OG_SIGNAL_STRONG,
+						}}
+					>
+						yet.
+					</div>
 				</div>
-
-				<div
-					style={{
-						display: "flex",
-						width: 260,
-						height: 260,
-						borderRadius: 9999,
-						border: "4px solid #11110F",
-						alignItems: "center",
-						justifyContent: "center",
-						background:
-							"linear-gradient(135deg, #F5FF7B 0%, #8AE1E7 45%, #F2B7E2 100%)",
-						boxShadow: "8px 8px 0 #11110F",
-						fontSize: 116,
-						fontWeight: 800,
-					}}
-				>
-					?
+				<div style={{ display: "flex", fontSize: 26, color: OG_MUTED }}>
+					Make a page for everything you share on llink.space
 				</div>
 			</div>
 		</div>,
 		{
-			width: WIDTH,
-			height: HEIGHT,
-			headers: {
-				"Cache-Control": "public, max-age=300, s-maxage=3600",
-			},
+			width: OG_WIDTH,
+			height: OG_HEIGHT,
+			fonts,
+			headers: OG_CACHE_HEADERS,
 		},
 	);
 }
 
 async function handler({ params }: { params: { username: string } }) {
 	const username = params.username.toLowerCase();
-	const palette = paletteFor(username);
-
 	try {
 		const [profile] = await db
 			.select({
@@ -243,39 +150,46 @@ async function handler({ params }: { params: { username: string } }) {
 				displayName: profiles.displayName,
 				bio: profiles.bio,
 				avatarUrl: profiles.avatarUrl,
+				theme: profiles.theme,
+				accentColor: profiles.accentColor,
 			})
 			.from(profiles)
 			.where(eq(profiles.username, username))
 			.limit(1);
-
 		if (!profile) {
 			return renderUnavailableImage(params.username);
 		}
-
-		const publicLinks = await db
-			.select({
-				id: links.id,
-				title: links.title,
-				description: links.description,
-				url: links.url,
-				iconUrl: links.iconUrl,
-				iconBgColor: links.iconBgColor,
-			})
-			.from(links)
-			.leftJoin(linkSections, eq(links.sectionId, linkSections.id))
-			.where(and(eq(links.profileId, profile.id), publishedLinkFilter()))
-			.orderBy(
-				sql`coalesce(${linkSections.sortOrder}, -1)`,
-				asc(links.sortOrder),
-				asc(links.createdAt),
-				asc(links.id),
-			)
-			.limit(MAX_LINKS);
-
+		const [publicLinks, [linkTotal], fonts] = await Promise.all([
+			db
+				.select({
+					id: links.id,
+					title: links.title,
+					description: links.description,
+					url: links.url,
+					iconUrl: links.iconUrl,
+					iconBgColor: links.iconBgColor,
+				})
+				.from(links)
+				.leftJoin(linkSections, eq(links.sectionId, linkSections.id))
+				.where(and(eq(links.profileId, profile.id), publishedLinkFilter()))
+				.orderBy(
+					sql`coalesce(${linkSections.sortOrder}, -1)`,
+					asc(links.sortOrder),
+					asc(links.createdAt),
+					asc(links.id),
+				)
+				.limit(MAX_LINKS),
+			db
+				.select({ value: count() })
+				.from(links)
+				.where(and(eq(links.profileId, profile.id), publishedLinkFilter())),
+			loadOgFonts(),
+		]);
+		const palette = ogPalette(profile.theme, profile.accentColor);
 		const displayName = profile.displayName?.trim() || `@${profile.username}`;
-		const subtitle = profile.bio?.trim()
-			? clampText(profile.bio.trim(), 92)
-			: "This is my personal bio page";
+		const bio = profile.bio?.trim()
+			? clampText(profile.bio.trim(), 120)
+			: "Links, updates and everything in between.";
 		const [avatarUrl, ...iconImages] = await Promise.all([
 			storedPreviewImage(profile.avatarUrl),
 			...publicLinks.map((link) => storedPreviewImage(link.iconUrl)),
@@ -283,321 +197,257 @@ async function handler({ params }: { params: { username: string } }) {
 		const iconImagesById = new Map(
 			publicLinks.map((link, index) => [link.id, iconImages[index]]),
 		);
+		const remaining = Math.max(0, (linkTotal?.value ?? 0) - publicLinks.length);
+		const nameSize = displayName.length > 18 ? 58 : 72;
 
 		return new ImageResponse(
 			<div
 				style={{
 					display: "flex",
+					position: "relative",
 					width: "100%",
 					height: "100%",
-					justifyContent: "center",
-					alignItems: "center",
-					background: palette.page,
-					fontFamily: "Arial, sans-serif",
+					background: palette.glow ? PAPER_WASH : palette.page,
+					fontFamily: "Geist",
+					color: palette.text,
+					overflow: "hidden",
 				}}
 			>
 				<div
 					style={{
 						display: "flex",
-						flexDirection: "row",
-						alignItems: "stretch",
-						gap: 26,
-						width: 1080,
-						height: 520,
-						padding: "28px 32px",
-						borderRadius: 44,
-						border: "4px solid #11110F",
-						background: palette.card,
-						boxShadow: "12px 12px 0 #11110F",
-						transform: "rotate(-0.55deg)",
-						color: palette.text,
+						flexDirection: "column",
+						justifyContent: "space-between",
+						width: 610,
+						padding: "60px 0 56px 72px",
 					}}
 				>
 					<div
 						style={{
 							display: "flex",
-							flexDirection: "column",
-							alignItems: "flex-start",
-							justifyContent: "space-between",
-							width: 350,
-							padding: "4px 4px 8px",
-						}}
-					>
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: 12,
-								width: "100%",
-							}}
-						>
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "row",
-									alignItems: "center",
-									gap: 12,
-									width: "100%",
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										width: 108,
-										height: 108,
-										borderRadius: 9999,
-										border: "4px solid #11110F",
-										alignItems: "center",
-										justifyContent: "center",
-										background:
-											"linear-gradient(135deg, #FFF5CC 0%, #FFD9CF 50%, #D8F6FB 100%)",
-										boxShadow: "6px 6px 0 #11110F",
-										overflow: "hidden",
-										fontSize: 42,
-										fontWeight: 800,
-										flexShrink: 0,
-									}}
-								>
-									{avatarUrl ? (
-										<img
-											src={avatarUrl}
-											alt={`${displayName} avatar`}
-											width={108}
-											height={108}
-											style={{
-												width: "100%",
-												height: "100%",
-												objectFit: "cover",
-											}}
-										/>
-									) : (
-										avatarLetters(displayName)
-									)}
-								</div>
-								<div
-									style={{
-										fontSize: 48,
-										lineHeight: 1.02,
-										fontWeight: 900,
-										fontFamily: "'Arial Black', Arial, sans-serif",
-										textAlign: "left",
-									}}
-								>
-									{clampText(displayName, 18)}
-								</div>
-							</div>
-							<div
-								style={{
-									width: "100%",
-									fontSize: 22,
-									color: palette.muted,
-									textAlign: "left",
-									lineHeight: 1.22,
-								}}
-							>
-								{subtitle}
-							</div>
-						</div>
-
-						<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-							<div style={{ fontSize: 23, color: palette.muted }}>
-								Powered by
-							</div>
-							<LlinkBadge size={24} />
-							<div
-								style={{
-									fontSize: 30,
-									fontWeight: 900,
-									fontFamily: "'Arial Black', Arial, sans-serif",
-								}}
-							>
-								llink.space
-							</div>
-						</div>
-					</div>
-
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							justifyContent: "space-between",
-							flex: 1,
-							padding: "2px 2px 6px",
+							alignItems: "center",
+							justifyContent: "center",
+							width: 132,
+							height: 132,
+							borderRadius: 999,
+							padding: 5,
+							background: palette.accent,
 						}}
 					>
 						<div
 							style={{
 								display: "flex",
 								alignItems: "center",
-								justifyContent: "flex-end",
+								justifyContent: "center",
+								width: "100%",
+								height: "100%",
+								borderRadius: 999,
+								border: `5px solid ${palette.page}`,
+								overflow: "hidden",
+								background: palette.accent,
+								color: readableTextColor(palette.accent),
+								fontFamily: "Fraunces",
+								fontWeight: 600,
+								fontSize: 52,
 							}}
 						>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									height: 48,
-									padding: "0 18px",
-									borderRadius: 9999,
-									border: "3px solid #11110F",
-									background: palette.accent,
-									fontSize: 24,
-									fontWeight: 800,
-								}}
-							>
-								{`@${profile.username}`}
-							</div>
-						</div>
-
-						<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-							{publicLinks.length > 0 ? (
-								publicLinks.map((link) => {
-									const iconValue = link.iconUrl?.trim() ?? "";
-									const iconKey =
-										iconValue && isLinkIconKey(iconValue) ? iconValue : null;
-									const iconOption = iconKey
-										? LINK_ICON_OPTIONS_BY_KEY[iconKey]
-										: undefined;
-									const iconImageUrl = !iconKey
-										? iconImagesById.get(link.id)
-										: null;
-									const iconGlyphUrl = iconOption
-										? getLucideIconDataUri(
-												iconOption.Icon,
-												`link-${iconOption.key}`,
-												28,
-												"#11110F",
-											)
-										: null;
-									const fallbackGlyphUrl = getLucideIconDataUri(
-										Link2,
-										"link-fallback",
-										28,
-										"#11110F",
-									);
-									const metaText = clampText(
-										link.description?.trim() || hostnameFromUrl(link.url),
-										36,
-									);
-
-									return (
-										<div
-											key={link.id}
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: 14,
-												height: 88,
-												padding: "0 16px",
-												borderRadius: 24,
-												border: "4px solid #11110F",
-												background: "#FFFFFF",
-												boxShadow: "6px 6px 0 #11110F",
-											}}
-										>
-											<div
-												style={{
-													display: "flex",
-													width: 54,
-													height: 54,
-													borderRadius: 16,
-													border: "4px solid #11110F",
-													background: link.iconBgColor ?? palette.accent,
-													alignItems: "center",
-													justifyContent: "center",
-													overflow: "hidden",
-												}}
-											>
-												{iconGlyphUrl ? (
-													<img
-														src={iconGlyphUrl}
-														alt=""
-														aria-hidden="true"
-														width={28}
-														height={28}
-														style={{ width: 28, height: 28 }}
-													/>
-												) : iconImageUrl ? (
-													<img
-														src={iconImageUrl}
-														alt=""
-														aria-hidden="true"
-														width={54}
-														height={54}
-														style={{
-															width: "100%",
-															height: "100%",
-															objectFit: "cover",
-														}}
-													/>
-												) : (
-													<img
-														src={fallbackGlyphUrl}
-														alt=""
-														aria-hidden="true"
-														width={28}
-														height={28}
-														style={{ width: 28, height: 28 }}
-													/>
-												)}
-											</div>
-											<div
-												style={{
-													display: "flex",
-													flexDirection: "column",
-													gap: 2,
-												}}
-											>
-												<div
-													style={{
-														fontSize: 38,
-														lineHeight: 1,
-														fontWeight: 700,
-													}}
-												>
-													{clampText(link.title, 21)}
-												</div>
-												<div
-													style={{
-														fontSize: 22,
-														color: palette.muted,
-														lineHeight: 1.02,
-													}}
-												>
-													{metaText}
-												</div>
-											</div>
-										</div>
-									);
-								})
+							{avatarUrl ? (
+								<img
+									src={avatarUrl}
+									alt=""
+									width={112}
+									height={112}
+									style={{ width: "100%", height: "100%", objectFit: "cover" }}
+								/>
 							) : (
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										height: 88,
-										borderRadius: 24,
-										border: "4px solid #11110F",
-										background: "#FFFFFF",
-										boxShadow: "6px 6px 0 #11110F",
-										fontSize: 30,
-										color: palette.muted,
-									}}
-								>
-									No links yet
-								</div>
+								avatarLetters(displayName)
 							)}
 						</div>
 					</div>
+					<div style={{ display: "flex", flexDirection: "column" }}>
+						<div
+							style={{
+								fontFamily: "Fraunces",
+								fontWeight: 600,
+								fontSize: nameSize,
+								lineHeight: 1.02,
+								letterSpacing: "-0.04em",
+							}}
+						>
+							{clampText(displayName, 30)}
+						</div>
+						<div
+							style={{
+								marginTop: 10,
+								fontFamily: "Geist Mono",
+								fontSize: 24,
+								color: palette.muted,
+							}}
+						>
+							{`@${clampText(profile.username, 28)}`}
+						</div>
+						<div
+							style={{
+								marginTop: 22,
+								fontSize: 27,
+								lineHeight: 1.38,
+								color: palette.muted,
+								maxWidth: 500,
+							}}
+						>
+							{bio}
+						</div>
+					</div>
+					<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+						<OgBrandMark size={34} />
+						<div
+							style={{
+								fontFamily: "Geist Mono",
+								fontSize: 21,
+								color: palette.muted,
+							}}
+						>
+							{`llink.space/u/${clampText(profile.username, 24)}`}
+						</div>
+					</div>
+				</div>
+
+				<div
+					style={{
+						display: "flex",
+						position: "absolute",
+						right: 64,
+						top: 56,
+						bottom: 56,
+						width: 470,
+						flexDirection: "column",
+						justifyContent: "center",
+						gap: 14,
+						padding: "28px 26px",
+						borderRadius: 36,
+						background: palette.card,
+						border: `1.5px solid ${palette.line}`,
+						boxShadow: "0 40px 80px -36px rgba(22,20,15,0.45)",
+					}}
+				>
+					{publicLinks.length > 0 ? (
+						publicLinks.map((link) => {
+							const iconValue = link.iconUrl?.trim() ?? "";
+							const iconKey =
+								iconValue && isLinkIconKey(iconValue) ? iconValue : null;
+							const iconOption = iconKey
+								? LINK_ICON_OPTIONS_BY_KEY[iconKey]
+								: undefined;
+							const iconImageUrl = !iconKey
+								? iconImagesById.get(link.id)
+								: null;
+							const tile =
+								link.iconBgColor && HEX_COLOR.test(link.iconBgColor)
+									? link.iconBgColor
+									: DEFAULT_ICON_BG_COLOR;
+							const glyphColor = readableTextColor(tile);
+							const glyph = iconOption
+								? lucideDataUri(
+										iconOption.Icon,
+										`link-${iconOption.key}`,
+										26,
+										glyphColor,
+									)
+								: lucideDataUri(Link2, "link-fallback", 26, glyphColor);
+							return (
+								<div
+									key={link.id}
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: 16,
+										padding: "14px 16px",
+										borderRadius: 22,
+										border: `1.5px solid ${palette.line}`,
+									}}
+								>
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											width: 54,
+											height: 54,
+											flexShrink: 0,
+											borderRadius: 16,
+											background: tile,
+											overflow: "hidden",
+										}}
+									>
+										<img
+											src={iconImageUrl ?? glyph}
+											alt=""
+											width={iconImageUrl ? 54 : 26}
+											height={iconImageUrl ? 54 : 26}
+											style={
+												iconImageUrl
+													? { width: 54, height: 54, objectFit: "cover" }
+													: { width: 26, height: 26 }
+											}
+										/>
+									</div>
+									<div
+										style={{
+											display: "flex",
+											flexDirection: "column",
+											minWidth: 0,
+										}}
+									>
+										<div style={{ fontSize: 25, fontWeight: 600 }}>
+											{clampText(link.title, 26)}
+										</div>
+										<div style={{ fontSize: 18, color: palette.muted }}>
+											{clampText(
+												link.description?.trim() || hostnameFromUrl(link.url),
+												38,
+											)}
+										</div>
+									</div>
+								</div>
+							);
+						})
+					) : (
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								height: 120,
+								borderRadius: 22,
+								border: `1.5px dashed ${palette.line}`,
+								fontSize: 24,
+								color: palette.muted,
+							}}
+						>
+							New links coming soon
+						</div>
+					)}
+					{remaining > 0 && (
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "center",
+								marginTop: 2,
+								fontFamily: "Geist Mono",
+								fontSize: 18,
+								color: palette.muted,
+							}}
+						>
+							{`+ ${remaining} more link${remaining === 1 ? "" : "s"}`}
+						</div>
+					)}
 				</div>
 			</div>,
 			{
-				width: WIDTH,
-				height: HEIGHT,
-				headers: {
-					"Cache-Control": "public, max-age=300, s-maxage=3600",
-				},
+				width: OG_WIDTH,
+				height: OG_HEIGHT,
+				fonts,
+				headers: OG_CACHE_HEADERS,
 			},
 		);
 	} catch (error) {

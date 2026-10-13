@@ -1,45 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ImageResponse } from "@vercel/og";
-import { BarChart3, Link2, type LucideIcon, Sparkles } from "lucide-react";
-import { renderToStaticMarkup } from "react-dom/server";
+import {
+	loadOgFonts,
+	OG_CACHE_HEADERS,
+	OG_HEIGHT,
+	OG_INK,
+	OG_LINE,
+	OG_MUTED,
+	OG_PAPER,
+	OG_SIGNAL,
+	OG_SIGNAL_STRONG,
+	OG_WIDTH,
+	OgWordmark,
+} from "#/lib/og-brand.server";
 
-const WIDTH = 1200;
-const HEIGHT = 630;
-const lucideDataUriCache = new Map<string, string>();
+const sampleLinks = [
+	{
+		title: "The spring collection",
+		meta: "Objects made slowly",
+		tone: "#FFD9C7",
+	},
+	{
+		title: "Notes from the studio",
+		meta: "Process and work in progress",
+		tone: "#C7D2FF",
+	},
+	{ title: "Workshop tickets", meta: "Saturdays · 10am", tone: "#C9E4C5" },
+];
 
-function getLucideIconDataUri(
-	Icon: LucideIcon,
-	cacheKey: string,
-	size: number,
-	color: string,
-) {
-	const key = `${cacheKey}-${size}-${color}`;
-	const cached = lucideDataUriCache.get(key);
-	if (cached) return cached;
-
-	const svg = renderToStaticMarkup(
-		<Icon size={size} color={color} strokeWidth={2.2} />,
-	);
-	const uri = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-	lucideDataUriCache.set(key, uri);
-	return uri;
-}
+const bars = [34, 48, 40, 58, 52, 84, 66];
 
 async function handler() {
-	const brandGlyph = getLucideIconDataUri(Link2, "brand-link", 36, "#F5F3CF");
-	const sparklesGlyph = getLucideIconDataUri(
-		Sparkles,
-		"hero-sparkles",
-		20,
-		"#11110F",
-	);
-	const chartGlyph = getLucideIconDataUri(
-		BarChart3,
-		"hero-chart",
-		20,
-		"#11110F",
-	);
-
+	const fonts = await loadOgFonts();
 	return new ImageResponse(
 		<div
 			style={{
@@ -47,302 +39,285 @@ async function handler() {
 				position: "relative",
 				width: "100%",
 				height: "100%",
-				alignItems: "center",
-				justifyContent: "center",
-				background:
-					"linear-gradient(128deg, #F5FF7B 0%, #8AE1E7 34%, #F2B7E2 68%, #FF8A4C 100%)",
-				fontFamily: "Arial, sans-serif",
+				background: OG_PAPER,
+				fontFamily: "Geist",
+				color: OG_INK,
+				overflow: "hidden",
 			}}
 		>
 			<div
 				style={{
 					display: "flex",
 					position: "absolute",
-					top: -120,
-					left: -90,
-					width: 320,
-					height: 320,
+					right: -120,
+					top: -160,
+					width: 760,
+					height: 760,
 					borderRadius: 9999,
-					background: "rgba(17,17,15,0.14)",
+					background:
+						"radial-gradient(circle at 50% 50%, #FFC4A3 0%, rgba(255,196,163,0) 65%)",
 				}}
 			/>
 			<div
 				style={{
 					display: "flex",
 					position: "absolute",
-					bottom: -100,
-					right: -40,
-					width: 260,
-					height: 260,
+					right: -60,
+					bottom: -320,
+					width: 680,
+					height: 680,
 					borderRadius: 9999,
-					background: "rgba(255,252,239,0.4)",
+					background:
+						"radial-gradient(circle at 50% 50%, #C7D2FF 0%, rgba(199,210,255,0) 65%)",
 				}}
 			/>
 
 			<div
 				style={{
 					display: "flex",
-					width: 1080,
-					height: 520,
-					padding: "36px 38px",
-					gap: 28,
-					borderRadius: 44,
-					border: "4px solid #11110F",
-					background: "#FFFCEF",
-					boxShadow: "12px 12px 0 #11110F",
-					transform: "rotate(-0.4deg)",
+					flexDirection: "column",
+					justifyContent: "space-between",
+					width: 660,
+					padding: "64px 0 60px 72px",
+				}}
+			>
+				<OgWordmark size={44} />
+				<div style={{ display: "flex", flexDirection: "column" }}>
+					<div
+						style={{
+							fontFamily: "Fraunces",
+							fontWeight: 600,
+							fontSize: 74,
+							lineHeight: 1,
+							letterSpacing: "-0.045em",
+						}}
+					>
+						Everything you make,
+					</div>
+					<div
+						style={{
+							fontFamily: "Fraunces",
+							fontStyle: "italic",
+							fontWeight: 500,
+							fontSize: 74,
+							lineHeight: 1.08,
+							letterSpacing: "-0.045em",
+							color: OG_SIGNAL_STRONG,
+						}}
+					>
+						one link away.
+					</div>
+					<div
+						style={{
+							marginTop: 24,
+							fontSize: 25,
+							lineHeight: 1.4,
+							color: OG_MUTED,
+							maxWidth: 520,
+						}}
+					>
+						A link-in-bio page that looks like you, with tools to organize it
+						and insights that show what lands.
+					</div>
+				</div>
+				<div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							flexShrink: 0,
+							height: 56,
+							padding: "0 26px",
+							borderRadius: 999,
+							background: OG_SIGNAL,
+							fontSize: 22,
+							fontWeight: 600,
+							whiteSpace: "nowrap",
+						}}
+					>
+						Create your page
+					</div>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							height: 56,
+							padding: "0 22px",
+							borderRadius: 999,
+							border: `1.5px solid ${OG_LINE}`,
+							background: "#FFFFFF",
+							fontFamily: "Geist Mono",
+							fontSize: 20,
+							color: OG_MUTED,
+							whiteSpace: "nowrap",
+						}}
+					>
+						llink.space/u/
+						<span style={{ color: OG_INK }}>yourname</span>
+					</div>
+				</div>
+			</div>
+
+			<div
+				style={{
+					display: "flex",
+					position: "absolute",
+					right: 96,
+					top: 64,
+					width: 360,
+					flexDirection: "column",
+					alignItems: "center",
+					padding: "34px 26px 30px",
+					borderRadius: 40,
+					background: "#FFFFFF",
+					border: `1.5px solid ${OG_LINE}`,
+					boxShadow: "0 40px 80px -30px rgba(22,20,15,0.45)",
+					transform: "rotate(2.5deg)",
 				}}
 			>
 				<div
 					style={{
 						display: "flex",
-						flexDirection: "column",
-						width: 640,
-						justifyContent: "space-between",
-						color: "#11110F",
+						alignItems: "center",
+						justifyContent: "center",
+						width: 92,
+						height: 92,
+						borderRadius: 999,
+						border: `5px solid #FFE6DA`,
+						background: OG_SIGNAL,
+						fontFamily: "Fraunces",
+						fontWeight: 600,
+						fontSize: 42,
 					}}
 				>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: 16,
-						}}
-					>
-						<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-							<div
-								style={{
-									display: "flex",
-									width: 54,
-									height: 54,
-									borderRadius: 16,
-									padding: 3,
-									background:
-										"linear-gradient(128deg, #f5ff7b 0%, #8ae1e7 34%, #f2b7e2 68%, #ff8a4c 100%)",
-									boxShadow: "0 2px 0 rgba(17,17,15,0.3)",
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										width: "100%",
-										height: "100%",
-										borderRadius: 12,
-										alignItems: "center",
-										justifyContent: "center",
-										background: "#11110F",
-									}}
-								>
-									<img
-										src={brandGlyph}
-										alt=""
-										aria-hidden="true"
-										width={36}
-										height={36}
-										style={{ width: 36, height: 36 }}
-									/>
-								</div>
-							</div>
-							<div
-								style={{
-									fontSize: 48,
-									fontWeight: 900,
-									fontFamily: "'Arial Black', Arial, sans-serif",
-									lineHeight: 1,
-								}}
-							>
-								llink.space
-							</div>
-						</div>
-
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: 8,
-							}}
-						>
-							<div
-								style={{
-									fontSize: 74,
-									fontWeight: 900,
-									fontFamily: "'Arial Black', Arial, sans-serif",
-									lineHeight: 0.98,
-								}}
-							>
-								YOUR LINK-IN-BIO
-							</div>
-							<div
-								style={{
-									fontSize: 74,
-									fontWeight: 900,
-									fontFamily: "'Arial Black', Arial, sans-serif",
-									lineHeight: 0.98,
-								}}
-							>
-								HOME BASE.
-							</div>
-							<div
-								style={{
-									fontSize: 30,
-									lineHeight: 1.25,
-									color: "#4B4A43",
-								}}
-							>
-								Build one branded page, share it everywhere, and track what
-								drives clicks.
-							</div>
-						</div>
-					</div>
-
-					<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-						<div
-							style={{
-								display: "flex",
-								height: 54,
-								padding: "0 20px",
-								alignItems: "center",
-								borderRadius: 9999,
-								border: "3px solid #11110F",
-								background: "#11110F",
-								color: "#F5FF7B",
-								fontSize: 26,
-								fontWeight: 700,
-							}}
-						>
-							Create your page
-						</div>
-						<div
-							style={{
-								display: "flex",
-								height: 54,
-								padding: "0 20px",
-								alignItems: "center",
-								borderRadius: 9999,
-								border: "3px solid #11110F",
-								background: "#FFFFFF",
-								fontSize: 26,
-								fontWeight: 700,
-							}}
-						>
-							llink.space/u/yourname
-						</div>
-					</div>
+					S
 				</div>
-
+				<div
+					style={{
+						marginTop: 16,
+						fontWeight: 600,
+						fontSize: 30,
+						letterSpacing: "-0.02em",
+					}}
+				>
+					Studio Field
+				</div>
+				<div
+					style={{
+						fontFamily: "Geist Mono",
+						fontSize: 17,
+						color: OG_MUTED,
+					}}
+				>
+					@studiofield
+				</div>
 				<div
 					style={{
 						display: "flex",
 						flexDirection: "column",
-						width: 336,
-						gap: 16,
+						gap: 12,
+						width: "100%",
+						marginTop: 24,
 					}}
 				>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: 10,
-							padding: 18,
-							borderRadius: 28,
-							border: "4px solid #11110F",
-							background: "#FFFFFF",
-							boxShadow: "8px 8px 0 #11110F",
-						}}
-					>
+					{sampleLinks.map((link) => (
 						<div
+							key={link.title}
 							style={{
 								display: "flex",
 								alignItems: "center",
-								justifyContent: "space-between",
-								fontSize: 20,
-								fontWeight: 700,
+								gap: 14,
+								padding: "13px 14px",
+								borderRadius: 20,
+								border: `1.5px solid ${OG_LINE}`,
 							}}
 						>
-							<div>@daily.designs</div>
-							<img
-								src={sparklesGlyph}
-								alt=""
-								aria-hidden="true"
-								width={20}
-								height={20}
-								style={{ width: 20, height: 20 }}
-							/>
-						</div>
-
-						{["New release", "Resources", "Community"].map((item) => (
 							<div
-								key={item}
 								style={{
 									display: "flex",
-									height: 52,
-									alignItems: "center",
-									justifyContent: "space-between",
-									padding: "0 14px",
-									borderRadius: 14,
-									border: "3px solid #11110F",
-									background: "#F8F8F4",
-									fontSize: 22,
-									fontWeight: 600,
+									width: 40,
+									height: 40,
+									borderRadius: 12,
+									background: link.tone,
 								}}
-							>
-								<div>{item}</div>
-								<div>+</div>
+							/>
+							<div style={{ display: "flex", flexDirection: "column" }}>
+								<div style={{ fontSize: 19, fontWeight: 600 }}>
+									{link.title}
+								</div>
+								<div style={{ fontSize: 15, color: OG_MUTED }}>{link.meta}</div>
 							</div>
-						))}
-					</div>
+						</div>
+					))}
+				</div>
+			</div>
 
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: 8,
-							padding: "16px 18px",
-							borderRadius: 24,
-							border: "4px solid #11110F",
-							background: "#11110F",
-							color: "#E0FAFC",
-							boxShadow: "8px 8px 0 #11110F",
-						}}
-					>
+			<div
+				style={{
+					display: "flex",
+					position: "absolute",
+					right: 44,
+					bottom: 40,
+					flexDirection: "column",
+					width: 236,
+					padding: "18px 20px",
+					borderRadius: 26,
+					background: OG_INK,
+					color: "#FAF8F3",
+					boxShadow: "0 30px 60px -24px rgba(22,20,15,0.6)",
+				}}
+			>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						fontSize: 15,
+						color: "rgba(250,248,243,0.65)",
+					}}
+				>
+					<span>Clicks this week</span>
+					<span style={{ color: OG_SIGNAL }}>+38%</span>
+				</div>
+				<div
+					style={{
+						fontWeight: 600,
+						fontSize: 38,
+						letterSpacing: "-0.02em",
+						margin: "2px 0 12px",
+					}}
+				>
+					1,284
+				</div>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "flex-end",
+						gap: 7,
+						height: 44,
+					}}
+				>
+					{bars.map((height, index) => (
 						<div
+							// biome-ignore lint/suspicious/noArrayIndexKey: static decorative bars
+							key={index}
 							style={{
 								display: "flex",
-								alignItems: "center",
-								gap: 8,
-								fontSize: 20,
-								fontWeight: 600,
+								flex: 1,
+								height: `${height}%`,
+								borderRadius: 4,
+								background:
+									height === 84 ? OG_SIGNAL : "rgba(250,248,243,0.18)",
 							}}
-						>
-							<img
-								src={chartGlyph}
-								alt=""
-								aria-hidden="true"
-								width={20}
-								height={20}
-								style={{ width: 20, height: 20 }}
-							/>
-							<div>Performance</div>
-						</div>
-						<div
-							style={{
-								fontSize: 42,
-								lineHeight: 1,
-								fontWeight: 800,
-							}}
-						>
-							+312 total clicks
-						</div>
-					</div>
+						/>
+					))}
 				</div>
 			</div>
 		</div>,
 		{
-			width: WIDTH,
-			height: HEIGHT,
-			headers: {
-				"Cache-Control": "public, max-age=300, s-maxage=3600",
-			},
+			width: OG_WIDTH,
+			height: OG_HEIGHT,
+			fonts,
+			headers: OG_CACHE_HEADERS,
 		},
 	);
 }

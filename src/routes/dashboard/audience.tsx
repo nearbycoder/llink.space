@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "#/components/dashboard/PageHeader";
 import { UnsavedChangesGuard } from "#/components/dashboard/UnsavedChangesGuard";
 import { Button } from "#/components/ui/button";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -94,22 +95,17 @@ function AudiencePage() {
 		}
 	};
 	return (
-		<div className="dashboard-page px-4 py-6 sm:px-6 md:p-8">
+		<div className="dashboard-page px-4 py-6 sm:px-6 md:px-10">
 			<UnsavedChangesGuard
 				when={dirty || settings.isPending || connect.isPending}
 			/>
-			<header className="mb-7">
-				<p className="text-xs font-bold uppercase tracking-widest">
-					Keep the conversation going
-				</p>
-				<h1 className="mt-2 text-3xl font-black">Audience</h1>
-				<p className="mt-2 text-sm">
-					Collect signups with consent, export your audience, and sync to your
-					email list.
-				</p>
-			</header>
+			<PageHeader
+				eyebrow="Keep the conversation going"
+				title="Audience"
+				description="Collect signups with consent, export your audience, and sync to your email list."
+			/>
 			<div className="grid gap-5 md:grid-cols-2">
-				<section className="kinetic-panel bg-card p-5">
+				<section className="surface bg-card p-5">
 					<h2 className="text-lg font-bold">Signup block</h2>
 					<fieldset
 						disabled={!ready || settings.isPending}
@@ -149,7 +145,7 @@ function AudiencePage() {
 						to 10,000 records per page.
 					</p>
 				</section>
-				<section className="kinetic-panel bg-card p-5">
+				<section className="surface bg-card p-5">
 					<h2 className="text-lg font-bold">Connect Brevo</h2>
 					<p className="mt-2 text-xs">
 						{data.connected
@@ -233,7 +229,7 @@ function AudiencePage() {
 					</p>
 				</section>
 			</div>
-			<section className="kinetic-panel mt-6 overflow-hidden bg-card p-5">
+			<section className="surface mt-6 overflow-hidden bg-card p-5">
 				<div className="mb-5 flex flex-wrap items-center justify-between gap-3">
 					<h2 className="text-lg font-bold">
 						Subscribers · {data.active} active / {data.total} total
@@ -285,7 +281,7 @@ function AudiencePage() {
 					)}
 				</form>
 				{searchError && (
-					<p role="alert" className="mb-3 text-sm text-red-700">
+					<p role="alert" className="mb-3 text-sm text-destructive">
 						Could not load subscribers. Try searching again.
 					</p>
 				)}
