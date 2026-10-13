@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { BrandMark, SiteBrand } from "#/components/SiteBrand";
+import { ThemeSwitcher, ThemeToggleButton } from "#/components/ThemeToggle";
 import { authClient } from "#/lib/auth-client";
 import { featureGroups } from "./features";
 import { ProductDemo } from "./ProductDemo";
@@ -56,6 +57,7 @@ export function LandingPage() {
 						<a href="#faq" className="marketing-nav-link">
 							FAQ
 						</a>
+						<ThemeToggleButton />
 						<Link
 							to={session?.user ? "/dashboard" : "/sign-in"}
 							className="marketing-sign-in"
@@ -491,6 +493,7 @@ export function LandingPage() {
 					<div>
 						<SiteBrand size="md" />
 						<p>A home for everything you’re putting into the world.</p>
+						<ThemeSwitcher className="mt-5 w-fit border-white/15 bg-white/5 [&_button]:text-[#faf8f3]/70 [&_button:hover]:text-[#faf8f3] [&_button[aria-pressed=true]]:bg-[#faf8f3] [&_button[aria-pressed=true]]:text-[#16140f]" />
 					</div>
 					<nav aria-label="Footer">
 						<a href="#tour">Tour</a>

@@ -55,15 +55,16 @@ export const Route = createFileRoute("/dashboard/analytics")({
 });
 
 // Single-series charts use one hue; the top link gets the signal accent.
-const BAR_FILL = "#16140F";
+const BAR_FILL = "var(--chart-bar)";
 const BAR_PEAK_FILL = "#FF5F1F";
-const AXIS_TICK = { fontSize: 11, fill: "#67625A" };
-const GRID_STROKE = "#16140F14";
+const AXIS_TICK = { fontSize: 11, fill: "var(--muted-foreground)" };
+const GRID_STROKE = "var(--border)";
 const tooltipStyle = {
-	border: "1px solid #E3DED3",
+	border: "1px solid var(--border)",
 	borderRadius: "12px",
 	fontSize: "12px",
-	backgroundColor: "#FFFFFF",
+	backgroundColor: "var(--popover)",
+	color: "var(--popover-foreground)",
 	boxShadow: "0 12px 32px -12px rgb(22 20 15 / 0.35)",
 	padding: "8px 12px",
 };
@@ -304,11 +305,11 @@ function AnalyticsPage() {
 										width={30}
 									/>
 									<Tooltip
-										cursor={{ fill: "#16140F0A" }}
+										cursor={{ fill: "var(--accent)" }}
 										contentStyle={tooltipStyle}
 										labelStyle={{
 											fontWeight: 600,
-											color: "#16140F",
+											color: "var(--popover-foreground)",
 											marginBottom: 4,
 										}}
 										formatter={(value, _name, item) => [
@@ -383,7 +384,7 @@ function AnalyticsPage() {
 										width={30}
 									/>
 									<Tooltip
-										cursor={{ stroke: "#16140F40", strokeWidth: 1 }}
+										cursor={{ stroke: "var(--border-strong)", strokeWidth: 1 }}
 										contentStyle={tooltipStyle}
 										labelFormatter={(_, payload) =>
 											payload?.[0]?.payload?.fullLabel ?? ""
@@ -396,7 +397,7 @@ function AnalyticsPage() {
 										isAnimationActive={false}
 										stroke="#E5531A"
 										strokeWidth={2}
-										activeDot={{ r: 5, stroke: "#FFFFFF", strokeWidth: 2 }}
+										activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 2 }}
 										fill={`url(#${trendFillId})`}
 									/>
 								</AreaChart>

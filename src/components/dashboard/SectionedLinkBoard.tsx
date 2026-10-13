@@ -473,7 +473,7 @@ function SectionColumn({
 		<section
 			ref={setNodeRef}
 			className={cn(
-				"rounded-[1.125rem] border border-border bg-[#efece5]/70 p-2 transition-colors sm:p-2.5",
+				"rounded-[1.125rem] border border-border bg-muted/70 p-2 transition-colors sm:p-2.5",
 				isOver && enableDrag && "border-signal/40 bg-signal-soft/50",
 			)}
 		>

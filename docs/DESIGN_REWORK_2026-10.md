@@ -27,3 +27,9 @@ The marketing site, dashboard, auth, onboarding, public profile pages, share dia
 ## Verification
 
 Typecheck, Biome, 163 unit tests, the full Playwright suite and a production build pass. Desktop and 390 px mobile layouts were reviewed for the marketing page, dashboard pages, auth, public profile and missing profile; OG images were rendered from the production server. The tour, poster, captions and phone image were re-recorded with `scripts/record-marketing-demo.mjs`.
+
+## Dark mode
+
+Marketing, auth, onboarding, the dashboard and the 404/missing-profile pages support Light, Dark and System themes (`src/lib/theme.ts`). The choice is stored in the browser, synced across tabs, and applied by a small inline script before first paint, so there is no flash on load. Toggles live in the marketing nav and footer, the dashboard sidebar and the mobile menu.
+
+Dark tokens are scoped to `.dark:not(:has([data-public-profile]))`, so creator pages always keep the creator's own theme. Components should use tokens (`bg-card`, `text-foreground`, `border-border`, …) rather than hex values; marketing uses its `--m-*` variables, which have dark values too. Charts read `--chart-bar`, `--border` and `--muted-foreground`.

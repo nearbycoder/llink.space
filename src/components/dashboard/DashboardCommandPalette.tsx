@@ -206,7 +206,7 @@ export function DashboardCommandPalette({
 						type="button"
 						onClick={() => onOpenChange(false)}
 						aria-label="Close search"
-						className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-offset-0"
+						className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-foreground/5 text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-offset-0"
 					>
 						<X className="size-5" aria-hidden="true" />
 					</button>
@@ -223,7 +223,7 @@ export function DashboardCommandPalette({
 							"min-h-11 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "navigate"
 								? "bg-accent text-primary"
-								: "text-muted-foreground hover:bg-black/5",
+								: "text-muted-foreground hover:bg-foreground/5",
 						)}
 					>
 						Search
@@ -239,7 +239,7 @@ export function DashboardCommandPalette({
 							"inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors",
 							mode === "create"
 								? "bg-accent text-primary"
-								: "text-muted-foreground hover:bg-black/5",
+								: "text-muted-foreground hover:bg-foreground/5",
 						)}
 					>
 						<Link2 className="size-4" aria-hidden="true" />
@@ -301,7 +301,7 @@ export function DashboardCommandPalette({
 					)}
 					<div
 						data-slot="command-keyboard-help"
-						className="hidden shrink-0 items-center justify-between border-t border-border bg-black/[0.025] px-4 py-3 text-xs text-muted-foreground sm:flex"
+						className="hidden shrink-0 items-center justify-between border-t border-border bg-foreground/[0.025] px-4 py-3 text-xs text-muted-foreground sm:flex"
 					>
 						<span>
 							↑ ↓ to browse <span className="mx-2 text-foreground/20">/</span> ↵

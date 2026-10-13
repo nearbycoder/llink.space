@@ -5,7 +5,7 @@ export function Skeleton({ className, ...props }: ComponentProps<"div">) {
 	return (
 		<div
 			aria-hidden="true"
-			className={cn("loading-shimmer rounded-md bg-[#e9e5dc]", className)}
+			className={cn("loading-shimmer rounded-md bg-border/80", className)}
 			{...props}
 		/>
 	);

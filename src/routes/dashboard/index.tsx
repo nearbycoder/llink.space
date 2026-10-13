@@ -62,7 +62,7 @@ import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { publishingStatus } from "#/lib/link-publishing";
 import { LINK_SORTS, type LinkSort, sortDashboardView } from "#/lib/link-sort";
 import { buildLinkMarkdown } from "#/lib/markdown-export";
-import { cn } from "#/lib/utils";
+import { cn, DEFAULT_ICON_BG_COLOR } from "#/lib/utils";
 
 export const Route = createFileRoute("/dashboard/")({
 	headers: () => ({
@@ -1135,7 +1135,7 @@ function DashboardPage() {
 								ctaLabel: editingLink.ctaLabel ?? "",
 								publishAt: editingLink.publishAt ?? "",
 								expireAt: editingLink.expireAt ?? "",
-								iconBgColor: editingLink.iconBgColor ?? "#F5FF7B",
+								iconBgColor: editingLink.iconBgColor ?? DEFAULT_ICON_BG_COLOR,
 								isActive: editingLink.isActive ?? true,
 							}}
 							sections={layout.sections}

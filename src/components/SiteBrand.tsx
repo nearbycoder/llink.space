@@ -31,9 +31,28 @@ export function BrandMark({
 			aria-hidden={title ? undefined : true}
 			aria-label={title}
 		>
-			<rect width="32" height="32" rx="9" fill="#16140F" />
-			<rect x="8.5" y="7" width="4" height="18" rx="2" fill="#FAF8F3" />
-			<rect x="15" y="7" width="4" height="18" rx="2" fill="#FAF8F3" />
+			<rect
+				width="32"
+				height="32"
+				rx="9"
+				style={{ fill: "var(--brand-tile, #16140F)" }}
+			/>
+			<rect
+				x="8.5"
+				y="7"
+				width="4"
+				height="18"
+				rx="2"
+				style={{ fill: "var(--brand-stroke, #FAF8F3)" }}
+			/>
+			<rect
+				x="15"
+				y="7"
+				width="4"
+				height="18"
+				rx="2"
+				style={{ fill: "var(--brand-stroke, #FAF8F3)" }}
+			/>
 			<circle cx="23.5" cy="22.5" r="2.75" fill="#FF5F1F" />
 		</svg>
 	);

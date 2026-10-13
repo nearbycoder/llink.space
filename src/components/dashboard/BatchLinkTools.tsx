@@ -31,6 +31,7 @@ import {
 	previewBatchLinks,
 } from "#/lib/batch-link-tools";
 import type { LinkIconKey } from "#/lib/link-icon-keys";
+import { DEFAULT_ICON_BG_COLOR } from "#/lib/utils";
 
 type EditableLink = BatchLink & { updatedAt: Date | string | null };
 function dateValue(value: string) {
@@ -57,7 +58,7 @@ export function BatchLinkTools({
 	const [replacement, setReplacement] = useState("");
 	const [description, setDescription] = useState("");
 	const [icon, setIcon] = useState<LinkIconKey | "none">("globe");
-	const [color, setColor] = useState("#EDF3DF");
+	const [color, setColor] = useState(DEFAULT_ICON_BG_COLOR);
 	const [start, setStart] = useState("");
 	const [end, setEnd] = useState("");
 	const [activate, setActivate] = useState(false);
@@ -347,12 +348,16 @@ export function BatchLinkTools({
 												<span>Before</span>
 												<LinkIcon
 													iconUrl={before.iconUrl}
-													iconBgColor={before.iconBgColor ?? "#EDF3DF"}
+													iconBgColor={
+														before.iconBgColor ?? DEFAULT_ICON_BG_COLOR
+													}
 												/>
 												<span>After</span>
 												<LinkIcon
 													iconUrl={after.iconUrl}
-													iconBgColor={after.iconBgColor ?? "#EDF3DF"}
+													iconBgColor={
+														after.iconBgColor ?? DEFAULT_ICON_BG_COLOR
+													}
 												/>
 											</div>
 										) : kind === "url" || kind === "clean" ? (

@@ -9,6 +9,7 @@ import {
 import { Popover } from "radix-ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { RemoveScroll } from "react-remove-scroll";
+import { ThemeSwitcher } from "#/components/ThemeToggle";
 import { cn } from "#/lib/utils";
 
 export interface DashboardNavItem {
@@ -27,7 +28,7 @@ export interface DashboardNavItem {
 const dockClass =
 	"flex h-14 items-center rounded-full bg-primary p-1.5 text-primary-foreground shadow-[0_18px_40px_-12px_rgb(22_20_15/0.55)]";
 const findClass =
-	"inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold hover:bg-white/10 focus-visible:outline-signal";
+	"inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold hover:bg-primary-foreground/10 focus-visible:outline-signal";
 const toggleClass =
 	"inline-flex h-11 w-12 items-center justify-center rounded-full bg-signal text-ink hover:bg-[#ff7a45] focus-visible:outline-signal";
 const bottom = "calc(env(safe-area-inset-bottom, 0px) + 1rem)";
@@ -113,7 +114,10 @@ export function MobileDashboardNav({
 							<Search className="size-4" aria-hidden="true" />
 							Find
 						</button>
-						<span className="mx-1 h-6 w-px bg-white/15" aria-hidden="true" />
+						<span
+							className="mx-1 h-6 w-px bg-primary-foreground/15"
+							aria-hidden="true"
+						/>
 						<Popover.Trigger asChild>
 							<button
 								type="button"
@@ -205,6 +209,9 @@ export function MobileDashboardNav({
 								);
 							})}
 						</nav>
+						<div className="border-t border-border px-1 py-2">
+							<ThemeSwitcher />
+						</div>
 						<div className="border-t border-border pt-2">
 							{username && (
 								<a
