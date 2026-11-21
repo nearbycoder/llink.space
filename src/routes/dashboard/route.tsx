@@ -19,12 +19,9 @@ import {
 	User,
 	Users,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-	DashboardCommandPalette,
-	type DashboardCommandShortcut,
-} from "#/components/dashboard/DashboardCommandPalette";
+import type { DashboardCommandShortcut } from "#/components/dashboard/DashboardCommandPalette";
 import { DashboardPendingShell } from "#/components/dashboard/DashboardLoading";
 import {
 	type DashboardNavItem,
@@ -37,6 +34,12 @@ import { useTRPC } from "#/integrations/trpc/react";
 import { authClient } from "#/lib/auth-client";
 import { checkDashboardAccess } from "#/lib/auth-server";
 import { cn } from "#/lib/utils";
+
+const DashboardCommandPalette = lazy(() =>
+	import("#/components/dashboard/DashboardCommandPalette").then((mod) => ({
+		default: mod.DashboardCommandPalette,
+	})),
+);
 
 export const Route = createFileRoute("/dashboard")({
 	headers: () => ({
@@ -119,6 +122,7 @@ function DashboardLayout() {
 	const queryClient = useQueryClient();
 	const profileQueryOptions = trpc.profile.getCurrent.queryOptions();
 	const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+	const [hasLoadedCommandPalette, setHasLoadedCommandPalette] = useState(false);
 	const { data: profile = initialProfile } = useQuery({
 		...profileQueryOptions,
 		initialData: initialProfile,
@@ -130,6 +134,7 @@ function DashboardLayout() {
 			if (event.defaultPrevented) return;
 			if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
 				event.preventDefault();
+				setHasLoadedCommandPalette(true);
 				setIsCommandPaletteOpen((open) => !open);
 			}
 		};
@@ -153,7 +158,10 @@ function DashboardLayout() {
 		[navigate],
 	);
 
-	const openCommandPalette = () => setIsCommandPaletteOpen(true);
+	const openCommandPalette = () => {
+		setHasLoadedCommandPalette(true);
+		setIsCommandPaletteOpen(true);
+	};
 	const handleSignOut = async () => {
 		if (!navigationGuard.current()) return;
 		const result = await authClient.signOut();
@@ -240,6 +248,7 @@ function DashboardLayout() {
 										<img
 											src={profile.avatarUrl}
 											alt=""
+											decoding="async"
 											className="size-full object-cover"
 										/>
 									) : (
@@ -295,13 +304,17 @@ function DashboardLayout() {
 					onSearch={openCommandPalette}
 					onSignOut={handleSignOut}
 				/>
-				<DashboardCommandPalette
-					open={isCommandPaletteOpen}
-					onOpenChange={setIsCommandPaletteOpen}
-					shortcuts={commandShortcuts}
-					username={profile?.username ?? null}
-					onSignOut={() => void handleSignOut()}
-				/>
+				{hasLoadedCommandPalette && (
+					<Suspense fallback={null}>
+						<DashboardCommandPalette
+							open={isCommandPaletteOpen}
+							onOpenChange={setIsCommandPaletteOpen}
+							shortcuts={commandShortcuts}
+							username={profile?.username ?? null}
+							onSignOut={() => void handleSignOut()}
+						/>
+					</Suspense>
+				)}
 			</div>
 		</NavigationGuardContext>
 	);

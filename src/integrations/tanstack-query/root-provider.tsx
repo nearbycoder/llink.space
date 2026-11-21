@@ -48,6 +48,9 @@ let browserContext: RouterContext | undefined;
 function createContext(): RouterContext {
 	const queryClient = new QueryClient({
 		defaultOptions: {
+			queries: {
+				staleTime: 30_000,
+			},
 			dehydrate: { serializeData: superjson.serialize },
 			hydrate: { deserializeData: superjson.deserialize },
 		},

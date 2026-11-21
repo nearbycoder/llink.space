@@ -1,17 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ImageResponse } from "@vercel/og";
 import {
+	getCachedOgResponse,
 	loadOgFonts,
-	OG_CACHE_HEADERS,
-	OG_HEIGHT,
 	OG_INK,
 	OG_LINE,
 	OG_MUTED,
 	OG_PAPER,
 	OG_SIGNAL,
 	OG_SIGNAL_STRONG,
-	OG_WIDTH,
 	OgWordmark,
+	renderOgImage,
 } from "#/lib/og-brand.server";
 
 const sampleLinks = [
@@ -30,9 +28,13 @@ const sampleLinks = [
 
 const bars = [34, 48, 40, 58, 52, 84, 66];
 
-async function handler() {
+const SITE_OG_CACHE_KEY = "site-default-og-v1";
+
+async function handler({ request }: { request: Request }) {
+	const cached = getCachedOgResponse(SITE_OG_CACHE_KEY, request);
+	if (cached) return cached;
 	const fonts = await loadOgFonts();
-	return new ImageResponse(
+	return renderOgImage(
 		<div
 			style={{
 				display: "flex",
@@ -171,7 +173,7 @@ async function handler() {
 					borderRadius: 40,
 					background: "#FFFFFF",
 					border: `1.5px solid ${OG_LINE}`,
-					boxShadow: "0 40px 80px -30px rgba(22,20,15,0.45)",
+					boxShadow: "0 24px 56px 0 rgba(22,20,15,0.18)",
 					transform: "rotate(2.5deg)",
 				}}
 			>
@@ -264,7 +266,7 @@ async function handler() {
 					borderRadius: 26,
 					background: OG_INK,
 					color: "#FAF8F3",
-					boxShadow: "0 30px 60px -24px rgba(22,20,15,0.6)",
+					boxShadow: "0 20px 48px 0 rgba(22,20,15,0.28)",
 				}}
 			>
 				<div
@@ -314,10 +316,9 @@ async function handler() {
 			</div>
 		</div>,
 		{
-			width: OG_WIDTH,
-			height: OG_HEIGHT,
 			fonts,
-			headers: OG_CACHE_HEADERS,
+			cacheKey: "site-default-og-v1",
+			request,
 		},
 	);
 }
@@ -326,6 +327,7 @@ export const Route = createFileRoute("/api/og")({
 	server: {
 		handlers: {
 			GET: handler,
+			HEAD: handler,
 		},
 	},
 });

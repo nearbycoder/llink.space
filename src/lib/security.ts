@@ -65,6 +65,29 @@ export function isAllowedBackgroundImageUrl(value: string): boolean {
 	return isAllowedProfileImageUrl(value);
 }
 
+/**
+ * Safely serialize JSON for inline <script type="application/ld+json"> tags,
+ * preventing </script> breakout and JS line-separator syntax issues.
+ */
+export function serializeJsonLd(value: unknown): string {
+	return JSON.stringify(value)
+		.replace(/</g, "\\u003c")
+		.replace(/>/g, "\\u003e")
+		.replace(/&/g, "\\u0026")
+		.replace(/\u2028/g, "\\u2028")
+		.replace(/\u2029/g, "\\u2029");
+}
+
+/**
+ * Validate and format a background image URL for CSS url("...") declarations.
+ */
+export function toSafeCssUrl(value: string): string | null {
+	if (!isAllowedBackgroundImageUrl(value)) return null;
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: strip ASCII control characters before CSS interpolation
+	const safeValue = value.trim().replace(/["'()\\\n\r\f\u0000-\u001f]/g, "");
+	return safeValue ? `url("${safeValue}")` : null;
+}
+
 function getTrustedOriginCandidates(): string[] {
 	const candidates: string[] = [];
 

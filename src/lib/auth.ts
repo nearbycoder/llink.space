@@ -3,10 +3,12 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "#/db";
 import * as authSchema from "#/db/auth-schema";
+import { trustedIpHeader } from "#/lib/click-protection-server";
 import { resolveTrustedOrigins } from "#/lib/security";
 import { getConfiguredSiteOrigin } from "#/lib/site-url";
 
 const isProduction = process.env.NODE_ENV === "production";
+const authIpHeader = trustedIpHeader();
 const authSecret =
 	process.env.BETTER_AUTH_SECRET ??
 	(isProduction ? undefined : "llink-space-dev-secret-change-me");
@@ -40,6 +42,13 @@ export const auth = betterAuth({
 	},
 	advanced: {
 		useSecureCookies: isProduction,
+		...(authIpHeader
+			? {
+					ipAddress: {
+						ipAddressHeaders: [authIpHeader],
+					},
+				}
+			: {}),
 	},
 	plugins: [tanstackStartCookies()],
 });

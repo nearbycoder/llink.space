@@ -1,6 +1,7 @@
 import { Link2 } from "lucide-react";
 import { useState } from "react";
 import { isLinkIconKey } from "#/lib/link-icon-keys";
+import { isAllowedAvatarUrl } from "#/lib/security";
 import { cn, DEFAULT_ICON_BG_COLOR, readableTextColor } from "#/lib/utils";
 import { LINK_ICON_OPTIONS_BY_KEY } from "./icon-options";
 
@@ -22,7 +23,11 @@ export function LinkIcon({
 	const [isBroken, setIsBroken] = useState(false);
 	const normalizedIcon = iconUrl?.trim() ?? "";
 	const isIconKey = normalizedIcon.length > 0 && isLinkIconKey(normalizedIcon);
-	const showImage = normalizedIcon.length > 0 && !isIconKey && !isBroken;
+	const showImage =
+		normalizedIcon.length > 0 &&
+		!isIconKey &&
+		!isBroken &&
+		isAllowedAvatarUrl(normalizedIcon);
 	const iconOption = isIconKey
 		? LINK_ICON_OPTIONS_BY_KEY[normalizedIcon]
 		: undefined;

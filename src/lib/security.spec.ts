@@ -6,6 +6,8 @@ import {
 	normalizeHttpUrl,
 	prepareHttpUrl,
 	resolveTrustedOrigins,
+	serializeJsonLd,
+	toSafeCssUrl,
 } from "#/lib/security";
 
 afterEach(() => {
@@ -199,6 +201,36 @@ describe("security", () => {
 			const request = new Request("https://app.llink.space/api/upload/avatar");
 
 			expect(isTrustedRequestOrigin(request)).toBe(true);
+		});
+	});
+
+	describe("serializeJsonLd", () => {
+		it("escapes script breakout characters while remaining valid JSON", () => {
+			const payload = {
+				name: 'Creator </script><script>alert("xss")</script> & friends',
+				bio: "Line\u2028break\u2029here",
+			};
+			const serialized = serializeJsonLd(payload);
+			expect(serialized).not.toContain("<");
+			expect(serialized).not.toContain(">");
+			expect(serialized).not.toContain("&");
+			expect(serialized).not.toContain("\u2028");
+			expect(serialized).not.toContain("\u2029");
+			expect(JSON.parse(serialized)).toEqual(payload);
+		});
+	});
+
+	describe("toSafeCssUrl", () => {
+		it("allows safe image URLs and rejects unsafe or injectable values", () => {
+			expect(toSafeCssUrl("/uploads/bg.webp")).toBe('url("/uploads/bg.webp")');
+			expect(toSafeCssUrl("https://cdn.llink.space/bg.png")).toBe(
+				'url("https://cdn.llink.space/bg.png")',
+			);
+			expect(toSafeCssUrl("javascript:alert(1)")).toBeNull();
+			expect(toSafeCssUrl("/uploads/bg.svg")).toBeNull();
+			expect(toSafeCssUrl("/uploads/bg.png?x=1)a")).toBe(
+				'url("/uploads/bg.png?x=1a")',
+			);
 		});
 	});
 });

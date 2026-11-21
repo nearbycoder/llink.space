@@ -5,7 +5,11 @@ import { z } from "zod";
 import { db } from "#/db";
 import { customDomains, profiles } from "#/db/schema";
 import { hashClickKey } from "#/lib/click-protection";
-import { consumeClickBudget } from "#/lib/click-protection-server";
+import {
+	cleanupClickGuards,
+	consumeClickBudget,
+	guardSecret,
+} from "#/lib/click-protection-server";
 import {
 	domainProofHost,
 	domainProofValue,
@@ -29,26 +33,30 @@ async function owner(userId: string) {
 	if (!p) throw new TRPCError({ code: "NOT_FOUND" });
 	return p;
 }
+export async function fetchCurrentDomain(profileId: string) {
+	const domain = await db.query.customDomains.findFirst({
+		where: eq(customDomains.profileId, profileId),
+	});
+	return {
+		domain: domain
+			? {
+					id: domain.id,
+					hostname: domain.hostname,
+					status: domain.status,
+					verifiedAt: domain.verifiedAt,
+					proofHost: domainProofHost(domain.hostname),
+					proofValue: domainProofValue(domain.token),
+					hosting: domain.providerStatus,
+				}
+			: null,
+		hostingConfigured: domainHostingConfigured(),
+	};
+}
+
 export const domainsRouter = createTRPCRouter({
 	current: protectedProcedure.query(async ({ ctx }) => {
 		const p = await owner(ctx.userId);
-		const domain = await db.query.customDomains.findFirst({
-			where: eq(customDomains.profileId, p.id),
-		});
-		return {
-			domain: domain
-				? {
-						id: domain.id,
-						hostname: domain.hostname,
-						status: domain.status,
-						verifiedAt: domain.verifiedAt,
-						proofHost: domainProofHost(domain.hostname),
-						proofValue: domainProofValue(domain.token),
-						hosting: domain.providerStatus,
-					}
-				: null,
-			hostingConfigured: domainHostingConfigured(),
-		};
+		return fetchCurrentDomain(p.id);
 	}),
 	add: protectedProcedure
 		.input(z.object({ hostname: z.string().max(253) }))
@@ -81,13 +89,11 @@ export const domainsRouter = createTRPCRouter({
 		}),
 	verify: protectedProcedure.mutation(async ({ ctx }) => {
 		const p = await owner(ctx.userId);
+		await cleanupClickGuards(db);
 		if (
 			!(await consumeClickBudget(
 				db,
-				hashClickKey(process.env.BETTER_AUTH_SECRET ?? "local", [
-					"domain-verify",
-					p.id,
-				]),
+				hashClickKey(guardSecret(), ["domain-verify", p.id]),
 				3,
 				60,
 			))

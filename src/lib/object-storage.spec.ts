@@ -100,4 +100,13 @@ describe("S3 streaming contract", () => {
 			"2026-09-06T12:00:00.000Z",
 		);
 	});
+	it("refuses S3 reads outside a configured keyPrefix", async () => {
+		const send = vi.spyOn(S3Client.prototype, "send");
+		const storage = new S3ObjectStorage({
+			...config,
+			keyPrefix: "profile-media",
+		});
+		expect(await storage.getObject("other-folder/secret.png")).toBeNull();
+		expect(send).not.toHaveBeenCalled();
+	});
 });

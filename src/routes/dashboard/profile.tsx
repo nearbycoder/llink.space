@@ -36,6 +36,7 @@ import {
 import {
 	isAllowedAvatarUrl,
 	isAllowedBackgroundImageUrl,
+	toSafeCssUrl,
 } from "#/lib/security";
 
 const BACKGROUND_TYPE_LABELS: Record<ProfileBackgroundType, string> = {
@@ -53,11 +54,6 @@ function normalizeBackgroundType(
 		: DEFAULT_PROFILE_BACKGROUND_TYPE;
 }
 
-function toCssBackgroundImageUrl(value: string) {
-	const safeValue = value.replace(/["\\\n\r\f]/g, "");
-	return `url("${safeValue}")`;
-}
-
 function getBackgroundPreviewStyle(input: {
 	type: ProfileBackgroundType;
 	colorId: string;
@@ -70,10 +66,14 @@ function getBackgroundPreviewStyle(input: {
 		};
 	}
 
-	if (input.type === "image" && input.imageUrl) {
+	const safeCssUrl =
+		input.type === "image" && input.imageUrl
+			? toSafeCssUrl(input.imageUrl)
+			: null;
+	if (safeCssUrl) {
 		return {
 			backgroundColor: "#11110F",
-			backgroundImage: `linear-gradient(130deg, rgba(17,17,15,0.45), rgba(17,17,15,0.2)), ${toCssBackgroundImageUrl(input.imageUrl)}`,
+			backgroundImage: `linear-gradient(130deg, rgba(17,17,15,0.45), rgba(17,17,15,0.2)), ${safeCssUrl}`,
 			backgroundPosition: "center",
 			backgroundSize: "cover",
 		};
@@ -177,6 +177,7 @@ function ProfilePage() {
 	const { data: profile = initialProfile } = useQuery({
 		...profileQueryOptions,
 		initialData: initialProfile,
+		staleTime: 30_000,
 	});
 	const updateProfile = useMutation(trpc.profile.update.mutationOptions());
 	const [isHydrated, setIsHydrated] = useState(false);
@@ -408,7 +409,7 @@ function ProfilePage() {
 				pageBackgroundImageUrl: updatedProfile.pageBackgroundImageUrl ?? "",
 			});
 			await queryClient.invalidateQueries({
-				queryKey: ["trpc", "profile", "getCurrent"],
+				queryKey: trpc.profile.getCurrent.queryKey(),
 			});
 			toast.success("Profile published");
 		} catch (error) {

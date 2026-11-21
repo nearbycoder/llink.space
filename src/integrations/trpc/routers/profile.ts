@@ -67,9 +67,11 @@ export const profileRouter = createTRPCRouter({
 	checkUsername: publicProcedure
 		.input(z.object({ username: z.string().min(1).max(30) }))
 		.query(async ({ input }) => {
-			const existing = await db.query.profiles.findFirst({
-				where: eq(profiles.username, input.username.toLowerCase()),
-			});
+			const [existing] = await db
+				.select({ id: profiles.id })
+				.from(profiles)
+				.where(eq(profiles.username, input.username.toLowerCase()))
+				.limit(1);
 			return { available: !existing };
 		}),
 

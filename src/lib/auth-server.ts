@@ -3,8 +3,11 @@ import { getRequest } from "@tanstack/start-server-core";
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "#/db";
-import { linkSections, links, profiles } from "#/db/schema";
-import { trpcRouter } from "#/integrations/trpc/router";
+import { links, profiles } from "#/db/schema";
+import { fetchAnalyticsSummary } from "#/integrations/trpc/routers/analytics";
+import { fetchAudienceList } from "#/integrations/trpc/routers/audience";
+import { fetchCurrentDomain } from "#/integrations/trpc/routers/domains";
+import { fetchProfileLayout } from "#/integrations/trpc/routers/links";
 import { normalizeObjectUrlForClient } from "#/lib/object-storage";
 import { auth } from "./auth";
 
@@ -57,26 +60,13 @@ export const getDashboardLinks = createServerFn().handler(async () => {
 		return access;
 	}
 
-	const [profileLinks, profileSections] = await Promise.all([
-		db.query.links.findMany({
-			where: eq(links.profileId, access.profile.id),
-			orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-		}),
-		db.query.linkSections.findMany({
-			where: eq(linkSections.profileId, access.profile.id),
-			orderBy: [
-				asc(linkSections.sortOrder),
-				asc(linkSections.createdAt),
-				asc(linkSections.id),
-			],
-		}),
-	]);
+	const layout = await fetchProfileLayout({ profileId: access.profile.id });
 
 	return {
 		status: "ok",
 		profile: access.profile,
-		links: profileLinks,
-		sections: profileSections,
+		links: layout.links,
+		sections: layout.sections,
 	} as const;
 });
 
@@ -96,14 +86,9 @@ export const getDashboardAnalytics = createServerFn()
 			return access;
 		}
 
-		const caller = trpcRouter.createCaller({
-			request,
-			userId: access.profile.userId,
-		});
-
 		return {
 			status: "ok",
-			summary: await caller.analytics.getSummary({ days: data.days }),
+			summary: await fetchAnalyticsSummary(access.profile.id, data.days),
 		} as const;
 	});
 
@@ -111,25 +96,32 @@ export const getDashboardDesign = createServerFn().handler(async () => {
 	const request = getRequest();
 	const access = await resolveDashboardAccess(request.headers);
 	if (access.status !== "ok") return access;
-	const caller = trpcRouter.createCaller({
-		request,
-		userId: access.profile.userId,
-	});
-	const layout = await caller.links.list();
+	const layout = await fetchProfileLayout({ profileId: access.profile.id });
 	return { status: "ok" as const, profile: access.profile, layout };
+});
+
+export const getDashboardHealth = createServerFn().handler(async () => {
+	const request = getRequest();
+	const access = await resolveDashboardAccess(request.headers);
+	if (access.status !== "ok") return access;
+	const profileLinks = await db.query.links.findMany({
+		where: eq(links.profileId, access.profile.id),
+		orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
+	});
+	return { status: "ok" as const, links: profileLinks };
 });
 
 export const getDashboardAudience = createServerFn().handler(async () => {
 	const request = getRequest();
 	const access = await resolveDashboardAccess(request.headers);
 	if (access.status !== "ok") return access;
-	const caller = trpcRouter.createCaller({
-		request,
-		userId: access.profile.userId,
-	});
 	return {
 		status: "ok" as const,
-		audience: await caller.audience.list({ page: 0 }),
+		audience: await fetchAudienceList(access.profile, {
+			page: 0,
+			search: "",
+			status: "all",
+		}),
 	};
 });
 
@@ -137,9 +129,8 @@ export const getDashboardDomain = createServerFn().handler(async () => {
 	const request = getRequest();
 	const access = await resolveDashboardAccess(request.headers);
 	if (access.status !== "ok") return access;
-	const caller = trpcRouter.createCaller({
-		request,
-		userId: access.profile.userId,
-	});
-	return { status: "ok" as const, domain: await caller.domains.current() };
+	return {
+		status: "ok" as const,
+		domain: await fetchCurrentDomain(access.profile.id),
+	};
 });

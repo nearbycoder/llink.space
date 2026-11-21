@@ -19,6 +19,156 @@ import { normalizeHttpUrl } from "#/lib/security";
 import { fillClickHeatmap, summarizeDevices } from "#/lib/traffic-insights";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
+export async function fetchAnalyticsSummary(
+	profileId: string,
+	days: 7 | 30 | 90,
+) {
+	const now = new Date();
+	const rangeStart = analyticsRangeStart(days, now);
+	const previousStart = new Date(rangeStart.getTime() - days * 86400000);
+	const rangeWhere = and(
+		eq(clickEvents.profileId, profileId),
+		gte(clickEvents.clickedAt, rangeStart),
+	);
+
+	const referrerSourceExpr = sql<string>`coalesce(nullif(split_part(split_part(split_part(regexp_replace(${clickEvents.referrer}, '^https?://(www\\.)?', ''), '/', 1), '?', 1), '#', 1), ''), 'Direct')`;
+	const dayExpr = sql`date_trunc('day', ${clickEvents.clickedAt})`;
+	const weekdayExpr = sql<number>`extract(isodow from ${clickEvents.clickedAt})::int`;
+	const hourExpr = sql<number>`extract(hour from ${clickEvents.clickedAt})::int`;
+	const isUnknownUa = sql`nullif(btrim(${clickEvents.userAgent}), '') is null`;
+	const isTabletUa = sql`not (${isUnknownUa}) and (${clickEvents.userAgent} ~* '(ipad|tablet|silk|kindle)' or (${clickEvents.userAgent} ~* 'android' and ${clickEvents.userAgent} !~* 'mobile'))`;
+	const isMobileUa = sql`not (${isUnknownUa}) and not (${isTabletUa}) and ${clickEvents.userAgent} ~* '(mobile|iphone|ipod|android)'`;
+	const isDesktopUa = sql`not (${isUnknownUa}) and not (${isTabletUa}) and not (${isMobileUa})`;
+
+	// Fold totals and fixed device buckets into one profile scan, keeping the
+	// remaining range-scoped queries aligned with the profile/date index.
+	const [
+		totals,
+		clicksByLink,
+		topReferrers,
+		clicksByDay,
+		recentClicks,
+		heatmapRows,
+	] = await Promise.all([
+		db
+			.select({
+				totalClicks: sql<number>`count(*)::int`,
+				clicksLast24h: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 86400000)})::int`,
+				clicksLast7d: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 7 * 86400000)})::int`,
+				previousPeriodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${previousStart} and ${clickEvents.clickedAt} < ${rangeStart})::int`,
+				periodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
+				uniqueReferrers: sql<number>`count(distinct ${referrerSourceExpr}) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is not null)::int`,
+				directClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is null)::int`,
+				desktopClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and ${isDesktopUa})::int`,
+				mobileClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and ${isMobileUa})::int`,
+				tabletClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and ${isTabletUa})::int`,
+				unknownClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and ${isUnknownUa})::int`,
+			})
+			.from(clickEvents)
+			.where(eq(clickEvents.profileId, profileId)),
+		db
+			.select({
+				linkId: clickEvents.linkId,
+				previousCount: sql<number>`count(*) filter (where ${clickEvents.clickedAt} < ${rangeStart})::int`,
+				count: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
+				title: links.title,
+				url: links.url,
+			})
+			.from(clickEvents)
+			.leftJoin(links, eq(clickEvents.linkId, links.id))
+			.where(
+				and(
+					eq(clickEvents.profileId, profileId),
+					gte(clickEvents.clickedAt, previousStart),
+				),
+			)
+			.groupBy(clickEvents.linkId, links.title, links.url)
+			.orderBy(
+				desc(
+					sql`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})`,
+				),
+			),
+
+		db
+			.select({
+				source: referrerSourceExpr,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(clickEvents)
+			.where(rangeWhere)
+			.groupBy(referrerSourceExpr)
+			.orderBy(desc(sql`count(*)`))
+			.limit(8),
+
+		db
+			.select({
+				day: sql<string>`to_char(${dayExpr}, 'YYYY-MM-DD')`,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(clickEvents)
+			.where(rangeWhere)
+			.groupBy(dayExpr)
+			.orderBy(asc(dayExpr)),
+
+		db
+			.select({
+				id: clickEvents.id,
+				linkId: clickEvents.linkId,
+				referrer: clickEvents.referrer,
+				userAgent: clickEvents.userAgent,
+				country: clickEvents.country,
+				clickedAt: clickEvents.clickedAt,
+				linkTitle: links.title,
+				linkUrl: links.url,
+			})
+			.from(clickEvents)
+			.leftJoin(links, eq(clickEvents.linkId, links.id))
+			.where(rangeWhere)
+			.orderBy(desc(clickEvents.clickedAt))
+			.limit(12),
+		db
+			.select({
+				weekday: weekdayExpr,
+				hour: hourExpr,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(clickEvents)
+			.where(rangeWhere)
+			.groupBy(weekdayExpr, hourExpr),
+	]);
+
+	const summaryRow = totals[0];
+	const deviceRows = [
+		{ device: "Desktop", count: summaryRow?.desktopClicks ?? 0 },
+		{ device: "Mobile", count: summaryRow?.mobileClicks ?? 0 },
+		{ device: "Tablet", count: summaryRow?.tabletClicks ?? 0 },
+		{ device: "Unknown", count: summaryRow?.unknownClicks ?? 0 },
+	];
+
+	return {
+		devices: summarizeDevices(deviceRows),
+		clickHeatmap: fillClickHeatmap(heatmapRows),
+		rangeDays: days,
+		previousPeriodClicks: summaryRow?.previousPeriodClicks ?? 0,
+		previousRangeStart: previousStart.toISOString().slice(0, 10),
+		previousRangeEnd: new Date(rangeStart.getTime() - 1)
+			.toISOString()
+			.slice(0, 10),
+		periodClicks: summaryRow?.periodClicks ?? 0,
+		totalClicks: summaryRow?.totalClicks ?? 0,
+		clicksLast24h: summaryRow?.clicksLast24h ?? 0,
+		clicksLast7d: summaryRow?.clicksLast7d ?? 0,
+		uniqueReferrers: summaryRow?.uniqueReferrers ?? 0,
+		directClicks: summaryRow?.directClicks ?? 0,
+		clicksByLink,
+		topReferrers,
+		rangeStart: rangeStart.toISOString().slice(0, 10),
+		rangeEnd: now.toISOString().slice(0, 10),
+		clicksByDay: fillDailyClicks(clicksByDay, days, now),
+		recentClicks,
+	};
+}
+
 export const analyticsRouter = createTRPCRouter({
 	recordClick: publicProcedure
 		.input(
@@ -87,9 +237,11 @@ export const analyticsRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const profile = await db.query.profiles.findFirst({
-				where: eq(profiles.userId, ctx.userId),
-			});
+			const [profile] = await db
+				.select({ id: profiles.id })
+				.from(profiles)
+				.where(eq(profiles.userId, ctx.userId))
+				.limit(1);
 			if (!profile) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
@@ -97,142 +249,6 @@ export const analyticsRouter = createTRPCRouter({
 				});
 			}
 
-			const now = new Date();
-			const rangeStart = analyticsRangeStart(input.days, now);
-			const previousStart = new Date(
-				rangeStart.getTime() - input.days * 86400000,
-			);
-			const rangeWhere = and(
-				eq(clickEvents.profileId, profile.id),
-				gte(clickEvents.clickedAt, rangeStart),
-			);
-
-			const referrerSourceExpr = sql<string>`coalesce(nullif(split_part(split_part(split_part(regexp_replace(${clickEvents.referrer}, '^https?://(www\\.)?', ''), '/', 1), '?', 1), '#', 1), ''), 'Direct')`;
-			const dayExpr = sql`date_trunc('day', ${clickEvents.clickedAt})`;
-			const weekdayExpr = sql<number>`extract(isodow from ${clickEvents.clickedAt})::int`;
-			const hourExpr = sql<number>`extract(hour from ${clickEvents.clickedAt})::int`;
-			const deviceExpr = sql<string>`case when nullif(btrim(${clickEvents.userAgent}), '') is null then 'Unknown' when ${clickEvents.userAgent} ~* '(ipad|tablet|silk|kindle)' or (${clickEvents.userAgent} ~* 'android' and ${clickEvents.userAgent} !~* 'mobile') then 'Tablet' when ${clickEvents.userAgent} ~* '(mobile|iphone|ipod|android)' then 'Mobile' else 'Desktop' end`;
-
-			// One aggregate scan replaces six sequential count queries. The remaining
-			// independent, range-scoped queries can use the profile/date index.
-			const [
-				totals,
-				clicksByLink,
-				topReferrers,
-				clicksByDay,
-				recentClicks,
-				deviceRows,
-				heatmapRows,
-			] = await Promise.all([
-				db
-					.select({
-						totalClicks: sql<number>`count(*)::int`,
-						clicksLast24h: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 86400000)})::int`,
-						clicksLast7d: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${new Date(now.getTime() - 7 * 86400000)})::int`,
-						previousPeriodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${previousStart} and ${clickEvents.clickedAt} < ${rangeStart})::int`,
-						periodClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
-						uniqueReferrers: sql<number>`count(distinct ${referrerSourceExpr}) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is not null)::int`,
-						directClicks: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart} and nullif(btrim(${clickEvents.referrer}), '') is null)::int`,
-					})
-					.from(clickEvents)
-					.where(eq(clickEvents.profileId, profile.id)),
-				db
-					.select({
-						linkId: clickEvents.linkId,
-						previousCount: sql<number>`count(*) filter (where ${clickEvents.clickedAt} < ${rangeStart})::int`,
-						count: sql<number>`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})::int`,
-						title: links.title,
-						url: links.url,
-					})
-					.from(clickEvents)
-					.leftJoin(links, eq(clickEvents.linkId, links.id))
-					.where(
-						and(
-							eq(clickEvents.profileId, profile.id),
-							gte(clickEvents.clickedAt, previousStart),
-						),
-					)
-					.groupBy(clickEvents.linkId, links.title, links.url)
-					.orderBy(
-						desc(
-							sql`count(*) filter (where ${clickEvents.clickedAt} >= ${rangeStart})`,
-						),
-					),
-
-				db
-					.select({
-						source: referrerSourceExpr,
-						count: sql<number>`count(*)::int`,
-					})
-					.from(clickEvents)
-					.where(rangeWhere)
-					.groupBy(referrerSourceExpr)
-					.orderBy(desc(sql`count(*)`))
-					.limit(8),
-
-				db
-					.select({
-						day: sql<string>`to_char(${dayExpr}, 'YYYY-MM-DD')`,
-						count: sql<number>`count(*)::int`,
-					})
-					.from(clickEvents)
-					.where(rangeWhere)
-					.groupBy(dayExpr)
-					.orderBy(asc(dayExpr)),
-
-				db
-					.select({
-						id: clickEvents.id,
-						linkId: clickEvents.linkId,
-						referrer: clickEvents.referrer,
-						userAgent: clickEvents.userAgent,
-						country: clickEvents.country,
-						clickedAt: clickEvents.clickedAt,
-						linkTitle: links.title,
-						linkUrl: links.url,
-					})
-					.from(clickEvents)
-					.leftJoin(links, eq(clickEvents.linkId, links.id))
-					.where(rangeWhere)
-					.orderBy(desc(clickEvents.clickedAt))
-					.limit(12),
-				db
-					.select({ device: deviceExpr, count: sql<number>`count(*)::int` })
-					.from(clickEvents)
-					.where(rangeWhere)
-					.groupBy(deviceExpr),
-				db
-					.select({
-						weekday: weekdayExpr,
-						hour: hourExpr,
-						count: sql<number>`count(*)::int`,
-					})
-					.from(clickEvents)
-					.where(rangeWhere)
-					.groupBy(weekdayExpr, hourExpr),
-			]);
-
-			return {
-				devices: summarizeDevices(deviceRows),
-				clickHeatmap: fillClickHeatmap(heatmapRows),
-				rangeDays: input.days,
-				previousPeriodClicks: totals[0]?.previousPeriodClicks ?? 0,
-				previousRangeStart: previousStart.toISOString().slice(0, 10),
-				previousRangeEnd: new Date(rangeStart.getTime() - 1)
-					.toISOString()
-					.slice(0, 10),
-				periodClicks: totals[0]?.periodClicks ?? 0,
-				totalClicks: totals[0]?.totalClicks ?? 0,
-				clicksLast24h: totals[0]?.clicksLast24h ?? 0,
-				clicksLast7d: totals[0]?.clicksLast7d ?? 0,
-				uniqueReferrers: totals[0]?.uniqueReferrers ?? 0,
-				directClicks: totals[0]?.directClicks ?? 0,
-				clicksByLink,
-				topReferrers,
-				rangeStart: rangeStart.toISOString().slice(0, 10),
-				rangeEnd: now.toISOString().slice(0, 10),
-				clicksByDay: fillDailyClicks(clicksByDay, input.days, now),
-				recentClicks,
-			};
+			return fetchAnalyticsSummary(profile.id, input.days);
 		}),
 });

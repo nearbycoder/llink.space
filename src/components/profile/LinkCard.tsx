@@ -44,6 +44,7 @@ export function LinkCard({
 	mutedTextColor = "#5F5A51",
 	onClickRecord,
 }: LinkCardProps) {
+	const safeUrl = normalizeHttpUrl(url);
 	const handleClick = () => {
 		if (!safeUrl) {
 			return;
@@ -52,7 +53,6 @@ export function LinkCard({
 			onClickRecord(id);
 		}
 	};
-	const safeUrl = normalizeHttpUrl(url);
 
 	return (
 		<div className="public-link-card" data-featured={featured || undefined}>
@@ -84,6 +84,7 @@ export function LinkCard({
 								alt=""
 								className="aspect-video w-full rounded-xl object-cover"
 								loading="lazy"
+								decoding="async"
 							/>
 						)}
 						<span

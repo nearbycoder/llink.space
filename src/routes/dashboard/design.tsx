@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import type { SetStateAction } from "react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DesignBackup } from "#/components/dashboard/DesignBackup";
 import { PageHeader } from "#/components/dashboard/PageHeader";
@@ -91,7 +91,7 @@ function DesignStudio() {
 			...v,
 			links: typeof action === "function" ? action(v.links) : action,
 		}));
-	const [saved, setSaved] = useState(
+	const [saved, setSaved] = useState(() =>
 		JSON.stringify({ profile: initial.profile, links: initial.layout.links }),
 	);
 	const [selectedTemplate, setSelectedTemplate] = useState<
@@ -99,7 +99,11 @@ function DesignStudio() {
 	>(null);
 	const templateTrigger = useRef<HTMLButtonElement | null>(null);
 	const [device, setDevice] = useState<"phone" | "desktop">("phone");
-	const dirty = JSON.stringify({ profile: draft, links: draftLinks }) !== saved;
+	const serializedDraft = useMemo(
+		() => JSON.stringify({ profile: draft, links: draftLinks }),
+		[draft, draftLinks],
+	);
+	const dirty = serializedDraft !== saved;
 	const save = useMutation(trpc.design.save.mutationOptions());
 	const update = (patch: Partial<typeof draft>) =>
 		setDraft((v) => ({ ...v, ...patch }));
@@ -109,19 +113,27 @@ function DesignStudio() {
 				b.id === id ? { ...b, ...patch } : b,
 			),
 		});
-	const published = draftLinks.filter((l) => isLinkPublished(l));
-	const preview: PublicPageData = {
-		customDomain: null,
-		profile: draft,
-		links: published,
-		unsectionedLinks: published.filter((l) => !l.sectionId),
-		sections: initial.layout.sections
-			.map((s) => ({
-				...s,
-				links: published.filter((l) => l.sectionId === s.id),
-			}))
-			.filter((s) => s.links.length),
-	};
+	const preview = useMemo<PublicPageData>(() => {
+		const published = draftLinks.filter((l) => isLinkPublished(l));
+		const bySection = new Map<string | null, typeof published>();
+		for (const link of published) {
+			const bucket = bySection.get(link.sectionId);
+			if (bucket) bucket.push(link);
+			else bySection.set(link.sectionId, [link]);
+		}
+		return {
+			customDomain: null,
+			profile: draft,
+			links: published,
+			unsectionedLinks: bySection.get(null) ?? [],
+			sections: initial.layout.sections
+				.map((s) => ({
+					...s,
+					links: bySection.get(s.id) ?? [],
+				}))
+				.filter((s) => s.links.length > 0),
+		};
+	}, [draft, draftLinks, initial.layout.sections]);
 	const applyTemplate = () => {
 		if (!selectedTemplate) return;
 		const t = selectedTemplate;
@@ -146,9 +158,12 @@ function DesignStudio() {
 	};
 	const publish = async () => {
 		try {
+			const initialLinksById = new Map(
+				initial.layout.links.map((link) => [link.id, link]),
+			);
 			const edits = draftLinks
 				.filter((l) => {
-					const old = initial.layout.links.find((o) => o.id === l.id);
+					const old = initialLinksById.get(l.id);
 					return old?.title !== l.title || old?.url !== l.url;
 				})
 				.map(({ id, title, url }) => ({ id, title, url }));
