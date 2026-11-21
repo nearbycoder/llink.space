@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TRPCClientError } from "@trpc/client";
 import { Home, SearchX, UserPlus } from "lucide-react";
 import { PublicProfilePage } from "#/components/profile/PublicProfilePage";
 import { SiteBrand } from "#/components/SiteBrand";
+import { getPublicProfilePage } from "#/lib/public-profile-fn";
+import { serializeJsonLd } from "#/lib/security";
 import { toAbsoluteUrl } from "#/lib/site-url";
 
 function trimForMeta(value: string, maxLength: number) {
@@ -12,24 +13,20 @@ function trimForMeta(value: string, maxLength: number) {
 
 export const Route = createFileRoute("/u/$username")({
 	ssr: true,
-	loader: async ({ params, context }) => {
-		try {
-			const data = await context.queryClient.fetchQuery(
-				context.trpc.links.getPublic.queryOptions({
-					username: params.username,
-				}),
-			);
-			return { data };
-		} catch (error) {
-			if (
-				error instanceof TRPCClientError &&
-				error.data?.code === "NOT_FOUND"
-			) {
-				return { data: null };
-			}
-			throw error;
+	loader: async ({ params }) => {
+		if (!params.username || params.username.length > 30) {
+			return { data: null };
 		}
+		const data = await getPublicProfilePage({
+			data: { username: params.username },
+		});
+		return { data };
 	},
+	headers: ({ loaderData }) => ({
+		"cache-control": loaderData?.data
+			? "public, max-age=0, s-maxage=60, stale-while-revalidate=300"
+			: "no-store",
+	}),
 	head: ({ params, loaderData }) => {
 		const encodedUsername = encodeURIComponent(params.username);
 		const pageUrl = loaderData?.data?.customDomain
@@ -146,7 +143,7 @@ export const Route = createFileRoute("/u/$username")({
 			scripts: [
 				{
 					type: "application/ld+json",
-					children: JSON.stringify(structuredData),
+					children: serializeJsonLd(structuredData),
 				},
 			],
 			links: [{ rel: "canonical", href: pageUrl }],

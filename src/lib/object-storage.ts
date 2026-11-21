@@ -180,6 +180,12 @@ export class S3ObjectStorage implements ObjectStorage {
 		options: ObjectReadOptions = {},
 	): Promise<GetObjectResult | null> {
 		const normalizedKey = key.replace(/^\/+/, "");
+		if (
+			this.config.keyPrefix &&
+			!normalizedKey.startsWith(`${this.config.keyPrefix}/`)
+		) {
+			return null;
+		}
 
 		try {
 			const input = {
@@ -513,8 +519,12 @@ export function buildProfileAvatarObjectKey({
 	fileName: string;
 	contentType: string;
 }) {
-	const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "");
-	const extFromName = path.extname(fileName).replace(".", "").toLowerCase();
+	const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "") || "user";
+	const extFromName = path
+		.extname(fileName)
+		.replace(".", "")
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, "");
 	const extFromMime = extensionByMimeType[contentType];
 	const ext = extFromMime || extFromName || "bin";
 	return `avatars/${safeUserId}/${Date.now()}-${randomUUID()}.${ext}`;
@@ -529,8 +539,12 @@ export function buildProfileBackgroundObjectKey({
 	fileName: string;
 	contentType: string;
 }) {
-	const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "");
-	const extFromName = path.extname(fileName).replace(".", "").toLowerCase();
+	const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "") || "user";
+	const extFromName = path
+		.extname(fileName)
+		.replace(".", "")
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, "");
 	const extFromMime = extensionByMimeType[contentType];
 	const ext = extFromMime || extFromName || "bin";
 	return `backgrounds/${safeUserId}/${Date.now()}-${randomUUID()}.${ext}`;

@@ -18,7 +18,7 @@ function decodeObjectPath(pathValue: string) {
 			.map((segment) => decodeURIComponent(segment))
 			.join("/");
 	} catch {
-		return pathValue.replace(/^\/+/, "");
+		return null;
 	}
 }
 
@@ -29,7 +29,7 @@ function extractObjectKeyFromRequestUrl(requestUrl: string) {
 	if (!encodedPath) return null;
 	const key = decodeObjectPath(encodedPath);
 	if (!key) return null;
-	if (key.includes("\u0000")) return null;
+	if (key.includes("\u0000") || key.includes("\\")) return null;
 	if (key.split("/").some((segment) => segment === "." || segment === "..")) {
 		return null;
 	}

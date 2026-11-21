@@ -4,9 +4,19 @@ import { analyticsGuards } from "#/db/schema";
 import { clickClientKey, hashClickKey } from "./click-protection";
 
 type Executor = Pick<typeof db, "execute">;
-const secret = process.env.BETTER_AUTH_SECRET ?? "llink-local-click-protection";
 let nextCleanup = 0;
 let requestsSinceCleanup = 0;
+
+export function guardSecret() {
+	return process.env.BETTER_AUTH_SECRET ?? "llink-local-click-protection";
+}
+
+export function trustedIpHeader() {
+	return (
+		process.env.ANALYTICS_TRUSTED_IP_HEADER ??
+		(process.env.RAILWAY_ENVIRONMENT_ID ? "x-real-ip" : undefined)
+	);
+}
 
 export function clickGuardKeys(
 	request: Request,
@@ -14,10 +24,8 @@ export function clickGuardKeys(
 	linkId: string,
 	referrer: string,
 ) {
-	const header =
-		process.env.ANALYTICS_TRUSTED_IP_HEADER ??
-		(process.env.RAILWAY_ENVIRONMENT_ID ? "x-real-ip" : undefined);
-	const client = clickClientKey(request, secret, header);
+	const secret = guardSecret();
+	const client = clickClientKey(request, secret, trustedIpHeader());
 	return {
 		rate: hashClickKey(secret, ["rate", profileId, client]),
 		duplicate: hashClickKey(secret, [

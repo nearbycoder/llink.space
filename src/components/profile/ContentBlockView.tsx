@@ -80,6 +80,7 @@ export function ContentBlockView({
 					src={block.url}
 					alt={block.title}
 					loading="lazy"
+					decoding="async"
 					className="w-full rounded-xl"
 				/>
 			)}

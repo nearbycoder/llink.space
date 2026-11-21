@@ -166,7 +166,7 @@ function DomainPage() {
 									<a
 										href={`https://${domain.hostname}/`}
 										target="_blank"
-										rel="noreferrer"
+										rel="noopener noreferrer"
 										className="rounded-lg border border-border px-4 py-2 text-sm font-bold"
 									>
 										Open custom domain ↗

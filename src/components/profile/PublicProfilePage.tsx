@@ -1,7 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { ChevronDown } from "lucide-react";
-import { type CSSProperties, Fragment, useState } from "react";
+import {
+	type CSSProperties,
+	Fragment,
+	useCallback,
+	useMemo,
+	useState,
+} from "react";
 import { flushSync } from "react-dom";
 import { SiteBrand } from "#/components/SiteBrand";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -11,7 +17,7 @@ import {
 	getProfileBackgroundColorValue,
 	getProfileBackgroundGradientValue,
 } from "#/lib/profile-backgrounds";
-import { isAllowedBackgroundImageUrl } from "#/lib/security";
+import { toSafeCssUrl } from "#/lib/security";
 import { getTheme } from "#/lib/themes";
 import { useReadingList } from "#/lib/use-reading-list";
 import { ContactDownload } from "./ContactDownload";
@@ -26,10 +32,6 @@ import { PublicProfileShare } from "./PublicProfileShare";
 import { ReadingList } from "./ReadingList";
 export type PublicPageData =
 	inferRouterOutputs<TRPCRouter>["links"]["getPublic"];
-function toCssBackgroundImageUrl(value: string) {
-	const safeValue = value.replace(/["\\\n\r\f]/g, "");
-	return `url("${safeValue}")`;
-}
 
 function resolveProfileBackgroundStyle(
 	profile: {
@@ -46,14 +48,14 @@ function resolveProfileBackgroundStyle(
 		};
 	}
 
-	if (
-		profile.pageBackgroundType === "image" &&
-		profile.pageBackgroundImageUrl &&
-		isAllowedBackgroundImageUrl(profile.pageBackgroundImageUrl)
-	) {
+	const safeCssUrl =
+		profile.pageBackgroundType === "image" && profile.pageBackgroundImageUrl
+			? toSafeCssUrl(profile.pageBackgroundImageUrl)
+			: null;
+	if (safeCssUrl) {
 		return {
 			backgroundColor: "#16140F",
-			backgroundImage: `linear-gradient(180deg, rgba(22,20,15,0.35), rgba(22,20,15,0.15)), ${toCssBackgroundImageUrl(profile.pageBackgroundImageUrl)}`,
+			backgroundImage: `linear-gradient(180deg, rgba(22,20,15,0.35), rgba(22,20,15,0.15)), ${safeCssUrl}`,
 			backgroundPosition: "center",
 			backgroundSize: "cover",
 		};
@@ -83,11 +85,11 @@ interface PublicProfileLink {
 }
 
 interface PublicLinkGroupProps {
-	savedIds?: string[];
+	savedIdSet?: ReadonlySet<string>;
 	saveReady?: boolean;
 	onToggleSave?: (id: string) => void;
 	preview?: boolean;
-	blocks: ContentBlock[];
+	blocksByAfterLinkId: ReadonlyMap<string, ContentBlock[]>;
 	buttonStyle?: string;
 	links: PublicProfileLink[];
 	cardBg: string;
@@ -100,11 +102,11 @@ interface PublicLinkGroupProps {
 const PUBLIC_LINK_PREVIEW_LIMIT = 5;
 
 function PublicLinkGroup({
-	savedIds,
+	savedIdSet,
 	saveReady,
 	onToggleSave,
 	preview,
-	blocks,
+	blocksByAfterLinkId,
 	buttonStyle,
 	links,
 	cardBg,
@@ -115,35 +117,36 @@ function PublicLinkGroup({
 }: PublicLinkGroupProps) {
 	const visibleLinks = links.slice(0, PUBLIC_LINK_PREVIEW_LIMIT);
 	const remainingLinks = links.slice(PUBLIC_LINK_PREVIEW_LIMIT);
-	const renderLink = (link: PublicProfileLink) => (
-		<Fragment key={link.id}>
-			<LinkCard
-				saved={savedIds?.includes(link.id)}
-				saveReady={saveReady}
-				onToggleSave={onToggleSave}
-				buttonStyle={buttonStyle}
-				featured={link.featured}
-				featureImageUrl={link.featureImageUrl}
-				ctaLabel={link.ctaLabel}
-				id={link.id}
-				title={link.title}
-				url={link.url}
-				description={link.description}
-				iconUrl={link.iconUrl}
-				iconBgColor={link.iconBgColor}
-				cardBg={cardBg}
-				cardBorder={cardBorder}
-				textColor={textColor}
-				mutedTextColor={mutedTextColor}
-				onClickRecord={onVisit}
-			/>
-			{blocks
-				.filter((b) => b.afterLinkId === link.id)
-				.map((b) => (
+	const renderLink = (link: PublicProfileLink) => {
+		const attachedBlocks = blocksByAfterLinkId.get(link.id);
+		return (
+			<Fragment key={link.id}>
+				<LinkCard
+					saved={savedIdSet?.has(link.id)}
+					saveReady={saveReady}
+					onToggleSave={onToggleSave}
+					buttonStyle={buttonStyle}
+					featured={link.featured}
+					featureImageUrl={link.featureImageUrl}
+					ctaLabel={link.ctaLabel}
+					id={link.id}
+					title={link.title}
+					url={link.url}
+					description={link.description}
+					iconUrl={link.iconUrl}
+					iconBgColor={link.iconBgColor}
+					cardBg={cardBg}
+					cardBorder={cardBorder}
+					textColor={textColor}
+					mutedTextColor={mutedTextColor}
+					onClickRecord={onVisit}
+				/>
+				{attachedBlocks?.map((b) => (
 					<ContentBlockView key={b.id} block={b} preview={preview} />
 				))}
-		</Fragment>
-	);
+			</Fragment>
+		);
+	};
 
 	return (
 		<div className="space-y-2.5">
@@ -177,41 +180,62 @@ export function PublicProfilePage({
 	const trpc = useTRPC();
 	const recordClick = useMutation(trpc.analytics.recordClick.mutationOptions());
 	const { profile, links, sections, unsectionedLinks } = data;
-	const reading = useReadingList(
-		profile.id,
-		links.map((l) => l.id),
-		!preview,
+	const linkIds = useMemo(() => links.map((l) => l.id), [links]);
+	const reading = useReadingList(profile.id, linkIds, !preview);
+	const savedIdSet = useMemo(() => new Set(reading.ids), [reading.ids]);
+	const savedLinks = useMemo(
+		() => links.filter((l) => savedIdSet.has(l.id)),
+		[links, savedIdSet],
 	);
 	const theme = {
 		...getTheme(profile.theme ?? "default"),
 		...(profile.accentColor ? { accent: profile.accentColor } : {}),
 	};
 	const blocks = profile.contentBlocks ?? [];
-	const visibleIds = new Set(links.map((l) => l.id));
+	const { blocksByAfterLinkId, leadingBlocks } = useMemo(() => {
+		const visibleIds = new Set(linkIds);
+		const byAfterLinkId = new Map<string, ContentBlock[]>();
+		const leading: ContentBlock[] = [];
+		for (const block of blocks) {
+			if (!block.afterLinkId || !visibleIds.has(block.afterLinkId)) {
+				leading.push(block);
+			} else {
+				const bucket = byAfterLinkId.get(block.afterLinkId);
+				if (bucket) bucket.push(block);
+				else byAfterLinkId.set(block.afterLinkId, [block]);
+			}
+		}
+		return { blocksByAfterLinkId: byAfterLinkId, leadingBlocks: leading };
+	}, [blocks, linkIds]);
 	const pageBackgroundStyle = resolveProfileBackgroundStyle(
 		profile,
 		theme.background,
 	);
-	const sectionTitleByLinkId = new Map(
-		sections.flatMap((section) =>
-			section.links.map((link) => [link.id, section.title] as const),
-		),
-	);
-	const commandLinks = links.map((link) => ({
-		...link,
-		sectionTitle: sectionTitleByLinkId.get(link.id) ?? null,
-	}));
+	const commandLinks = useMemo(() => {
+		const sectionTitleByLinkId = new Map(
+			sections.flatMap((section) =>
+				section.links.map((link) => [link.id, section.title] as const),
+			),
+		);
+		return links.map((link) => ({
+			...link,
+			sectionTitle: sectionTitleByLinkId.get(link.id) ?? null,
+		}));
+	}, [links, sections]);
 
-	const handleLinkClick = (linkId: string) => {
-		if (preview) return;
-		recordClick.mutate({
-			linkId,
-			profileId: profile.id,
-			referrer: typeof window !== "undefined" ? document.referrer : undefined,
-			userAgent:
-				typeof window !== "undefined" ? navigator.userAgent : undefined,
-		});
-	};
+	const handleLinkClick = useCallback(
+		(linkId: string) => {
+			if (preview) return;
+			recordClick.mutate({
+				linkId,
+				profileId: profile.id,
+				referrer: typeof window !== "undefined" ? document.referrer : undefined,
+				userAgent:
+					typeof window !== "undefined" ? navigator.userAgent : undefined,
+			});
+		},
+		[preview, profile.id, recordClick],
+	);
 
 	const displayName = profile.displayName?.trim() || `@${profile.username}`;
 	const [printQr, setPrintQr] = useState<string | null>(null);
@@ -297,7 +321,7 @@ export function PublicProfilePage({
 						/>
 						{!preview && (
 							<ReadingList
-								links={links.filter((l) => reading.ids.includes(l.id))}
+								links={savedLinks}
 								onRemove={reading.toggle}
 								onClear={reading.clear}
 								onUndo={reading.undo}
@@ -333,20 +357,18 @@ export function PublicProfilePage({
 							</div>
 						</nav>
 					)}
-					{blocks
-						.filter((b) => !b.afterLinkId || !visibleIds.has(b.afterLinkId))
-						.map((b) => (
-							<ContentBlockView key={b.id} block={b} preview={preview} />
-						))}
+					{leadingBlocks.map((b) => (
+						<ContentBlockView key={b.id} block={b} preview={preview} />
+					))}
 					{links.length > 0 ? (
 						<div className="space-y-8">
 							{unsectionedLinks.length > 0 && (
 								<PublicLinkGroup
-									savedIds={reading.ids}
+									savedIdSet={savedIdSet}
 									saveReady={reading.ready}
 									onToggleSave={preview ? undefined : reading.toggle}
 									preview={preview}
-									blocks={blocks}
+									blocksByAfterLinkId={blocksByAfterLinkId}
 									buttonStyle={profile.buttonStyle}
 									links={unsectionedLinks}
 									cardBg={theme.cardBg}
@@ -387,11 +409,11 @@ export function PublicProfilePage({
 										</span>
 									</div>
 									<PublicLinkGroup
-										savedIds={reading.ids}
+										savedIdSet={savedIdSet}
 										saveReady={reading.ready}
 										onToggleSave={preview ? undefined : reading.toggle}
 										preview={preview}
-										blocks={blocks}
+										blocksByAfterLinkId={blocksByAfterLinkId}
 										buttonStyle={profile.buttonStyle}
 										links={section.links}
 										cardBg={theme.cardBg}

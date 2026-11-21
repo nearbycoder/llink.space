@@ -21,6 +21,9 @@ const config = defineConfig({
 	resolve: {
 		tsconfigPaths: true,
 	},
+	ssr: {
+		external: ["@resvg/resvg-wasm"],
+	},
 	optimizeDeps: {
 		include: ["qrcode"],
 		exclude: tanstackOptimizeDepsExcludes,
@@ -39,13 +42,34 @@ const config = defineConfig({
 			},
 		}),
 		nitro({
-			rollupConfig: { external: [/^@sentry\//] },
+			rollupConfig: { external: [/^@sentry\//, /^@resvg\/resvg-wasm/] },
 			// API image URLs must reach Start even when browsers request them as assets.
 			routes: { "/api/**": "./server/tanstack-api.ts" },
 			routeRules: {
+				"/assets/**": {
+					headers: {
+						"cache-control": "public, max-age=31536000, immutable",
+						"x-content-type-options": "nosniff",
+					},
+				},
+				"/fonts/**": {
+					headers: {
+						"cache-control": "public, max-age=31536000, immutable",
+						"x-content-type-options": "nosniff",
+					},
+				},
+				"/demo/**": {
+					headers: {
+						"cache-control": "public, max-age=86400",
+						"x-content-type-options": "nosniff",
+					},
+				},
 				"/uploads/**": {
 					headers: {
 						"cache-control": "public, max-age=31536000, immutable",
+						"x-content-type-options": "nosniff",
+						"content-security-policy": "default-src 'none'; sandbox",
+						"cross-origin-resource-policy": "same-origin",
 					},
 				},
 			},

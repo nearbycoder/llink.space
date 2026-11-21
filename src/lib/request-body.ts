@@ -66,6 +66,8 @@ export function oversizedRequestResponse() {
 		headers: {
 			"content-type": "application/json",
 			"cache-control": "no-store",
+			"x-content-type-options": "nosniff",
+			"x-frame-options": "DENY",
 		},
 	});
 }

@@ -13,6 +13,7 @@ describe("safe destination checks", () => {
 			"169.254.169.254",
 			"100.64.1.1",
 			"168.63.129.16",
+			"192.88.99.1",
 			"192.168.0.1",
 			"::1",
 			"::ffff:127.0.0.1",
@@ -66,5 +67,22 @@ describe("safe destination checks", () => {
 		expect((await inspectLink("https://example.com", deps)).healthState).toBe(
 			"restricted",
 		);
+	});
+	it("blocks trailing-dot internal hostnames and oversized redirect targets", async () => {
+		for (const url of [
+			"http://localhost./secret",
+			"http://metadata.google.internal./computeMetadata/v1/",
+			"http://printer.home.arpa/",
+		]) {
+			await expect(resolvePublicTarget(url)).rejects.toThrow("blocked");
+		}
+		const result = await inspectLink("https://example.com", {
+			resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+			probe: async () => ({
+				status: 302,
+				location: `https://example.com/${"a".repeat(2100)}`,
+			}),
+		});
+		expect(result.healthState).toBe("blocked");
 	});
 });

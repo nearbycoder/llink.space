@@ -7,7 +7,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Select } from "#/components/ui/select";
 import { useTRPC } from "#/integrations/trpc/react";
-import { getDashboardDesign } from "#/lib/auth-server";
+import { getDashboardHealth } from "#/lib/auth-server";
 import { downloadFile } from "#/lib/download-file";
 import {
 	buildHealthCsv,
@@ -17,10 +17,10 @@ import {
 } from "#/lib/health-tools";
 export const Route = createFileRoute("/dashboard/health")({
 	loader: async () => {
-		const data = await getDashboardDesign();
+		const data = await getDashboardHealth();
 		if (data.status === "unauthenticated") throw redirect({ to: "/sign-in" });
 		if (data.status === "no-profile") throw redirect({ to: "/onboarding" });
-		return data.layout.links;
+		return data.links;
 	},
 	component: HealthPage,
 });

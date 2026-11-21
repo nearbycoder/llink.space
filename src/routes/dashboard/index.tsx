@@ -231,12 +231,29 @@ function DashboardPage() {
 		statusFilter !== "all" ||
 		sectionFilter !== "all";
 	const selectedCount = selectedLinkIds.size;
-	const hiddenSelectedCount =
-		selectedCount -
-		filteredLinks.filter((link) => selectedLinkIds.has(link.id)).length;
-	const allVisibleSelected =
-		filteredLinks.length > 0 &&
-		filteredLinks.every((link) => selectedLinkIds.has(link.id));
+	const { hiddenSelectedCount, allVisibleSelected } = useMemo(() => {
+		let visibleSelected = 0;
+		for (const link of filteredLinks) {
+			if (selectedLinkIds.has(link.id)) visibleSelected += 1;
+		}
+		return {
+			hiddenSelectedCount: selectedCount - visibleSelected,
+			allVisibleSelected:
+				filteredLinks.length > 0 && visibleSelected === filteredLinks.length,
+		};
+	}, [filteredLinks, selectedCount, selectedLinkIds]);
+	const existingUrls = useMemo(
+		() => layout.links.map((link) => link.url),
+		[layout.links],
+	);
+	const sectionIds = useMemo(
+		() => layout.sections.map((section) => section.id),
+		[layout.sections],
+	);
+	const selectedLinks = useMemo(
+		() => layout.links.filter((link) => selectedLinkIds.has(link.id)),
+		[layout.links, selectedLinkIds],
+	);
 
 	useEffect(() => {
 		setIsHydrated(true);
@@ -622,7 +639,7 @@ function DashboardPage() {
 				actions={
 					<>
 						<LinkImportDialog
-							existingUrls={layout.links.map((link) => link.url)}
+							existingUrls={existingUrls}
 							onImported={refreshLayout}
 							disabled={isBusy || isBulkBusy}
 						/>
@@ -847,7 +864,7 @@ function DashboardPage() {
 							status: statusFilter,
 							sectionId: sectionFilter,
 						}}
-						sectionIds={layout.sections.map((s) => s.id)}
+						sectionIds={sectionIds}
 						onApply={(v) => {
 							setLinkQuery(v.query);
 							setStatusFilter(v.status);
@@ -938,7 +955,7 @@ function DashboardPage() {
 						</div>
 						<div className="flex flex-wrap gap-2">
 							<BatchLinkTools
-								links={layout.links.filter((l) => selectedLinkIds.has(l.id))}
+								links={selectedLinks}
 								disabled={isBusy || isBulkBusy}
 								onSaved={async () => {
 									await refreshLayout();

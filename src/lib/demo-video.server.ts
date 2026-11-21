@@ -24,6 +24,8 @@ export async function demoVideoResponse(request: Request) {
 			etag: etag,
 			"last-modified": stat.mtime.toUTCString(),
 			"x-content-type-options": "nosniff",
+			"content-security-policy": "default-src 'none'; sandbox",
+			"cross-origin-resource-policy": "same-origin",
 		});
 		if (request.headers.get("if-none-match") === etag) {
 			await file.close();

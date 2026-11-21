@@ -4,19 +4,21 @@ import { auth } from "#/lib/auth";
 import { isTrustedRequestOrigin } from "#/lib/security";
 
 export interface TRPCContext {
-	userId: string | null;
+	userId?: string | null;
 	request: Request;
+	getSessionUserId?: () => Promise<string | null>;
 }
 
-export async function createContext({
-	req,
-}: {
-	req: Request;
-}): Promise<TRPCContext> {
-	const session = await auth.api.getSession({ headers: req.headers });
+export function createContext({ req }: { req: Request }): TRPCContext {
+	let sessionUserIdPromise: Promise<string | null> | undefined;
 	return {
-		userId: session?.user?.id ?? null,
 		request: req,
+		getSessionUserId: () => {
+			sessionUserIdPromise ??= auth.api
+				.getSession({ headers: req.headers })
+				.then((session) => session?.user?.id ?? null);
+			return sessionUserIdPromise;
+		},
 	};
 }
 
@@ -39,8 +41,12 @@ const t = initTRPC.context<TRPCContext>().create({
 export const createTRPCRouter = t.router;
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-	if (!ctx.userId) {
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+	const userId =
+		ctx.userId !== undefined
+			? ctx.userId
+			: ((await ctx.getSessionUserId?.()) ?? null);
+	if (!userId) {
 		throw new TRPCError({ code: "UNAUTHORIZED" });
 	}
 	if (!isTrustedRequestOrigin(ctx.request)) {
@@ -49,5 +55,5 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 			message: "Invalid request origin",
 		});
 	}
-	return next({ ctx: { ...ctx, userId: ctx.userId } });
+	return next({ ctx: { ...ctx, userId } });
 });

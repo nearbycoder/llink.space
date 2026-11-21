@@ -231,3 +231,36 @@ test("internal errors do not reveal database queries or account details", async 
 	])
 		expect(body).not.toContain(secret);
 });
+
+test("public profile JSON-LD escapes script breakouts and APIs emit security headers", async ({
+	page,
+	request,
+}) => {
+	const { username } = await setupCreator(page);
+	const payload = '</script><script>window.__jsonLdXss="pwned"</script>';
+	await api(page.request, "profile.update", {
+		displayName: "Creator",
+		bio: payload,
+	});
+	const htmlResponse = await request.get(`/u/${username}`);
+	expect(htmlResponse.ok()).toBe(true);
+	const html = await htmlResponse.text();
+	expect(html).not.toContain('</script><script>window.__jsonLdXss="pwned"');
+	expect(html).toContain("\\u003c/script\\u003e");
+	await page.goto(`/u/${username}`);
+	expect(
+		await page.evaluate(
+			() => (window as unknown as { __jsonLdXss?: string }).__jsonLdXss,
+		),
+	).toBeUndefined();
+
+	const og = await request.get("/api/og");
+	expect(og.status()).toBe(200);
+	expect(og.headers()["content-type"]).toContain("image/png");
+	expect(og.headers()["x-content-type-options"]).toBe("nosniff");
+	expect(og.headers().etag).toBeTruthy();
+	const ogNotModified = await request.get("/api/og", {
+		headers: { "if-none-match": og.headers().etag },
+	});
+	expect(ogNotModified.status()).toBe(304);
+});

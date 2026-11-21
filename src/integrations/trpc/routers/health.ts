@@ -7,6 +7,7 @@ import { hashClickKey } from "#/lib/click-protection";
 import {
 	cleanupClickGuards,
 	consumeClickBudget,
+	guardSecret,
 } from "#/lib/click-protection-server";
 import { inspectLink } from "#/lib/link-health";
 import { createTRPCRouter, protectedProcedure } from "../init";
@@ -31,10 +32,7 @@ export const healthRouter = createTRPCRouter({
 			if (
 				!(await consumeClickBudget(
 					db,
-					hashClickKey(process.env.BETTER_AUTH_SECRET ?? "local", [
-						"health",
-						profile.id,
-					]),
+					hashClickKey(guardSecret(), ["health", profile.id]),
 					1,
 					30,
 				))

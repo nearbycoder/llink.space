@@ -14,6 +14,9 @@ async function authHandler(request: Request) {
 			headers: {
 				"content-type": "application/json",
 				"cache-control": "no-store",
+				"x-content-type-options": "nosniff",
+				"x-frame-options": "DENY",
+				"referrer-policy": "no-referrer",
 			},
 		});
 	}
@@ -29,6 +32,9 @@ async function authHandler(request: Request) {
 	const response = await auth.handler(request);
 	const headers = new Headers(response.headers);
 	headers.set("cache-control", "no-store");
+	headers.set("x-content-type-options", "nosniff");
+	headers.set("x-frame-options", "DENY");
+	headers.set("referrer-policy", "no-referrer");
 
 	return new Response(response.body, {
 		status: response.status,

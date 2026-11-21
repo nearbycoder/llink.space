@@ -11,7 +11,7 @@ import {
 	RefreshCw,
 	TrendingUp,
 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import {
 	Area,
 	AreaChart,
@@ -80,16 +80,21 @@ function normalizeReferrer(value: string | null | undefined) {
 	return raw.replace(/^https?:\/\/(www\.)?/i, "").split("/")[0] || "Direct";
 }
 
+const shortWeekdayFormatter = new Intl.DateTimeFormat("en-US", {
+	weekday: "short",
+	timeZone: "UTC",
+});
+const monthDayFormatter = new Intl.DateTimeFormat("en-US", {
+	month: "short",
+	day: "numeric",
+	timeZone: "UTC",
+});
+
 function buildTrend(
 	clicksByDay: Array<{ day: string; count: number }>,
 	days: number,
 ) {
-	const formatter = new Intl.DateTimeFormat(
-		"en-US",
-		days === 7
-			? { weekday: "short", timeZone: "UTC" }
-			: { month: "short", day: "numeric", timeZone: "UTC" },
-	);
+	const formatter = days === 7 ? shortWeekdayFormatter : monthDayFormatter;
 	return clicksByDay.map((item) => ({
 		...item,
 		label: formatter.format(new Date(`${item.day}T00:00:00Z`)),
@@ -124,18 +129,24 @@ function AnalyticsPage() {
 	const directPercent =
 		periodClicks > 0 ? Math.round((directClicks / periodClicks) * 100) : 0;
 
-	const chartData =
-		summary?.clicksByLink.slice(0, 20).map((item, index) => {
-			const label = item.title || item.url || "Untitled link";
-			return {
-				...item,
-				label,
-				shortLabel: truncateLabel(label),
-				fill: index === 0 ? BAR_PEAK_FILL : BAR_FILL,
-			};
-		}) ?? [];
+	const chartData = useMemo(
+		() =>
+			summary?.clicksByLink.slice(0, 20).map((item, index) => {
+				const label = item.title || item.url || "Untitled link";
+				return {
+					...item,
+					label,
+					shortLabel: truncateLabel(label),
+					fill: index === 0 ? BAR_PEAK_FILL : BAR_FILL,
+				};
+			}) ?? [],
+		[summary?.clicksByLink],
+	);
 
-	const trendData = buildTrend(summary?.clicksByDay ?? [], displayRangeDays);
+	const trendData = useMemo(
+		() => buildTrend(summary?.clicksByDay ?? [], displayRangeDays),
+		[summary?.clicksByDay, displayRangeDays],
+	);
 	const topLink = chartData[0];
 	useEffect(() => {
 		setIsHydrated(true);

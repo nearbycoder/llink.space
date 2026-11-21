@@ -3,10 +3,12 @@ import { getRequest } from "@tanstack/start-server-core";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "#/db";
 import { customDomains, profiles } from "#/db/schema";
-import { trpcRouter } from "#/integrations/trpc/router";
 import { checkDomainOwnership } from "./domain-ownership";
 import { getConfiguredSiteOrigin } from "./site-url";
 export const getCustomDomainPage = createServerFn().handler(async () => {
+	const { fetchPublicProfileForRow, publicProfileColumns } = await import(
+		"./public-profile.server"
+	);
 	const request = getRequest();
 	const hostname = new URL(request.url).hostname.toLowerCase();
 	if (
@@ -43,11 +45,11 @@ export const getCustomDomainPage = createServerFn().handler(async () => {
 			);
 		if (!valid) return null;
 	}
-	const profile = await db.query.profiles.findFirst({
-		where: eq(profiles.id, domain.profileId),
-	});
+	const [profile] = await db
+		.select(publicProfileColumns)
+		.from(profiles)
+		.where(eq(profiles.id, domain.profileId))
+		.limit(1);
 	if (!profile) return null;
-	return trpcRouter
-		.createCaller({ request, userId: null })
-		.links.getPublic({ username: profile.username });
+	return fetchPublicProfileForRow(profile, domain.hostname);
 });

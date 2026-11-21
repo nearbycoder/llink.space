@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ImageResponse } from "@vercel/og";
 import { and, asc, count, eq, sql } from "drizzle-orm";
 import { Link2 } from "lucide-react";
 import { LINK_ICON_OPTIONS_BY_KEY } from "#/components/links/icon-options";
@@ -9,18 +8,18 @@ import { isLinkIconKey } from "#/lib/link-icon-keys";
 import { publishedLinkFilter } from "#/lib/link-publishing-server";
 import {
 	clampText,
+	getCachedOgResponse,
+	hashOgCacheKey,
 	loadOgFonts,
 	lucideDataUri,
-	OG_CACHE_HEADERS,
-	OG_HEIGHT,
 	OG_INK,
 	OG_MUTED,
 	OG_PAPER,
 	OG_SIGNAL,
 	OG_SIGNAL_STRONG,
-	OG_WIDTH,
 	OgBrandMark,
 	OgWordmark,
+	renderOgImage,
 } from "#/lib/og-brand.server";
 import { storedPreviewImage } from "#/lib/og-image";
 import { getTheme } from "#/lib/themes";
@@ -64,10 +63,13 @@ function ogPalette(themeId: string | null, accentColor: string | null) {
 const PAPER_WASH =
 	"linear-gradient(135deg, #FFDCC8 0%, #F5F3EE 42%, #F5F3EE 62%, #DEE4FA 100%)";
 
-async function renderUnavailableImage(username: string) {
-	const fonts = await loadOgFonts();
+async function renderUnavailableImage(username: string, request?: Request) {
 	const handle = clampText(username, 24);
-	return new ImageResponse(
+	const cacheKey = hashOgCacheKey(["unavailable", handle]);
+	const cached = getCachedOgResponse(cacheKey, request);
+	if (cached) return cached;
+	const fonts = await loadOgFonts();
+	return renderOgImage(
 		<div
 			style={{
 				display: "flex",
@@ -132,15 +134,20 @@ async function renderUnavailableImage(username: string) {
 			</div>
 		</div>,
 		{
-			width: OG_WIDTH,
-			height: OG_HEIGHT,
 			fonts,
-			headers: OG_CACHE_HEADERS,
+			cacheKey: hashOgCacheKey(["unavailable", handle]),
+			request,
 		},
 	);
 }
 
-async function handler({ params }: { params: { username: string } }) {
+async function handler({
+	params,
+	request,
+}: {
+	params: { username: string };
+	request: Request;
+}) {
 	const username = params.username.toLowerCase();
 	try {
 		const [profile] = await db
@@ -157,7 +164,7 @@ async function handler({ params }: { params: { username: string } }) {
 			.where(eq(profiles.username, username))
 			.limit(1);
 		if (!profile) {
-			return renderUnavailableImage(params.username);
+			return renderUnavailableImage(params.username, request);
 		}
 		const [publicLinks, [linkTotal], fonts] = await Promise.all([
 			db
@@ -190,6 +197,27 @@ async function handler({ params }: { params: { username: string } }) {
 		const bio = profile.bio?.trim()
 			? clampText(profile.bio.trim(), 120)
 			: "Links, updates and everything in between.";
+		const remaining = Math.max(0, (linkTotal?.value ?? 0) - publicLinks.length);
+		const cacheKey = hashOgCacheKey([
+			"profile-og-v1",
+			profile.username,
+			displayName,
+			bio,
+			profile.avatarUrl,
+			profile.theme,
+			profile.accentColor,
+			remaining,
+			publicLinks.map((l) => [
+				l.id,
+				l.title,
+				l.description,
+				l.url,
+				l.iconUrl,
+				l.iconBgColor,
+			]),
+		]);
+		const cached = getCachedOgResponse(cacheKey, request);
+		if (cached) return cached;
 		const [avatarUrl, ...iconImages] = await Promise.all([
 			storedPreviewImage(profile.avatarUrl),
 			...publicLinks.map((link) => storedPreviewImage(link.iconUrl)),
@@ -197,10 +225,9 @@ async function handler({ params }: { params: { username: string } }) {
 		const iconImagesById = new Map(
 			publicLinks.map((link, index) => [link.id, iconImages[index]]),
 		);
-		const remaining = Math.max(0, (linkTotal?.value ?? 0) - publicLinks.length);
 		const nameSize = displayName.length > 18 ? 58 : 72;
 
-		return new ImageResponse(
+		return renderOgImage(
 			<div
 				style={{
 					display: "flex",
@@ -327,7 +354,7 @@ async function handler({ params }: { params: { username: string } }) {
 						borderRadius: 36,
 						background: palette.card,
 						border: `1.5px solid ${palette.line}`,
-						boxShadow: "0 40px 80px -36px rgba(22,20,15,0.45)",
+						boxShadow: "0 24px 56px 0 rgba(22,20,15,0.18)",
 					}}
 				>
 					{publicLinks.length > 0 ? (
@@ -444,15 +471,14 @@ async function handler({ params }: { params: { username: string } }) {
 				</div>
 			</div>,
 			{
-				width: OG_WIDTH,
-				height: OG_HEIGHT,
 				fonts,
-				headers: OG_CACHE_HEADERS,
+				cacheKey,
+				request,
 			},
 		);
 	} catch (error) {
 		console.error("OG image generation failed", { username, error });
-		return renderUnavailableImage(params.username);
+		return renderUnavailableImage(params.username, request);
 	}
 }
 
@@ -460,6 +486,7 @@ export const Route = createFileRoute("/api/og/u/$username")({
 	server: {
 		handlers: {
 			GET: handler,
+			HEAD: handler,
 		},
 	},
 });

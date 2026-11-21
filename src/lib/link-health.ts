@@ -14,6 +14,7 @@ for (const [address, prefix] of [
 	["172.16.0.0", 12],
 	["192.0.0.0", 24],
 	["192.0.2.0", 24],
+	["192.88.99.0", 24],
 	["192.168.0.0", 16],
 	["198.18.0.0", 15],
 	["198.51.100.0", 24],
@@ -57,10 +58,13 @@ export async function resolvePublicTarget(
 	const normalized = normalizeHttpUrl(value);
 	if (!normalized) throw new Error("blocked");
 	const url = new URL(normalized),
-		hostname = url.hostname.replace(/^\[|\]$/g, "");
+		hostname = url.hostname.replace(/^\[|\]$/g, "").replace(/\.+$/, "");
 	if (
+		!hostname ||
 		(url.port && !["80", "443"].includes(url.port)) ||
-		/(^|\.)(localhost|local|internal|test|invalid)$/.test(hostname)
+		/(^|\.)(localhost|local|localdomain|internal|test|invalid|home\.arpa|arpa)$/.test(
+			hostname,
+		)
 	)
 		throw new Error("blocked");
 	const addresses = isIP(hostname)
@@ -86,8 +90,15 @@ function probe(
 				agent: false,
 				family: target.family,
 				maxHeaderSize: 16384,
-				lookup: (_host, _options, callback) =>
-					callback(null, target.address, target.family),
+				lookup: (_host, options, callback) => {
+					if (options?.all) {
+						callback(null, [
+							{ address: target.address, family: target.family },
+						]);
+						return;
+					}
+					callback(null, target.address, target.family);
+				},
 				headers: {
 					"user-agent": "llink.space Link Checker/1.0",
 					accept: "*/*",
@@ -139,9 +150,11 @@ export async function inspectLink(
 					return {
 						healthState: "redirect-loop",
 						healthStatusCode: response.status,
-						healthFinalUrl: current,
+						healthFinalUrl: current.slice(0, 2048),
 					};
-				current = new URL(response.location, target.url).toString();
+				const nextUrl = new URL(response.location, target.url).toString();
+				if (nextUrl.length > 2048) throw new Error("blocked");
+				current = nextUrl;
 				redirects++;
 				continue;
 			}
@@ -155,7 +168,7 @@ export async function inspectLink(
 							? "restricted"
 							: "broken",
 				healthStatusCode: response.status,
-				healthFinalUrl: current,
+				healthFinalUrl: target.url.toString().slice(0, 2048),
 			};
 		}
 	} catch (error) {

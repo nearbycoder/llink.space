@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "#/db";
-import { customDomains, linkSections, links, profiles } from "#/db/schema";
+import { linkSections, links, profiles } from "#/db/schema";
 import {
 	batchOperationSchema,
 	previewBatchLinks,
@@ -11,8 +11,7 @@ import { parseLinkCatalog } from "#/lib/link-catalog";
 import { LINK_ICON_KEYS } from "#/lib/link-icon-keys";
 import { MAX_IMPORT_LINKS, parseLinkImport } from "#/lib/link-import";
 import { validSchedule } from "#/lib/link-publishing";
-import { publishedLinkFilter } from "#/lib/link-publishing-server";
-import { normalizeObjectUrlForClient } from "#/lib/object-storage";
+import { fetchPublicProfileByUsername } from "#/lib/public-profile.server";
 import {
 	isAllowedAvatarUrl,
 	isSafeHttpUrl,
@@ -130,28 +129,45 @@ async function requireProfileByUserId(userId: string) {
 	return profile;
 }
 
-async function fetchProfileLayout(input: {
-	profileId: string;
-	onlyActiveLinks: boolean;
-}) {
-	const linkWhere = input.onlyActiveLinks
-		? and(eq(links.profileId, input.profileId), publishedLinkFilter())
-		: eq(links.profileId, input.profileId);
-
-	const [profileLinks, profileSections] = await Promise.all([
-		db.query.links.findMany({
-			where: linkWhere,
+export async function fetchProfileLayout(
+	input: {
+		profileId: string;
+	},
+	executor?: Parameters<Parameters<typeof db.transaction>[0]>[0],
+) {
+	// Keep queries sequential on a single transaction client (pg deprecates
+	// overlapping client.query() calls on one connection), parallel on the pool.
+	let profileLinks: LinkRow[];
+	let profileSections: SectionRow[];
+	if (executor) {
+		profileLinks = await executor.query.links.findMany({
+			where: eq(links.profileId, input.profileId),
 			orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-		}),
-		db.query.linkSections.findMany({
+		});
+		profileSections = await executor.query.linkSections.findMany({
 			where: eq(linkSections.profileId, input.profileId),
 			orderBy: [
 				asc(linkSections.sortOrder),
 				asc(linkSections.createdAt),
 				asc(linkSections.id),
 			],
-		}),
-	]);
+		});
+	} else {
+		[profileLinks, profileSections] = await Promise.all([
+			db.query.links.findMany({
+				where: eq(links.profileId, input.profileId),
+				orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
+			}),
+			db.query.linkSections.findMany({
+				where: eq(linkSections.profileId, input.profileId),
+				orderBy: [
+					asc(linkSections.sortOrder),
+					asc(linkSections.createdAt),
+					asc(linkSections.id),
+				],
+			}),
+		]);
+	}
 
 	const sortedSections = sortSections(profileSections);
 	const sortedLinks = sortLinksForLayout(profileLinks, sortedSections);
@@ -160,6 +176,25 @@ async function fetchProfileLayout(input: {
 		links: sortedLinks,
 		sections: sortedSections,
 	};
+}
+
+async function applyLinkPositions(
+	tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+	profileId: string,
+	entries: Array<{ id: string; sectionId: string | null; sortOrder: number }>,
+) {
+	if (!entries.length) return;
+	const positions = entries.map((entry) =>
+		entry.sectionId === null
+			? sql`(${entry.id}::uuid, null::uuid, ${entry.sortOrder}::int)`
+			: sql`(${entry.id}::uuid, ${entry.sectionId}::uuid, ${entry.sortOrder}::int)`,
+	);
+	// Chunk parameters to remain below PostgreSQL's bind limit for large profiles.
+	for (let offset = 0; offset < positions.length; offset += 1000) {
+		await tx.execute(sql`update ${links} set section_id = position.section_id, sort_order = position.sort_order, updated_at = now()
+			from (values ${sql.join(positions.slice(offset, offset + 1000), sql`, `)}) as position(id, section_id, sort_order)
+			where ${links.id} = position.id and ${links.profileId} = ${profileId}::uuid`);
+	}
 }
 
 export const linksRouter = createTRPCRouter({
@@ -267,27 +302,25 @@ export const linksRouter = createTRPCRouter({
 						}),
 					);
 				} else {
-					await Promise.all(
-						preview.map(({ before, patch }) =>
-							tx
-								.update(links)
-								.set({
-									...patch,
-									...(patch.url && patch.url !== before.url
-										? {
-												healthState: null,
-												healthStatusCode: null,
-												healthFinalUrl: null,
-												healthCheckedAt: null,
-											}
-										: {}),
-									updatedAt: new Date(),
-								})
-								.where(
-									and(eq(links.id, before.id), eq(links.profileId, profile.id)),
-								),
-						),
-					);
+					for (const { before, patch } of preview) {
+						await tx
+							.update(links)
+							.set({
+								...patch,
+								...(patch.url && patch.url !== before.url
+									? {
+											healthState: null,
+											healthStatusCode: null,
+											healthFinalUrl: null,
+											healthCheckedAt: null,
+										}
+									: {}),
+								updatedAt: new Date(),
+							})
+							.where(
+								and(eq(links.id, before.id), eq(links.profileId, profile.id)),
+							);
+					}
 				}
 				return { count: preview.length };
 			}),
@@ -348,7 +381,6 @@ export const linksRouter = createTRPCRouter({
 		const profile = await requireProfileByUserId(ctx.userId);
 		return fetchProfileLayout({
 			profileId: profile.id,
-			onlyActiveLinks: false,
 		});
 	}),
 
@@ -413,37 +445,7 @@ export const linksRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			const profile = await requireProfileByUserId(ctx.userId);
 
-			if (input.sectionId) {
-				const section = await db.query.linkSections.findFirst({
-					where: and(
-						eq(linkSections.id, input.sectionId),
-						eq(linkSections.profileId, profile.id),
-					),
-				});
-				if (!section) {
-					throw new TRPCError({
-						code: "NOT_FOUND",
-						message: "Section not found",
-					});
-				}
-			}
-
 			const targetSectionId = input.sectionId ?? null;
-			const [order] = await db
-				.select({
-					max: sql<number>`coalesce(max(${links.sortOrder}), -1)::int`,
-				})
-				.from(links)
-				.where(
-					and(
-						eq(links.profileId, profile.id),
-						targetSectionId
-							? eq(links.sectionId, targetSectionId)
-							: isNull(links.sectionId),
-					),
-				);
-			const nextSortOrder = order.max + 1;
-
 			assertSchedule(input);
 			return db.transaction(async (tx) => {
 				await tx
@@ -451,6 +453,35 @@ export const linksRouter = createTRPCRouter({
 					.from(profiles)
 					.where(eq(profiles.id, profile.id))
 					.for("update");
+				if (targetSectionId) {
+					const section = await tx.query.linkSections.findFirst({
+						where: and(
+							eq(linkSections.id, targetSectionId),
+							eq(linkSections.profileId, profile.id),
+						),
+						columns: { id: true },
+					});
+					if (!section) {
+						throw new TRPCError({
+							code: "NOT_FOUND",
+							message: "Section not found",
+						});
+					}
+				}
+				const [order] = await tx
+					.select({
+						max: sql<number>`coalesce(max(${links.sortOrder}), -1)::int`,
+					})
+					.from(links)
+					.where(
+						and(
+							eq(links.profileId, profile.id),
+							targetSectionId
+								? eq(links.sectionId, targetSectionId)
+								: isNull(links.sectionId),
+						),
+					);
+				const nextSortOrder = order.max + 1;
 				if (input.featured)
 					await tx
 						.update(links)
@@ -586,35 +617,26 @@ export const linksRouter = createTRPCRouter({
 				});
 			}
 
-			const ownedLinks = await db.query.links.findMany({
-				where: and(
-					eq(links.profileId, profile.id),
-					inArray(links.id, uniqueIds),
-				),
-			});
-			if (ownedLinks.length !== uniqueIds.length) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "One or more selected links were not found",
-				});
-			}
+			await db.transaction(async (tx) => {
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
 
-			if (input.action === "move" && input.sectionId) {
-				const section = await db.query.linkSections.findFirst({
-					where: and(
-						eq(linkSections.id, input.sectionId),
-						eq(linkSections.profileId, profile.id),
-					),
-				});
-				if (!section) {
+				const ownedLinks = await tx
+					.select({ id: links.id })
+					.from(links)
+					.where(
+						and(eq(links.profileId, profile.id), inArray(links.id, uniqueIds)),
+					);
+				if (ownedLinks.length !== uniqueIds.length) {
 					throw new TRPCError({
 						code: "NOT_FOUND",
-						message: "Destination section not found",
+						message: "One or more selected links were not found",
 					});
 				}
-			}
 
-			await db.transaction(async (tx) => {
 				if (input.action === "delete") {
 					await tx
 						.delete(links)
@@ -644,31 +666,45 @@ export const linksRouter = createTRPCRouter({
 				}
 
 				const targetSectionId = input.sectionId ?? null;
-				const targetLinks = await tx.query.links.findMany({
-					where: and(
-						eq(links.profileId, profile.id),
-						targetSectionId
-							? eq(links.sectionId, targetSectionId)
-							: isNull(links.sectionId),
-					),
-				});
-				const nextSortOrder =
-					targetLinks.reduce(
-						(max, link) => Math.max(max, link.sortOrder ?? -1),
-						-1,
-					) + 1;
+				if (targetSectionId) {
+					const section = await tx.query.linkSections.findFirst({
+						where: and(
+							eq(linkSections.id, targetSectionId),
+							eq(linkSections.profileId, profile.id),
+						),
+						columns: { id: true },
+					});
+					if (!section) {
+						throw new TRPCError({
+							code: "NOT_FOUND",
+							message: "Destination section not found",
+						});
+					}
+				}
 
-				await Promise.all(
-					uniqueIds.map((id, index) =>
-						tx
-							.update(links)
-							.set({
-								sectionId: targetSectionId,
-								sortOrder: nextSortOrder + index,
-								updatedAt: new Date(),
-							})
-							.where(and(eq(links.id, id), eq(links.profileId, profile.id))),
-					),
+				const [order] = await tx
+					.select({
+						max: sql<number>`coalesce(max(${links.sortOrder}), -1)::int`,
+					})
+					.from(links)
+					.where(
+						and(
+							eq(links.profileId, profile.id),
+							targetSectionId
+								? eq(links.sectionId, targetSectionId)
+								: isNull(links.sectionId),
+						),
+					);
+				const nextSortOrder = order.max + 1;
+
+				await applyLinkPositions(
+					tx,
+					profile.id,
+					uniqueIds.map((id, index) => ({
+						id,
+						sectionId: targetSectionId,
+						sortOrder: nextSortOrder + index,
+					})),
 				);
 			});
 
@@ -817,41 +853,44 @@ export const linksRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const profile = await requireProfileByUserId(ctx.userId);
-			const layout = await fetchProfileLayout({
-				profileId: profile.id,
-				onlyActiveLinks: false,
-			});
-
 			const sourceSectionId = input.sourceSectionId ?? null;
-			const sourceSection = sourceSectionId
-				? layout.sections.find((section) => section.id === sourceSectionId)
-				: null;
 
-			if (sourceSectionId && !sourceSection) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Section not found",
-				});
-			}
+			return db.transaction(async (tx) => {
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
+				const layout = await fetchProfileLayout({ profileId: profile.id }, tx);
 
-			const sourceLinks = layout.links.filter(
-				(link) => link.sectionId === sourceSectionId,
-			);
+				const sourceSection = sourceSectionId
+					? layout.sections.find((section) => section.id === sourceSectionId)
+					: null;
 
-			if (input.splitIndex > sourceLinks.length) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Invalid split position",
-				});
-			}
+				if (sourceSectionId && !sourceSection) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Section not found",
+					});
+				}
 
-			const insertSortOrder = sourceSection
-				? (sourceSection.sortOrder ?? 0) + 1
-				: 0;
-			const movedLinks = sourceLinks.slice(input.splitIndex);
-			const remainingLinks = sourceLinks.slice(0, input.splitIndex);
+				const sourceLinks = layout.links.filter(
+					(link) => link.sectionId === sourceSectionId,
+				);
 
-			const createdSection = await db.transaction(async (tx) => {
+				if (input.splitIndex > sourceLinks.length) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Invalid split position",
+					});
+				}
+
+				const insertSortOrder = sourceSection
+					? (sourceSection.sortOrder ?? 0) + 1
+					: 0;
+				const movedLinks = sourceLinks.slice(input.splitIndex);
+				const remainingLinks = sourceLinks.slice(0, input.splitIndex);
+
 				await tx
 					.update(linkSections)
 					.set({
@@ -874,40 +913,21 @@ export const linksRouter = createTRPCRouter({
 					})
 					.returning();
 
-				await Promise.all(
-					remainingLinks.map((link, index) =>
-						tx
-							.update(links)
-							.set({
-								sectionId: sourceSectionId,
-								sortOrder: index,
-								updatedAt: new Date(),
-							})
-							.where(
-								and(eq(links.id, link.id), eq(links.profileId, profile.id)),
-							),
-					),
-				);
-
-				await Promise.all(
-					movedLinks.map((link, index) =>
-						tx
-							.update(links)
-							.set({
-								sectionId: created.id,
-								sortOrder: index,
-								updatedAt: new Date(),
-							})
-							.where(
-								and(eq(links.id, link.id), eq(links.profileId, profile.id)),
-							),
-					),
-				);
+				await applyLinkPositions(tx, profile.id, [
+					...remainingLinks.map((link, index) => ({
+						id: link.id,
+						sectionId: sourceSectionId,
+						sortOrder: index,
+					})),
+					...movedLinks.map((link, index) => ({
+						id: link.id,
+						sectionId: created.id,
+						sortOrder: index,
+					})),
+				]);
 
 				return created;
 			});
-
-			return createdSection;
 		}),
 
 	updateSection: protectedProcedure
@@ -948,64 +968,53 @@ export const linksRouter = createTRPCRouter({
 		.input(z.object({ id: z.string().uuid() }))
 		.mutation(async ({ ctx, input }) => {
 			const profile = await requireProfileByUserId(ctx.userId);
-			const section = await db.query.linkSections.findFirst({
-				where: and(
-					eq(linkSections.id, input.id),
-					eq(linkSections.profileId, profile.id),
-				),
-			});
 
-			if (!section) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Section not found",
+			await db.transaction(async (tx) => {
+				await tx
+					.select({ id: profiles.id })
+					.from(profiles)
+					.where(eq(profiles.id, profile.id))
+					.for("update");
+				const section = await tx.query.linkSections.findFirst({
+					where: and(
+						eq(linkSections.id, input.id),
+						eq(linkSections.profileId, profile.id),
+					),
 				});
-			}
 
-			const [sectionLinks, unsectionedLinks] = await Promise.all([
-				db.query.links.findMany({
+				if (!section) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Section not found",
+					});
+				}
+
+				const sectionLinks = await tx.query.links.findMany({
 					where: and(
 						eq(links.profileId, profile.id),
 						eq(links.sectionId, input.id),
 					),
+					columns: { id: true },
 					orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-				}),
-				db.query.links.findMany({
+				});
+				const unsectionedLinks = await tx.query.links.findMany({
 					where: and(eq(links.profileId, profile.id), isNull(links.sectionId)),
+					columns: { id: true },
 					orderBy: [asc(links.sortOrder), asc(links.createdAt), asc(links.id)],
-				}),
-			]);
+				});
 
-			await db.transaction(async (tx) => {
-				await Promise.all(
-					unsectionedLinks.map((link, index) =>
-						tx
-							.update(links)
-							.set({
-								sectionId: null,
-								sortOrder: index,
-								updatedAt: new Date(),
-							})
-							.where(
-								and(eq(links.id, link.id), eq(links.profileId, profile.id)),
-							),
-					),
-				);
-
-				await Promise.all(
-					sectionLinks.map((link, index) =>
-						tx
-							.update(links)
-							.set({
-								sectionId: null,
-								sortOrder: unsectionedLinks.length + index,
-								updatedAt: new Date(),
-							})
-							.where(
-								and(eq(links.id, link.id), eq(links.profileId, profile.id)),
-							),
-					),
-				);
+				await applyLinkPositions(tx, profile.id, [
+					...unsectionedLinks.map((link, index) => ({
+						id: link.id,
+						sectionId: null,
+						sortOrder: index,
+					})),
+					...sectionLinks.map((link, index) => ({
+						id: link.id,
+						sectionId: null,
+						sortOrder: unsectionedLinks.length + index,
+					})),
+				]);
 
 				await tx
 					.delete(linkSections)
@@ -1036,78 +1045,13 @@ export const linksRouter = createTRPCRouter({
 	getPublic: publicProcedure
 		.input(z.object({ username: z.string().min(1).max(30) }))
 		.query(async ({ input }) => {
-			const profile = await db.query.profiles.findFirst({
-				where: eq(profiles.username, input.username.toLowerCase()),
-			});
-			if (!profile) {
+			const result = await fetchPublicProfileByUsername(input.username);
+			if (!result) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: "Profile not found",
 				});
 			}
-
-			const layout = await fetchProfileLayout({
-				profileId: profile.id,
-				onlyActiveLinks: true,
-			});
-
-			// Explicit public fields keep account IDs and diagnostic URLs private.
-			const publicLinks = layout.links.map((link) => ({
-				id: link.id,
-				title: link.title,
-				url: link.url,
-				description: link.description,
-				iconUrl: link.iconUrl,
-				iconBgColor: link.iconBgColor,
-				sectionId: link.sectionId,
-				featured: link.featured,
-				featureImageUrl: link.featureImageUrl,
-				ctaLabel: link.ctaLabel,
-			}));
-			const sections = layout.sections
-				.map((section) => ({
-					id: section.id,
-					title: section.title,
-					links: publicLinks.filter((link) => link.sectionId === section.id),
-				}))
-				.filter((section) => section.links.length > 0);
-
-			const unsectionedLinks = publicLinks.filter(
-				(link) => link.sectionId === null,
-			);
-
-			const domain = await db.query.customDomains.findFirst({
-				where: and(
-					eq(customDomains.profileId, profile.id),
-					eq(customDomains.status, "active"),
-				),
-				columns: { hostname: true },
-			});
-			return {
-				customDomain: domain?.hostname ?? null,
-				profile: {
-					id: profile.id,
-					username: profile.username,
-					displayName: profile.displayName,
-					bio: profile.bio,
-					theme: profile.theme,
-					fontFamily: profile.fontFamily,
-					buttonStyle: profile.buttonStyle,
-					accentColor: profile.accentColor,
-					contentBlocks: profile.contentBlocks,
-					pageBackgroundType: profile.pageBackgroundType,
-					pageBackgroundColor: profile.pageBackgroundColor,
-					pageBackgroundGradient: profile.pageBackgroundGradient,
-					signupEnabled: profile.signupEnabled,
-					signupTitle: profile.signupTitle,
-					avatarUrl: normalizeObjectUrlForClient(profile.avatarUrl),
-					pageBackgroundImageUrl: normalizeObjectUrlForClient(
-						profile.pageBackgroundImageUrl,
-					),
-				},
-				links: publicLinks,
-				sections,
-				unsectionedLinks,
-			};
+			return result;
 		}),
 });

@@ -16,6 +16,8 @@ async function handler({ request }: { request: Request }) {
 			headers: {
 				"content-type": "application/json",
 				"cache-control": "no-store",
+				"x-content-type-options": "nosniff",
+				"x-frame-options": "DENY",
 			},
 		});
 	}
@@ -38,6 +40,8 @@ async function handler({ request }: { request: Request }) {
 
 	const headers = new Headers(response.headers);
 	headers.set("cache-control", "no-store");
+	headers.set("x-content-type-options", "nosniff");
+	headers.set("x-frame-options", "DENY");
 
 	return new Response(response.body, {
 		status: response.status,

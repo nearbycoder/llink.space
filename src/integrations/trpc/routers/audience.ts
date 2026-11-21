@@ -8,6 +8,8 @@ import { clickClientKey, hashClickKey } from "#/lib/click-protection";
 import {
 	cleanupClickGuards,
 	consumeClickBudget,
+	guardSecret,
+	trustedIpHeader,
 } from "#/lib/click-protection-server";
 import { csvCell } from "#/lib/dashboard-tools";
 import {
@@ -30,6 +32,69 @@ async function owner(userId: string) {
 }
 const tokenHash = (token: string) =>
 	createHash("sha256").update(token).digest("hex");
+export async function fetchAudienceList(
+	profile: { id: string; signupEnabled: boolean; signupTitle: string },
+	input: {
+		page: number;
+		search: string;
+		status: "all" | "active" | "unsubscribed";
+	},
+) {
+	const query = input.search.toLowerCase();
+	const searchFilter = query
+		? or(
+				sql`position(${query} in lower(${subscribers.email})) > 0`,
+				sql`position(${query} in lower(${subscribers.name})) > 0`,
+			)
+		: undefined;
+	const filter = and(
+		searchFilter,
+		input.status === "active"
+			? isNull(subscribers.unsubscribedAt)
+			: input.status === "unsubscribed"
+				? isNotNull(subscribers.unsubscribedAt)
+				: undefined,
+	);
+	const [rows, counts, connection] = await Promise.all([
+		db
+			.select({
+				id: subscribers.id,
+				email: subscribers.email,
+				name: subscribers.name,
+				consentAt: subscribers.consentAt,
+				unsubscribedAt: subscribers.unsubscribedAt,
+				syncedAt: subscribers.syncedAt,
+				syncAttemptedAt: subscribers.syncAttemptedAt,
+				providerRemovedAt: subscribers.providerRemovedAt,
+			})
+			.from(subscribers)
+			.where(and(eq(subscribers.profileId, profile.id), filter))
+			.orderBy(desc(subscribers.consentAt), desc(subscribers.id))
+			.limit(50)
+			.offset(input.page * 50),
+		db
+			.select({
+				total: sql<number>`count(*)::int`,
+				matchingCount: sql<number>`count(*) filter (where ${filter ?? sql`true`})::int`,
+				active: sql<number>`count(*) filter (where ${subscribers.unsubscribedAt} is null)::int`,
+			})
+			.from(subscribers)
+			.where(eq(subscribers.profileId, profile.id)),
+		db.query.emailConnections.findFirst({
+			where: eq(emailConnections.profileId, profile.id),
+			columns: { listId: true },
+		}),
+	]);
+	return {
+		rows,
+		...counts[0],
+		signupEnabled: profile.signupEnabled,
+		signupTitle: profile.signupTitle,
+		connected: Boolean(connection),
+		listId: connection?.listId ?? null,
+	};
+}
+
 export const audienceRouter = createTRPCRouter({
 	list: protectedProcedure
 		.input(
@@ -43,59 +108,7 @@ export const audienceRouter = createTRPCRouter({
 		)
 		.query(async ({ ctx, input }) => {
 			const p = await owner(ctx.userId);
-			const query = input.search.toLowerCase();
-			const searchFilter = query
-				? or(
-						sql`position(${query} in lower(${subscribers.email})) > 0`,
-						sql`position(${query} in lower(${subscribers.name})) > 0`,
-					)
-				: undefined;
-			const filter = and(
-				searchFilter,
-				input.status === "active"
-					? isNull(subscribers.unsubscribedAt)
-					: input.status === "unsubscribed"
-						? isNotNull(subscribers.unsubscribedAt)
-						: undefined,
-			);
-			const [rows, counts, connection] = await Promise.all([
-				db
-					.select({
-						id: subscribers.id,
-						email: subscribers.email,
-						name: subscribers.name,
-						consentAt: subscribers.consentAt,
-						unsubscribedAt: subscribers.unsubscribedAt,
-						syncedAt: subscribers.syncedAt,
-						syncAttemptedAt: subscribers.syncAttemptedAt,
-						providerRemovedAt: subscribers.providerRemovedAt,
-					})
-					.from(subscribers)
-					.where(and(eq(subscribers.profileId, p.id), filter))
-					.orderBy(desc(subscribers.consentAt), desc(subscribers.id))
-					.limit(50)
-					.offset(input.page * 50),
-				db
-					.select({
-						total: sql<number>`count(*)::int`,
-						matchingCount: sql<number>`count(*) filter (where ${filter ?? sql`true`})::int`,
-						active: sql<number>`count(*) filter (where ${subscribers.unsubscribedAt} is null)::int`,
-					})
-					.from(subscribers)
-					.where(eq(subscribers.profileId, p.id)),
-				db.query.emailConnections.findFirst({
-					where: eq(emailConnections.profileId, p.id),
-					columns: { listId: true },
-				}),
-			]);
-			return {
-				rows,
-				...counts[0],
-				signupEnabled: p.signupEnabled,
-				signupTitle: p.signupTitle,
-				connected: Boolean(connection),
-				listId: connection?.listId ?? null,
-			};
+			return fetchAudienceList(p, input);
 		}),
 	settings: protectedProcedure
 		.input(
@@ -148,10 +161,8 @@ export const audienceRouter = createTRPCRouter({
 					code: "NOT_FOUND",
 					message: "Signups are closed",
 				});
-			const secret = process.env.BETTER_AUTH_SECRET ?? "local";
-			const trusted =
-				process.env.ANALYTICS_TRUSTED_IP_HEADER ??
-				(process.env.RAILWAY_ENVIRONMENT_ID ? "x-real-ip" : undefined);
+			const secret = guardSecret();
+			const trusted = trustedIpHeader();
 			await cleanupClickGuards(db);
 			if (
 				!(await consumeClickBudget(
@@ -328,13 +339,11 @@ export const audienceRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const p = await owner(ctx.userId);
+			await cleanupClickGuards(db);
 			if (
 				!(await consumeClickBudget(
 					db,
-					hashClickKey(process.env.BETTER_AUTH_SECRET ?? "local", [
-						"email-connect",
-						p.id,
-					]),
+					hashClickKey(guardSecret(), ["email-connect", p.id]),
 					3,
 					60,
 				))

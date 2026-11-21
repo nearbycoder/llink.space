@@ -1,5 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { db } from "#/db";
 import { auth } from "#/lib/auth";
+import { hashClickKey } from "#/lib/click-protection";
+import {
+	cleanupClickGuards,
+	consumeClickBudget,
+	guardSecret,
+} from "#/lib/click-protection-server";
 import {
 	putProfileAvatarObject,
 	putProfileBackgroundObject,
@@ -13,6 +20,7 @@ import { PayloadTooLargeError, readStreamWithLimit } from "#/lib/request-body";
 import { isTrustedRequestOrigin } from "#/lib/security";
 
 const imageUploadPurposes = new Set(["avatar", "background"]);
+const MAX_UPLOADS_PER_MINUTE = 30;
 
 function jsonResponse(status: number, body: Record<string, string>) {
 	return new Response(JSON.stringify(body), {
@@ -20,6 +28,8 @@ function jsonResponse(status: number, body: Record<string, string>) {
 		headers: {
 			"content-type": "application/json",
 			"cache-control": "no-store",
+			"x-content-type-options": "nosniff",
+			"x-frame-options": "DENY",
 		},
 	});
 }
@@ -43,6 +53,19 @@ async function postHandler({ request }: { request: Request }) {
 	const session = await auth.api.getSession({ headers: request.headers });
 	if (!session?.user?.id) {
 		return jsonResponse(401, { error: "Unauthorized" });
+	}
+
+	await cleanupClickGuards(db);
+	const allowed = await consumeClickBudget(
+		db,
+		hashClickKey(guardSecret(), ["upload", session.user.id]),
+		MAX_UPLOADS_PER_MINUTE,
+		60,
+	);
+	if (!allowed) {
+		return jsonResponse(429, {
+			error: "Too many uploads. Please wait a minute and try again.",
+		});
 	}
 
 	let formData: FormData;

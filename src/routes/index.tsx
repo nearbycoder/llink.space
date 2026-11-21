@@ -1,8 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LandingPage } from "#/components/marketing/LandingPage";
-import { PublicProfilePage } from "#/components/profile/PublicProfilePage";
+import { lazy, Suspense } from "react";
 import { getCustomDomainPage } from "#/lib/custom-domain-page";
+import { serializeJsonLd } from "#/lib/security";
 import { toAbsoluteUrl } from "#/lib/site-url";
+
+const LandingPage = lazy(() =>
+	import("#/components/marketing/LandingPage").then((mod) => ({
+		default: mod.LandingPage,
+	})),
+);
+const PublicProfilePage = lazy(() =>
+	import("#/components/profile/PublicProfilePage").then((mod) => ({
+		default: mod.PublicProfilePage,
+	})),
+);
 
 export const Route = createFileRoute("/")({
 	loader: async () => ({ customPage: await getCustomDomainPage() }),
@@ -77,7 +88,7 @@ export const Route = createFileRoute("/")({
 			scripts: [
 				{
 					type: "application/ld+json",
-					children: JSON.stringify(structuredData),
+					children: serializeJsonLd(structuredData),
 				},
 			],
 			links: [{ rel: "canonical", href: pageUrl }],
@@ -88,5 +99,9 @@ export const Route = createFileRoute("/")({
 
 function SiteIndex() {
 	const { customPage } = Route.useLoaderData();
-	return customPage ? <PublicProfilePage data={customPage} /> : <LandingPage />;
+	return (
+		<Suspense fallback={null}>
+			{customPage ? <PublicProfilePage data={customPage} /> : <LandingPage />}
+		</Suspense>
+	);
 }
