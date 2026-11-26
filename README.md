@@ -292,6 +292,8 @@ The active hostname serves the public profile at `/`, and becomes its share/cano
 
 ### Verification and release
 
+Production runs on Coolify. The signed GitHub push webhook deploys `main` to the `llink.space` application. It uses Coolify's private PostgreSQL and RustFS services. Vercel DNS points the apex to the Coolify edge. The edge overwrites `X-Real-IP` before proxying and the application uses that header for click rate limits.
+
 CI runs unit tests, typechecking, source checks, a production build, fresh SQL migrations, isolated provider/database workflows and Playwright journeys. Provider tests replace HTTP and DNS, require a local test database, and cannot send email or provision real domains.
 
 Before releasing the expansion, apply migrations `0006`–`0011` with `bun run db:migrate`, then deploy the built app. Provider credentials and DNS configuration are separate setup steps. See [delivery record](FEATURE_DELIVERY.md) for the completed chunks and verification results.
